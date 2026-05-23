@@ -1,0 +1,20 @@
+{
+  "name": "Geospatial Annotation & ML Pipeline Automation",
+  "short_name": "GeoAnnot",
+  "description": "Production-grade geospatial annotation pipelines — ROI labeling, vector/raster sync, dataset versioning, active learning, COCO/YOLO/GeoJSON exports, and CI/CD validation.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fffbf3",
+  "theme_color": "#1f779e",
+  "lang": "en",
+  "categories": ["productivity", "education", "developer"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

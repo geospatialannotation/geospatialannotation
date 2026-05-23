@@ -1,0 +1,24 @@
+---
+layout: layouts/base.njk
+title: You're offline
+permalink: /offline.html
+robots: noindex
+eleventyExcludeFromCollections: true
+---
+<section class="shell">
+  <div style="max-width:640px;margin:60px auto;text-align:center;">
+    <h1 style="font-size:2rem;background:linear-gradient(120deg,var(--sky-700),var(--gold-500));-webkit-background-clip:text;background-clip:text;color:transparent;">You're offline</h1>
+    <p style="color:var(--muted);">
+      We couldn't reach the network. Cached pages are still available — try navigating to a section you've
+      already visited.
+    </p>
+    <p>
+      <a class="cta cta--sky" href="/" style="display:inline-flex;">
+        <span class="cta__icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+        </span>
+        <span><strong>Return home</strong></span>
+      </a>
+    </p>
+  </div>
+</section>

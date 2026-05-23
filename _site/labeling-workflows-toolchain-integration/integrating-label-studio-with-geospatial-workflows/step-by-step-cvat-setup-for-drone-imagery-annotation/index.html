@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Step-by-Step CVAT Setup for Drone Imagery Annotation · GeoAnnotation</title>
+  <meta name="description" content="To execute a step-by-step CVAT setup for drone imagery annotation, deploy CVAT via Docker Compose, preprocess orthomosaics into browser-compatible tiles, and automate task ingestion using the cvat-sdk">
+  <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="googlebot" content="index, follow">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/">
+
+  <!-- Theme + tile colors -->
+  <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="msapplication-TileColor" content="#1f779e">
+  <meta name="msapplication-config" content="none">
+  <meta name="application-name" content="GeoAnnotation">
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#1f779e">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GeoAnnot">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Step-by-Step CVAT Setup for Drone Imagery Annotation · GeoAnnotation">
+  <meta property="og:description" content="To execute a step-by-step CVAT setup for drone imagery annotation, deploy CVAT via Docker Compose, preprocess orthomosaics into browser-compatible tiles, and automate task ingestion using the cvat-sdk">
+  <meta property="og:url" content="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/">
+  <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Step-by-Step CVAT Setup for Drone Imagery Annotation · GeoAnnotation">
+  <meta name="twitter:description" content="To execute a step-by-step CVAT setup for drone imagery annotation, deploy CVAT via Docker Compose, preprocess orthomosaics into browser-compatible tiles, and automate task ingestion using the cvat-sdk">
+  <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- DNS prefetch + preconnect for mermaid CDN (only loaded when needed by the page) -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <script defer src="/assets/js/site.js"></script>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://www.geospatialannotation.com/#organization",
+  "name": "Geospatial Annotation &amp; ML Pipeline Automation",
+  "url": "https://www.geospatialannotation.com/",
+  "logo": {
+    "@type": "ImageObject",
+    "url": "https://www.geospatialannotation.com/icons/icon-512.png",
+    "width": 512,
+    "height": 512
+  }
+}
+</script>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.geospatialannotation.com/"
+    },{
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Labeling Workflows & Toolchain Integration for Geospatial AI",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"
+    },{
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Integrating Label Studio with Geospatial Workflows",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/"
+    },{
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Step-by-Step CVAT Setup for Drone Imagery Annotation",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/"
+    }]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/#article",
+  "headline": "Step-by-Step CVAT Setup for Drone Imagery Annotation",
+  "description": "To execute a step-by-step CVAT setup for drone imagery annotation, deploy CVAT via Docker Compose, preprocess orthomosaics into browser-compatible tiles, and automate task ingestion using the cvat-sdk",
+  "url": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/"
+  },
+  "image": "https://www.geospatialannotation.com/icons/og-image.png",
+  "inLanguage": "en-US",
+  "isPartOf": { "@id": "https://www.geospatialannotation.com/#website" },
+  "publisher": { "@id": "https://www.geospatialannotation.com/#organization" },
+  "author": { "@id": "https://www.geospatialannotation.com/#organization" }
+}
+</script>
+
+
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  
+  
+<header class="site-header" role="banner">
+  <div class="site-header__inner">
+    <a class="brand" href="/" aria-label="Home — Geospatial Annotation &amp; ML Pipeline Automation">
+      <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="b1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#94d0e6"/>
+            <stop offset="55%" stop-color="#43b7a5"/>
+            <stop offset="100%" stop-color="#ffc73a"/>
+          </linearGradient>
+          <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff8e6d"/>
+            <stop offset="100%" stop-color="#f06a48"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#b1)"/>
+        <g fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.25" stroke-linecap="round">
+          <path d="M8 44 C 18 36, 28 42, 38 34 S 56 26, 58 20"/>
+          <path d="M8 50 C 20 44, 30 48, 42 40 S 56 32, 60 28"/>
+          <path d="M8 38 C 16 32, 24 36, 32 30 S 48 20, 56 14"/>
+        </g>
+        <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+        <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="url(#b2)" stroke="#fff" stroke-width="1.4"/>
+        <circle cx="33" cy="29.4" r="2.4" fill="#fff"/>
+      </svg>
+      <span class="brand__text">
+        <span>GeoAnnotation</span>
+        <span class="brand__sub">ML Pipeline Automation</span>
+      </span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <nav id="primary-nav" class="site-nav" aria-label="Primary">
+      <a href="/" class="">
+        <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="site-nav__label">Home</span>
+      </a>
+      
+      <a href="/dataset-versioning-spatial-data-sync/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+        
+        <span class="site-nav__label">Dataset Versioning</span>
+      </a>
+      
+      <a href="/geospatial-annotation-fundamentals-architecture/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        
+        <span class="site-nav__label">Fundamentals</span>
+      </a>
+      
+      <a href="/labeling-workflows-toolchain-integration/" class="is-active">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
+        
+        <span class="site-nav__label">Labeling Workflows</span>
+      </a>
+      
+    </nav>
+  </div>
+</header>
+
+
+  <main id="main-content" class="site-main">
+    
+
+
+
+
+
+
+<div class="shell">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      
+        
+          <li><a href="/">Home</a></li>
+        
+      
+        
+          <li><a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration for Geospatial AI</a></li>
+        
+      
+        
+          <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
+        
+      
+        
+          <li aria-current="page">Step-by-Step CVAT Setup for Drone Imagery Annotation</li>
+        
+      
+    </ol>
+  </nav>
+
+  <div class="content-shell">
+    <aside class="sidebar" aria-label="Section contents">
+      <h4>Labeling Workflows &amp; Toolchain Integration for Geospatial AI</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/" class="">Overview</a></li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/" class="">Automating Pre-Labeling with Foundation Models</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/" class="">Converting Label Studio Exports to YOLOv8 Format</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/" class="">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/" class="">Syncing QGIS Edits to Cloud Annotation Platforms</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/" class="is-active">Integrating Label Studio with Geospatial Workflows</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/" class="is-active">Step-by-Step CVAT Setup for Drone Imagery Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating batch pre-labeling with SAM and QGIS</a></li>
+              
+            </ul>
+            
+          </li>
+        
+      </ul>
+    </aside>
+
+    <article class="article">
+      <h1>Step-by-Step CVAT Setup for Drone Imagery Annotation</h1>
+<p>To execute a <strong>step-by-step CVAT setup for drone imagery annotation</strong>, deploy CVAT via Docker Compose, preprocess orthomosaics into browser-compatible tiles, and automate task ingestion using the <code class="inline-code">cvat-sdk</code> Python client. Geospatial ML pipelines require explicit coordinate reference system (CRS) handling, chunked raster delivery, and persistent volume mapping before annotation begins. The following workflow covers production deployment, spatial preprocessing, and programmatic ingestion tailored for high-throughput drone datasets.</p>
+<h3 id="prerequisites-compatibility-matrix" tabindex="-1"><a class="header-anchor" href="#prerequisites-compatibility-matrix"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Compatibility Matrix</h3>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Component</th>
+<th>Minimum Requirement</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>OS</td>
+<td>Ubuntu 22.04 LTS / macOS 13+ / WSL2</td>
+<td>Linux preferred for volume I/O performance</td>
+</tr>
+<tr>
+<td>Docker Engine</td>
+<td>≥ 24.0</td>
+<td>Must support Compose V2 (<code class="inline-code">docker compose</code>)</td>
+</tr>
+<tr>
+<td>CVAT Version</td>
+<td>v2.14+ (stable)</td>
+<td>Verify with <code class="inline-code">docker compose version</code></td>
+</tr>
+<tr>
+<td>Python</td>
+<td>≥ 3.10</td>
+<td>Required for <code class="inline-code">cvat-sdk</code> and GDAL bindings</td>
+</tr>
+<tr>
+<td>RAM</td>
+<td>16GB (32GB recommended)</td>
+<td>Orthomosaics &gt;5GB trigger OOM without chunking</td>
+</tr>
+<tr>
+<td>Imagery Format</td>
+<td>JPEG/PNG (native), GeoTIFF (requires tiling)</td>
+<td>CVAT browser renderer strips CRS metadata</td>
+</tr>
+<tr>
+<td>GPU</td>
+<td>Optional (NVIDIA + CUDA 12+)</td>
+<td>Enables SAM/YOLOv8 auto-labeling inside CVAT</td>
+</tr>
+</tbody>
+</table>
+</div><h3 id="step-1-docker-deployment-storage-configuration" tabindex="-1"><a class="header-anchor" href="#step-1-docker-deployment-storage-configuration"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1: Docker Deployment &amp; Storage Configuration</h3>
+<p>CVAT’s official repository provides a production-ready Compose stack. Persistent volumes must be mapped to a high-throughput NVMe drive; default Docker overlay storage will bottleneck during tile streaming and database writes.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">bash</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-bash"><span class="token function">git</span> clone https://github.com/cvat-ai/cvat.git
+<span class="token builtin class-name">cd</span> cvat
+<span class="token function">cp</span> docker-compose.override.yml.example docker-compose.override.yml
+</code></pre>
+</div>
+<p>Edit <code class="inline-code">docker-compose.override.yml</code> to mount your fast storage to <code class="inline-code">/home/cvat/data</code>. Ensure <code class="inline-code">cvat_server</code> and <code class="inline-code">cvat_db</code> share the same host path for consistency. Reference the <a href="https://docs.cvat.ai/docs/administration/basics/installation/">CVAT Official Installation Guide</a> for environment variable tuning (e.g., <code class="inline-code">CVAT_NUM_WORKERS</code>, <code class="inline-code">CVAT_MAX_REQUEST_SIZE</code>).</p>
+<p>Start the stack and verify health:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">bash</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-bash"><span class="token function">docker</span> compose up <span class="token parameter variable">-d</span>
+<span class="token function">docker</span> compose <span class="token function">ps</span>
+</code></pre>
+</div>
+<p>All containers must report <code class="inline-code">healthy</code> or <code class="inline-code">running</code>. Access the UI at <code class="inline-code">http://localhost:8080</code> and create an admin account.</p>
+<h3 id="step-2-geospatial-preprocessing-tiling-strategy" tabindex="-1"><a class="header-anchor" href="#step-2-geospatial-preprocessing-tiling-strategy"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2: Geospatial Preprocessing &amp; Tiling Strategy</h3>
+<p>CVAT’s canvas expects raster images ≤ 4096×4096 pixels for smooth browser rendering. Drone orthomosaics routinely exceed 20,000×20,000 pixels. Preprocess using GDAL to split imagery into overlapping tiles while preserving spatial context for later georeferencing.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">bash</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-bash"><span class="token comment"># Create sequential 2048x2048 tiles with 10% overlap</span>
+gdal_retile.py <span class="token parameter variable">-ps</span> <span class="token number">2048</span> <span class="token number">2048</span> <span class="token parameter variable">-overlap</span> <span class="token number">200</span> <span class="token parameter variable">-levels</span> <span class="token number">1</span> <span class="token parameter variable">-targetDir</span> ./tiles <span class="token parameter variable">-r</span> bilinear input_orthomosaic.tif
+</code></pre>
+</div>
+<p>Alternatively, use <code class="inline-code">rasterio</code> or <code class="inline-code">rio-tiler</code> for programmatic chunking. Store tiles in a flat directory: <code class="inline-code">drone_project/task_01/frame_{0001..N}.jpg</code>. Maintain a sidecar CSV mapping <code class="inline-code">frame_id → original_pixel_bounds → CRS (e.g., EPSG:32633)</code>. This metadata enables post-export spatial reconstruction. Consult the <a href="https://gdal.org/programs/gdal_translate.html">GDAL Raster Utilities</a> documentation for advanced <code class="inline-code">-projwin</code> or <code class="inline-code">-co</code> compression flags.</p>
+<h3 id="step-3-automated-task-ingestion-via-python" tabindex="-1"><a class="header-anchor" href="#step-3-automated-task-ingestion-via-python"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3: Automated Task Ingestion via Python</h3>
+<p>Manual uploads break at scale. Use <code class="inline-code">cvat-sdk</code> to automate project creation, task definition, and frame ingestion. Install the client: <code class="inline-code">pip install cvat-sdk</code>.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">from</span> cvat_sdk <span class="token keyword">import</span> make_client
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token comment"># 1. Authenticate</span>
+client <span class="token operator">=</span> make_client<span class="token punctuation">(</span>host<span class="token operator">=</span><span class="token string">"http://localhost:8080"</span><span class="token punctuation">,</span> credentials<span class="token operator">=</span><span class="token punctuation">(</span><span class="token string">"admin"</span><span class="token punctuation">,</span> <span class="token string">"your_password"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 2. Create project</span>
+project <span class="token operator">=</span> client<span class="token punctuation">.</span>projects<span class="token punctuation">.</span>create<span class="token punctuation">(</span>name<span class="token operator">=</span><span class="token string">"Drone_Orthomosaic_Q3"</span><span class="token punctuation">)</span>
+
+<span class="token comment"># 3. Prepare tile paths</span>
+tile_dir <span class="token operator">=</span> Path<span class="token punctuation">(</span><span class="token string">"./tiles"</span><span class="token punctuation">)</span>
+resources <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">(</span>f<span class="token punctuation">)</span> <span class="token keyword">for</span> f <span class="token keyword">in</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>tile_dir<span class="token punctuation">.</span>glob<span class="token punctuation">(</span><span class="token string">"frame_*.jpg"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+
+<span class="token comment"># 4. Create task and upload data</span>
+task <span class="token operator">=</span> client<span class="token punctuation">.</span>tasks<span class="token punctuation">.</span>create_from_data<span class="token punctuation">(</span>
+    project_id<span class="token operator">=</span>project<span class="token punctuation">.</span><span class="token builtin">id</span><span class="token punctuation">,</span>
+    name<span class="token operator">=</span><span class="token string">"Tile_Batch_01"</span><span class="token punctuation">,</span>
+    resources<span class="token operator">=</span>resources<span class="token punctuation">,</span>
+    chunk_size<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span>  <span class="token comment"># 1 frame per chunk for precise bounding box tracking</span>
+    data_sort<span class="token operator">=</span><span class="token string">"natural"</span>
+<span class="token punctuation">)</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Task </span><span class="token interpolation"><span class="token punctuation">{</span>task<span class="token punctuation">.</span><span class="token builtin">id</span><span class="token punctuation">}</span></span><span class="token string"> created. Status: </span><span class="token interpolation"><span class="token punctuation">{</span>task<span class="token punctuation">.</span>status<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<p>For datasets exceeding 10GB, upload tiles to cloud storage (S3/GCS) and pass presigned URLs to <code class="inline-code">resources</code> instead of local paths. The SDK handles chunked uploads and background task initialization automatically.</p>
+<h3 id="step-4-annotation-export-spatial-reconstruction" tabindex="-1"><a class="header-anchor" href="#step-4-annotation-export-spatial-reconstruction"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4: Annotation, Export &amp; Spatial Reconstruction</h3>
+<p>Once tasks are ingested, annotators can use CVAT’s polygon, bounding box, or AI-assisted tools. Export formats (COCO, YOLO, CVAT XML) contain pixel coordinates relative to each tile, not the original orthomosaic. To restore geospatial accuracy:</p>
+<ol>
+<li>Export annotations and join with the sidecar CSV on <code class="inline-code">frame_id</code>.</li>
+<li>Apply affine transformations using the stored <code class="inline-code">original_pixel_bounds</code> to shift coordinates back to the master CRS.</li>
+<li>Validate topology with <code class="inline-code">shapely</code> or <code class="inline-code">geopandas</code> before training.</li>
+</ol>
+<p>While this pipeline focuses on CVAT, teams evaluating alternative platforms often explore <a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a> for comparative benchmarking. Regardless of the annotation engine, robust <a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration</a> ensures metadata survives the export-import cycle and aligns with downstream model training requirements.</p>
+<h3 id="troubleshooting-performance-notes" tabindex="-1"><a class="header-anchor" href="#troubleshooting-performance-notes"><span aria-hidden="true" class="anchor-symbol">#</span></a> Troubleshooting &amp; Performance Notes</h3>
+<ul>
+<li><strong>Browser Memory Limits:</strong> Chrome caps canvas memory at ~4GB. Keep tile sizes ≤ 3072×3072 and disable browser extensions during annotation.</li>
+<li><strong>Database Bloat:</strong> Run <code class="inline-code">docker compose exec cvat_db psql -U postgres -c &quot;VACUUM FULL;&quot;</code> monthly to reclaim space from deleted tasks.</li>
+<li><strong>GPU Auto-Labeling:</strong> Enable SAM/YOLOv8 by adding <code class="inline-code">--gpus all</code> to <code class="inline-code">docker-compose.override.yml</code> under <code class="inline-code">cvat_server.deploy.resources.reservations.devices</code>.</li>
+</ul>
+<p>This workflow delivers a reproducible, scalable foundation for drone imagery annotation. Automate ingestion, preserve CRS context, and validate exports before committing to model training.</p>
+
+
+      
+
+      
+    </article>
+
+    <aside class="toc" aria-label="On this page"></aside>
+  </div>
+</div>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+  <div class="site-footer__inner">
+    <div>
+      <div class="site-footer__brand">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="fb1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#94d0e6"/>
+              <stop offset="55%" stop-color="#43b7a5"/>
+              <stop offset="100%" stop-color="#ffc73a"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#fb1)"/>
+          <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+          <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="#ff8e6d" stroke="#fff" stroke-width="1.4"/>
+        </svg>
+        <div>
+          <div style="font-weight:700;color:var(--ink);">GeoAnnotation</div>
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">ML Pipeline Automation</div>
+        </div>
+      </div>
+      <p>Engineering production-grade pipelines for spatial annotation, dataset versioning, and active learning at scale.</p>
+    </div>
+
+    
+    <div>
+      <h4>Versioning</h4>
+      <ul>
+        <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Fundamentals</h4>
+      <ul>
+        <li><a href="/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Labeling</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/">Overview</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+      </ul>
+    </div>
+    
+  </div>
+
+  <div class="site-footer__bottom">
+    <span>© 2026 Geospatial Annotation & ML Pipeline Automation</span>
+    <span>Built with care for spatial data teams.</span>
+  </div>
+</footer>
+
+</body>
+</html>

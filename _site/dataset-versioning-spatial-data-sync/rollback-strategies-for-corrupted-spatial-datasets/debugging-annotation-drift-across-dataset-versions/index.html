@@ -1,0 +1,497 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Debugging Annotation Drift Across Dataset Versions · GeoAnnotation</title>
+  <meta name="description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o">
+  <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="googlebot" content="index, follow">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/">
+
+  <!-- Theme + tile colors -->
+  <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="msapplication-TileColor" content="#1f779e">
+  <meta name="msapplication-config" content="none">
+  <meta name="application-name" content="GeoAnnotation">
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#1f779e">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GeoAnnot">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Debugging Annotation Drift Across Dataset Versions · GeoAnnotation">
+  <meta property="og:description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o">
+  <meta property="og:url" content="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/">
+  <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Debugging Annotation Drift Across Dataset Versions · GeoAnnotation">
+  <meta name="twitter:description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o">
+  <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- DNS prefetch + preconnect for mermaid CDN (only loaded when needed by the page) -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <script defer src="/assets/js/site.js"></script>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://www.geospatialannotation.com/#organization",
+  "name": "Geospatial Annotation &amp; ML Pipeline Automation",
+  "url": "https://www.geospatialannotation.com/",
+  "logo": {
+    "@type": "ImageObject",
+    "url": "https://www.geospatialannotation.com/icons/icon-512.png",
+    "width": 512,
+    "height": 512
+  }
+}
+</script>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.geospatialannotation.com/"
+    },{
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Dataset Versioning & Spatial Data Sync for Geospatial AI/ML Pipelines",
+      "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"
+    },{
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Rollback Strategies for Corrupted Spatial Datasets",
+      "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/"
+    },{
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Debugging Annotation Drift Across Dataset Versions",
+      "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/"
+    }]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "@id": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/#article",
+  "headline": "Debugging Annotation Drift Across Dataset Versions",
+  "description": "Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o",
+  "url": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/"
+  },
+  "image": "https://www.geospatialannotation.com/icons/og-image.png",
+  "inLanguage": "en-US",
+  "isPartOf": { "@id": "https://www.geospatialannotation.com/#website" },
+  "publisher": { "@id": "https://www.geospatialannotation.com/#organization" },
+  "author": { "@id": "https://www.geospatialannotation.com/#organization" }
+}
+</script>
+
+
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  
+  
+<header class="site-header" role="banner">
+  <div class="site-header__inner">
+    <a class="brand" href="/" aria-label="Home — Geospatial Annotation &amp; ML Pipeline Automation">
+      <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="b1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#94d0e6"/>
+            <stop offset="55%" stop-color="#43b7a5"/>
+            <stop offset="100%" stop-color="#ffc73a"/>
+          </linearGradient>
+          <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff8e6d"/>
+            <stop offset="100%" stop-color="#f06a48"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#b1)"/>
+        <g fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.25" stroke-linecap="round">
+          <path d="M8 44 C 18 36, 28 42, 38 34 S 56 26, 58 20"/>
+          <path d="M8 50 C 20 44, 30 48, 42 40 S 56 32, 60 28"/>
+          <path d="M8 38 C 16 32, 24 36, 32 30 S 48 20, 56 14"/>
+        </g>
+        <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+        <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="url(#b2)" stroke="#fff" stroke-width="1.4"/>
+        <circle cx="33" cy="29.4" r="2.4" fill="#fff"/>
+      </svg>
+      <span class="brand__text">
+        <span>GeoAnnotation</span>
+        <span class="brand__sub">ML Pipeline Automation</span>
+      </span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <nav id="primary-nav" class="site-nav" aria-label="Primary">
+      <a href="/" class="">
+        <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="site-nav__label">Home</span>
+      </a>
+      
+      <a href="/dataset-versioning-spatial-data-sync/" class="is-active">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+        
+        <span class="site-nav__label">Dataset Versioning</span>
+      </a>
+      
+      <a href="/geospatial-annotation-fundamentals-architecture/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        
+        <span class="site-nav__label">Fundamentals</span>
+      </a>
+      
+      <a href="/labeling-workflows-toolchain-integration/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
+        
+        <span class="site-nav__label">Labeling Workflows</span>
+      </a>
+      
+    </nav>
+  </div>
+</header>
+
+
+  <main id="main-content" class="site-main">
+    
+
+
+
+
+
+
+<div class="shell">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      
+        
+          <li><a href="/">Home</a></li>
+        
+      
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync for Geospatial AI/ML Pipelines</a></li>
+        
+      
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+      
+        
+          <li aria-current="page">Debugging Annotation Drift Across Dataset Versions</li>
+        
+      
+    </ol>
+  </nav>
+
+  <div class="content-shell">
+    <aside class="sidebar" aria-label="Section contents">
+      <h4>Dataset Versioning &amp; Spatial Data Sync for Geospatial AI/ML Pipelines</h4>
+      <ul>
+        <li><a href="/dataset-versioning-spatial-data-sync/" class="">Overview</a></li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/" class="">Implementing DVC for Geospatial Training Data</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/" class="">How to Version Control Large Satellite Imagery Datasets</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/" class="">Preserving Metadata Across Dataset Versions</a>
+            
+          </li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/" class="is-active">Rollback Strategies for Corrupted Spatial Datasets</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/" class="is-active">Debugging Annotation Drift Across Dataset Versions</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/" class="">Tracking Annotation Changes with SHA Hashing</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/" class="">Using DVC Pipelines for Automated Dataset Snapshots</a></li>
+              
+            </ul>
+            
+          </li>
+        
+      </ul>
+    </aside>
+
+    <article class="article">
+      <h1>Debugging Annotation Drift Across Dataset Versions</h1>
+<p>Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, or pipeline serialization artifacts. The fastest resolution path is computing deterministic spatial and semantic deltas between consecutive version snapshots using geometry tolerance checks, attribute alignment, and statistical distribution profiling before allowing the data to enter training queues.</p>
+<h2 id="root-cause-taxonomy-in-geospatial-pipelines" tabindex="-1"><a class="header-anchor" href="#root-cause-taxonomy-in-geospatial-pipelines"><span aria-hidden="true" class="anchor-symbol">#</span></a> Root Cause Taxonomy in Geospatial Pipelines</h2>
+<p>Annotation drift rarely manifests as a single failure mode. In production ML pipelines, discrepancies typically fall into four diagnostic categories:</p>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Drift Type</th>
+<th>Symptom</th>
+<th>Primary Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Geometric</strong></td>
+<td>Sub-pixel coordinate shifts, slivers, self-intersections, or topology breaks</td>
+<td>Reprojection, clipping, tile stitching, or exporter rounding</td>
+</tr>
+<tr>
+<td><strong>Schema</strong></td>
+<td>Changed class IDs, renamed columns, or geometry type conversions (polygon → bbox)</td>
+<td>Annotation tool updates, manual schema edits, or ORM migrations</td>
+</tr>
+<tr>
+<td><strong>Statistical</strong></td>
+<td>Skewed label distributions, spatial clustering anomalies, or aspect ratio shifts</td>
+<td>Guideline revisions, annotator fatigue, or sampling bias</td>
+</tr>
+<tr>
+<td><strong>Serialization</strong></td>
+<td>Dropped metadata, reordered features, or truncated floating-point precision</td>
+<td>Format conversions (GeoJSON → Parquet → COCO) or batch loaders</td>
+</tr>
+</tbody>
+</table>
+</div><h2 id="step-by-step-debugging-workflow" tabindex="-1"><a class="header-anchor" href="#step-by-step-debugging-workflow"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step Debugging Workflow</h2>
+<ol>
+<li><strong>Lock Immutable Baselines:</strong> Never diff live streams. Export fixed snapshots and verify checksums. Align your diffing tools with established <a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> practices to guarantee consistent lineage tracking.</li>
+<li><strong>Validate CRS &amp; Topology:</strong> Confirm both versions share identical <code class="inline-code">EPSG</code> definitions. Run <code class="inline-code">is_valid</code> checks to catch invalid geometries that silently break spatial joins or rasterization steps.</li>
+<li><strong>Compute Spatial Deltas:</strong> Match features using centroid proximity or nearest-neighbor joins with a project-specific tolerance threshold. Flag pairs exceeding the threshold as geometrically drifted.</li>
+<li><strong>Align Attributes &amp; Labels:</strong> Join spatially matched features and compare label columns, confidence scores, and custom metadata. Explicitly track class ID remappings; implicit mappings cause silent training degradation.</li>
+<li><strong>Profile Statistical Shifts:</strong> Calculate Jensen-Shannon distance or KL divergence on label distributions and spatial density grids. Sudden distributional spikes indicate guideline drift rather than technical errors.</li>
+<li><strong>Trace Pipeline Artifacts:</strong> Cross-reference drift timestamps with CI/CD logs, annotation tool version bumps, and exporter configuration changes. If drift exceeds acceptable thresholds, consult <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a> before retraining or promoting the dataset.</li>
+</ol>
+<h2 id="working-code-spatial-schema-drift-detector" tabindex="-1"><a class="header-anchor" href="#working-code-spatial-schema-drift-detector"><span aria-hidden="true" class="anchor-symbol">#</span></a> Working Code: Spatial &amp; Schema Drift Detector</h2>
+<p>The following Python snippet uses <code class="inline-code">geopandas</code>, <code class="inline-code">shapely</code>, and <code class="inline-code">scipy</code> to compute geometric and label drift between two versioned annotation files. It assumes consistent schemas and enforces explicit CRS alignment.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">import</span> pandas <span class="token keyword">as</span> pd
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> shapely
+<span class="token keyword">from</span> scipy<span class="token punctuation">.</span>spatial<span class="token punctuation">.</span>distance <span class="token keyword">import</span> jensenshannon
+
+<span class="token keyword">def</span> <span class="token function">detect_annotation_drift</span><span class="token punctuation">(</span>
+    v1_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> 
+    v2_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> 
+    tolerance_meters<span class="token punctuation">:</span> <span class="token builtin">float</span> <span class="token operator">=</span> <span class="token number">0.5</span><span class="token punctuation">,</span>
+    label_col<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> <span class="token string">"class_id"</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">tuple</span><span class="token punctuation">[</span>pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">,</span> <span class="token builtin">float</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""
+    Computes spatial and semantic drift between two versioned geospatial datasets.
+    Returns a matched DataFrame with drift metrics and a Jensen-Shannon distance score.
+    """</span>
+    <span class="token comment"># 1. Load &amp; align CRS</span>
+    v1 <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>v1_path<span class="token punctuation">)</span>
+    v2 <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>v2_path<span class="token punctuation">)</span>
+    
+    <span class="token keyword">if</span> v1<span class="token punctuation">.</span>crs <span class="token operator">!=</span> v2<span class="token punctuation">.</span>crs<span class="token punctuation">:</span>
+        v2 <span class="token operator">=</span> v2<span class="token punctuation">.</span>to_crs<span class="token punctuation">(</span>v1<span class="token punctuation">.</span>crs<span class="token punctuation">)</span>
+        
+    <span class="token comment"># 2. Enforce valid geometries</span>
+    v1<span class="token punctuation">.</span>geometry <span class="token operator">=</span> v1<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>shapely<span class="token punctuation">.</span>make_valid<span class="token punctuation">)</span>
+    v2<span class="token punctuation">.</span>geometry <span class="token operator">=</span> v2<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>shapely<span class="token punctuation">.</span>make_valid<span class="token punctuation">)</span>
+    
+    <span class="token comment"># 3. Spatial matching with tolerance (requires geopandas >= 0.10)</span>
+    <span class="token comment"># Docs: https://geopandas.org/en/stable/docs/reference/api/geopandas.sjoin_nearest.html</span>
+    matched <span class="token operator">=</span> gpd<span class="token punctuation">.</span>sjoin_nearest<span class="token punctuation">(</span>
+        v1<span class="token punctuation">,</span> v2<span class="token punctuation">,</span> max_distance<span class="token operator">=</span>tolerance_meters<span class="token punctuation">,</span> how<span class="token operator">=</span><span class="token string">"inner"</span><span class="token punctuation">,</span> suffixes<span class="token operator">=</span><span class="token punctuation">(</span><span class="token string">"_v1"</span><span class="token punctuation">,</span> <span class="token string">"_v2"</span><span class="token punctuation">)</span>
+    <span class="token punctuation">)</span>
+    
+    <span class="token keyword">if</span> matched<span class="token punctuation">.</span>empty<span class="token punctuation">:</span>
+        <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"No spatial matches found. Verify CRS, tolerance, or data overlap."</span><span class="token punctuation">)</span>
+        
+    <span class="token comment"># 4. Compute geometric drift</span>
+    matched<span class="token punctuation">[</span><span class="token string">"hausdorff_dist"</span><span class="token punctuation">]</span> <span class="token operator">=</span> matched<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>
+        <span class="token keyword">lambda</span> r<span class="token punctuation">:</span> shapely<span class="token punctuation">.</span>hausdorff_distance<span class="token punctuation">(</span>r<span class="token punctuation">.</span>geometry_v1<span class="token punctuation">,</span> r<span class="token punctuation">.</span>geometry_v2<span class="token punctuation">)</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span>
+    <span class="token punctuation">)</span>
+    matched<span class="token punctuation">[</span><span class="token string">"centroid_shift_m"</span><span class="token punctuation">]</span> <span class="token operator">=</span> matched<span class="token punctuation">.</span>geometry_v1<span class="token punctuation">.</span>distance<span class="token punctuation">(</span>matched<span class="token punctuation">.</span>geometry_v2<span class="token punctuation">.</span>centroid<span class="token punctuation">)</span>
+    
+    <span class="token comment"># 5. Detect label/schema drift</span>
+    matched<span class="token punctuation">[</span><span class="token string">"label_mismatch"</span><span class="token punctuation">]</span> <span class="token operator">=</span> matched<span class="token punctuation">[</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>label_col<span class="token punctuation">}</span></span><span class="token string">_v1"</span></span><span class="token punctuation">]</span> <span class="token operator">!=</span> matched<span class="token punctuation">[</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>label_col<span class="token punctuation">}</span></span><span class="token string">_v2"</span></span><span class="token punctuation">]</span>
+    
+    <span class="token comment"># 6. Statistical distribution shift (Jensen-Shannon distance)</span>
+    <span class="token comment"># Docs: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jensenshannon.html</span>
+    dist_v1 <span class="token operator">=</span> v1<span class="token punctuation">[</span>label_col<span class="token punctuation">]</span><span class="token punctuation">.</span>value_counts<span class="token punctuation">(</span>normalize<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">.</span>sort_index<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    dist_v2 <span class="token operator">=</span> v2<span class="token punctuation">[</span>label_col<span class="token punctuation">]</span><span class="token punctuation">.</span>value_counts<span class="token punctuation">(</span>normalize<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">.</span>sort_index<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    
+    <span class="token comment"># Align indices to prevent NaN padding</span>
+    common_idx <span class="token operator">=</span> dist_v1<span class="token punctuation">.</span>index<span class="token punctuation">.</span>union<span class="token punctuation">(</span>dist_v2<span class="token punctuation">.</span>index<span class="token punctuation">)</span>
+    dist_v1 <span class="token operator">=</span> dist_v1<span class="token punctuation">.</span>reindex<span class="token punctuation">(</span>common_idx<span class="token punctuation">,</span> fill_value<span class="token operator">=</span><span class="token number">0.0</span><span class="token punctuation">)</span>
+    dist_v2 <span class="token operator">=</span> dist_v2<span class="token punctuation">.</span>reindex<span class="token punctuation">(</span>common_idx<span class="token punctuation">,</span> fill_value<span class="token operator">=</span><span class="token number">0.0</span><span class="token punctuation">)</span>
+    
+    jsd <span class="token operator">=</span> jensenshannon<span class="token punctuation">(</span>dist_v1<span class="token punctuation">.</span>values<span class="token punctuation">,</span> dist_v2<span class="token punctuation">.</span>values<span class="token punctuation">,</span> base<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">)</span>
+    
+    <span class="token keyword">return</span> matched<span class="token punctuation">,</span> jsd
+</code></pre>
+</div>
+<h3 id="interpreting-results-next-steps" tabindex="-1"><a class="header-anchor" href="#interpreting-results-next-steps"><span aria-hidden="true" class="anchor-symbol">#</span></a> Interpreting Results &amp; Next Steps</h3>
+<ul>
+<li><strong><code class="inline-code">hausdorff_dist</code> &gt; 0.5m</strong> (or your project tolerance): Investigate reprojection pipelines, tile boundary clipping, or coordinate truncation during export.</li>
+<li><strong><code class="inline-code">label_mismatch == True</code></strong>: Audit annotation guidelines. Check if class IDs were remapped without a migration script.</li>
+<li><strong><code class="inline-code">jsd &gt; 0.1</code></strong>: Indicates meaningful distributional shift. Review annotator instructions, sampling strategy, or recent label taxonomy changes.</li>
+<li><strong><code class="inline-code">matched</code> row count &lt;&lt; <code class="inline-code">len(v1)</code></strong>: Features dropped during spatial join. Likely caused by topology breaks, CRS misalignment, or aggressive tolerance thresholds.</li>
+</ul>
+<p>Once drift sources are isolated, quarantine the affected version, patch the pipeline step responsible, and regenerate the snapshot. If training jobs already consumed corrupted batches, revert to the last verified baseline using documented <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a> to prevent model degradation.</p>
+
+
+      
+
+      
+    </article>
+
+    <aside class="toc" aria-label="On this page"></aside>
+  </div>
+</div>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+  <div class="site-footer__inner">
+    <div>
+      <div class="site-footer__brand">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="fb1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#94d0e6"/>
+              <stop offset="55%" stop-color="#43b7a5"/>
+              <stop offset="100%" stop-color="#ffc73a"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#fb1)"/>
+          <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+          <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="#ff8e6d" stroke="#fff" stroke-width="1.4"/>
+        </svg>
+        <div>
+          <div style="font-weight:700;color:var(--ink);">GeoAnnotation</div>
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">ML Pipeline Automation</div>
+        </div>
+      </div>
+      <p>Engineering production-grade pipelines for spatial annotation, dataset versioning, and active learning at scale.</p>
+    </div>
+
+    
+    <div>
+      <h4>Versioning</h4>
+      <ul>
+        <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Fundamentals</h4>
+      <ul>
+        <li><a href="/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Labeling</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/">Overview</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+      </ul>
+    </div>
+    
+  </div>
+
+  <div class="site-footer__bottom">
+    <span>© 2026 Geospatial Annotation & ML Pipeline Automation</span>
+    <span>Built with care for spatial data teams.</span>
+  </div>
+</footer>
+
+</body>
+</html>

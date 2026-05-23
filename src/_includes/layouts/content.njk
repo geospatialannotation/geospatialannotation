@@ -1,0 +1,78 @@
+---
+layout: layouts/base.njk
+---
+{% set node = navTree | findNode(pageUrl) %}
+{% set parent = navTree | parentOf(pageUrl) %}
+{% set siblings = navTree | siblings(pageUrl) %}
+{% set crumbs = navTree | breadcrumbs(pageUrl) %}
+{% set topSection = pageUrl | topSection %}
+{% set topNode = navTree | findNode(topSection) %}
+
+<div class="shell">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      {% for c in crumbs %}
+        {% if loop.last %}
+          <li aria-current="page">{{ c.title }}</li>
+        {% else %}
+          <li><a href="{{ c.url }}">{{ c.title }}</a></li>
+        {% endif %}
+      {% endfor %}
+    </ol>
+  </nav>
+
+  <div class="content-shell">
+    <aside class="sidebar" aria-label="Section contents">
+      <h4>{{ topNode.title }}</h4>
+      <ul>
+        <li><a href="{{ topNode.url }}" class="{% if pageUrl == topNode.url %}is-active{% endif %}">Overview</a></li>
+        {% for child in topNode.children %}
+          <li>
+            <a href="{{ child.url }}" class="{% if pageUrl == child.url or pageUrl.startsWith(child.url) %}is-active{% endif %}">{{ child.title }}</a>
+            {% if child.children.length %}
+            <ul>
+              {% for grand in child.children %}
+                <li><a href="{{ grand.url }}" class="{% if pageUrl == grand.url %}is-active{% endif %}">{{ grand.title }}</a></li>
+              {% endfor %}
+            </ul>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </aside>
+
+    <article class="article">
+      {{ content | safe }}
+
+      {% if node and node.children.length %}
+      <section class="related" aria-label="Subsections">
+        <h2>Dive deeper</h2>
+        <div class="related__grid">
+          {% for child in node.children %}
+            <a class="related__card" href="{{ child.url }}">
+              <div class="title">{{ child.title }}</div>
+              {% if child.description %}<div class="desc">{{ child.description }}</div>{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if siblings.length and pageUrl != topSection %}
+      <section class="related" aria-label="Related pages">
+        <h2>Related in {{ parent.title }}</h2>
+        <div class="related__grid">
+          {% for sib in siblings %}
+            <a class="related__card" href="{{ sib.url }}">
+              <div class="title">{{ sib.title }}</div>
+              {% if sib.description %}<div class="desc">{{ sib.description }}</div>{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </article>
+
+    <aside class="toc" aria-label="On this page"></aside>
+  </div>
+</div>

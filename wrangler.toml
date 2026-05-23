@@ -1,0 +1,7 @@
+# Cloudflare Pages project configuration
+# Run `npm run deploy` to publish _site/ to production.
+# Docs: https://developers.cloudflare.com/pages/configuration/
+
+name = "geospatialannotation-com"
+pages_build_output_dir = "_site"
+compatibility_date = "2025-05-01"

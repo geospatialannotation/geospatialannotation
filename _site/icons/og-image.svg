@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Geospatial Annotation and ML Pipeline Automation">
+  <defs>
+    <linearGradient id="og-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f3fafd"/>
+      <stop offset="55%" stop-color="#e2f2f9"/>
+      <stop offset="100%" stop-color="#fff5e1"/>
+    </linearGradient>
+    <linearGradient id="og-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff3cc"/>
+      <stop offset="60%" stop-color="#ffe695"/>
+      <stop offset="100%" stop-color="#ff8e6d"/>
+    </linearGradient>
+    <linearGradient id="og-sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#94d0e6"/>
+      <stop offset="100%" stop-color="#1f779e"/>
+    </linearGradient>
+    <linearGradient id="og-text" x1="0" y1="0" x2="1" y2="0.4">
+      <stop offset="0%" stop-color="#154a63"/>
+      <stop offset="55%" stop-color="#14826f"/>
+      <stop offset="100%" stop-color="#d8930b"/>
+    </linearGradient>
+    <linearGradient id="og-roi" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#ffd862"/>
+      <stop offset="100%" stop-color="#f6b21e"/>
+    </linearGradient>
+    <radialGradient id="og-sun" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#fff5e1"/>
+      <stop offset="60%" stop-color="#ffc73a"/>
+      <stop offset="100%" stop-color="#f06a48" stop-opacity="0.55"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#og-bg)"/>
+
+  <!-- Decorative scene on the right -->
+  <g>
+    <rect x="700" y="60" width="440" height="510" rx="32" fill="#ffffff" stroke="rgba(31,119,158,0.18)" stroke-width="2"/>
+    <clipPath id="og-clip">
+      <rect x="700" y="60" width="440" height="510" rx="32"/>
+    </clipPath>
+    <g clip-path="url(#og-clip)">
+      <rect x="700" y="60" width="440" height="300" fill="url(#og-sky)"/>
+      <circle cx="920" cy="250" r="100" fill="url(#og-sun)"/>
+      <rect x="700" y="360" width="440" height="210" fill="url(#og-sea)"/>
+      <!-- Distant land -->
+      <path d="M700,400 C 760,386 820,400 900,392 S 1040,378 1140,398 L 1140,440 L 700,440 Z"
+            fill="#14826f" opacity="0.85"/>
+      <!-- Sea highlights -->
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.35" stroke-linecap="round">
+        <path d="M700 480 q 40 -10 80 0 t 80 0 t 80 0 t 80 0 t 80 0 t 80 0" stroke-width="1.8"/>
+        <path d="M700 520 q 40 -8 80 0 t 80 0 t 80 0 t 80 0 t 80 0 t 80 0" stroke-width="1.4"/>
+      </g>
+      <!-- Annotation grid -->
+      <g stroke="#ffffff" stroke-opacity="0.32" stroke-width="1">
+        <line x1="760" y1="120" x2="760" y2="420"/>
+        <line x1="860" y1="120" x2="860" y2="420"/>
+        <line x1="960" y1="120" x2="960" y2="420"/>
+        <line x1="1060" y1="120" x2="1060" y2="420"/>
+        <line x1="720" y1="180" x2="1120" y2="180"/>
+        <line x1="720" y1="260" x2="1120" y2="260"/>
+        <line x1="720" y1="340" x2="1120" y2="340"/>
+      </g>
+    </g>
+
+    <!-- Annotation bounding boxes -->
+    <rect x="745" y="180" width="160" height="110" rx="8" fill="rgba(255, 216, 98, 0.22)"
+          stroke="url(#og-roi)" stroke-width="3" stroke-dasharray="8 5"/>
+    <g fill="#fff" stroke="#f6b21e" stroke-width="2">
+      <rect x="739" y="174" width="10" height="10" rx="2"/>
+      <rect x="899" y="174" width="10" height="10" rx="2"/>
+      <rect x="739" y="284" width="10" height="10" rx="2"/>
+      <rect x="899" y="284" width="10" height="10" rx="2"/>
+    </g>
+    <text x="755" y="168" font-family="ui-sans-serif, system-ui" font-size="14" font-weight="700" fill="#1a5d7c">building</text>
+
+    <rect x="935" y="220" width="180" height="130" rx="8" fill="rgba(67, 183, 165, 0.18)"
+          stroke="#43b7a5" stroke-width="3" stroke-dasharray="8 5"/>
+    <g fill="#fff" stroke="#14826f" stroke-width="2">
+      <rect x="929" y="214" width="10" height="10" rx="2"/>
+      <rect x="1109" y="214" width="10" height="10" rx="2"/>
+      <rect x="929" y="344" width="10" height="10" rx="2"/>
+      <rect x="1109" y="344" width="10" height="10" rx="2"/>
+    </g>
+    <text x="945" y="208" font-family="ui-sans-serif, system-ui" font-size="14" font-weight="700" fill="#14826f">vegetation</text>
+
+    <!-- Pin -->
+    <g transform="translate(820, 410)">
+      <path d="M0 0 c -12 0 -22 9.6 -22 21.6 0 16 22 36 22 36 s 22 -20 22 -36 c 0 -12 -10 -21.6 -22 -21.6 z"
+            fill="#f06a48" stroke="#fff" stroke-width="3"/>
+      <circle cx="0" cy="21.6" r="7" fill="#fff"/>
+    </g>
+  </g>
+
+  <!-- Left side: Logo + Text -->
+  <g transform="translate(72, 96)">
+    <!-- Logo -->
+    <g>
+      <defs>
+        <linearGradient id="og-lg1" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#94d0e6"/>
+          <stop offset="55%" stop-color="#43b7a5"/>
+          <stop offset="100%" stop-color="#ffc73a"/>
+        </linearGradient>
+        <linearGradient id="og-lg2" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#ff8e6d"/>
+          <stop offset="100%" stop-color="#f06a48"/>
+        </linearGradient>
+      </defs>
+      <rect x="0" y="0" width="84" height="84" rx="18" fill="url(#og-lg1)"/>
+      <g fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="1.8" stroke-linecap="round">
+        <path d="M10 58 C 24 48, 38 56, 50 46 S 74 34, 78 26"/>
+        <path d="M10 66 C 26 58, 40 62, 56 52 S 74 42, 80 38"/>
+      </g>
+      <rect x="29" y="26" width="29" height="24" rx="3.2" fill="none" stroke="#ffd862" stroke-width="2.4" stroke-dasharray="4 3"/>
+      <path d="M43 29 c -5.5 0 -10 4.4 -10 9.7 0 7.3 10 16 10 16 s 10 -8.7 10 -16 c 0 -5.3 -4.5 -9.7 -10 -9.7 z" fill="url(#og-lg2)" stroke="#fff" stroke-width="1.8"/>
+      <circle cx="43" cy="38.7" r="3.1" fill="#fff"/>
+    </g>
+
+    <text x="106" y="36" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+          font-size="22" font-weight="600" fill="#1f779e" letter-spacing="0.04em">GEOSPATIAL · ANNOTATION · VERSIONING</text>
+    <text x="106" y="74" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+          font-size="34" font-weight="700" fill="#1a5d7c">GeoAnnotation</text>
+
+    <text x="0" y="200" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-0.02em" fill="#154a63">Annotate. Version.</text>
+    <text x="0" y="278" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+          font-size="64" font-weight="800" letter-spacing="-0.02em" fill="#154a63">Ship spatial ML.</text>
+
+    <text x="0" y="350" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+          font-size="24" font-weight="500" fill="#154a63">Production-grade pipelines for geospatial</text>
+    <text x="0" y="384" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+          font-size="24" font-weight="500" fill="#154a63">annotation, dataset versioning, and</text>
+    <text x="0" y="418" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+          font-size="24" font-weight="500" fill="#154a63">active learning at scale.</text>
+
+    <!-- Pill chips -->
+    <g transform="translate(0, 460)">
+      <g>
+        <rect x="0" y="0" width="155" height="36" rx="18" fill="#e2f2f9"/>
+        <text x="78" y="23" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="14" font-weight="600" fill="#1f779e">ROI labeling</text>
+      </g>
+      <g transform="translate(170 0)">
+        <rect x="0" y="0" width="200" height="36" rx="18" fill="#d3f0ec"/>
+        <text x="100" y="23" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="14" font-weight="600" fill="#14826f">Vector/Raster sync</text>
+      </g>
+      <g transform="translate(386 0)">
+        <rect x="0" y="0" width="200" height="36" rx="18" fill="#fff3cc"/>
+        <text x="100" y="23" text-anchor="middle" font-family="ui-sans-serif, system-ui" font-size="14" font-weight="600" fill="#d8930b">COCO · YOLO · GeoJSON</text>
+      </g>
+    </g>
+  </g>
+</svg>

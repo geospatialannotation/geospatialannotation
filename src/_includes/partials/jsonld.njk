@@ -1,0 +1,76 @@
+{# JSON-LD structured data — Organization always present, plus
+   WebSite on homepage, BreadcrumbList + Article on content pages. #}
+{%- set isHome = page.url == "/" -%}
+{%- set canonicalPath = pageUrl or page.url -%}
+{%- set canonicalUrl = siteUrl ~ canonicalPath -%}
+{%- set crumbs = navTree | breadcrumbs(canonicalPath) -%}
+{%- set socialImage = siteUrl ~ "/icons/og-image.png" -%}
+{%- set logoUrl = siteUrl ~ "/icons/icon-512.png" -%}
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "{{ siteUrl }}/#organization",
+  "name": "{{ siteTitle }}",
+  "url": "{{ siteUrl }}/",
+  "logo": {
+    "@type": "ImageObject",
+    "url": "{{ logoUrl }}",
+    "width": 512,
+    "height": 512
+  }
+}
+</script>
+
+{% if isHome %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "@id": "{{ siteUrl }}/#website",
+  "url": "{{ siteUrl }}/",
+  "name": "{{ siteTitle }}",
+  "description": "{{ metaDescription }}",
+  "publisher": { "@id": "{{ siteUrl }}/#organization" },
+  "inLanguage": "en-US"
+}
+</script>
+{% else %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {%- for c in crumbs -%}
+    {
+      "@type": "ListItem",
+      "position": {{ loop.index }},
+      "name": {{ c.title | dump | safe }},
+      "item": "{{ siteUrl }}{{ c.url }}"
+    }{% if not loop.last %},{% endif %}
+    {%- endfor -%}
+  ]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "@id": "{{ canonicalUrl }}#article",
+  "headline": {{ title | dump | safe }},
+  "description": "{{ metaDescription }}",
+  "url": "{{ canonicalUrl }}",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ canonicalUrl }}"
+  },
+  "image": "{{ socialImage }}",
+  "inLanguage": "en-US",
+  "isPartOf": { "@id": "{{ siteUrl }}/#website" },
+  "publisher": { "@id": "{{ siteUrl }}/#organization" },
+  "author": { "@id": "{{ siteUrl }}/#organization" }
+}
+</script>
+{% endif %}

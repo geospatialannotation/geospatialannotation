@@ -1,0 +1,9 @@
+# Cloudflare Pages redirects
+# https://developers.cloudflare.com/pages/configuration/redirects/
+
+# Force apex -> www so the canonical URL matches the configured siteUrl.
+https://geospatialannotation.com/*  https://www.geospatialannotation.com/:splat  301!
+
+# Trailing-slash normalization is already produced by Eleventy (every URL ends in /).
+# Catch-all 404 fallback (Pages serves /404.html automatically if present; the
+# offline page is intentionally noindex and not used as 404).

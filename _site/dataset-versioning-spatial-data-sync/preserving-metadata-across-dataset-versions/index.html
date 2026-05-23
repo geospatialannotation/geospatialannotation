@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Preserving Metadata Across Dataset Versions · GeoAnnotation</title>
+  <meta name="description" content="Geospatial machine learning pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data ">
+  <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="googlebot" content="index, follow">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">
+
+  <!-- Theme + tile colors -->
+  <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="msapplication-TileColor" content="#1f779e">
+  <meta name="msapplication-config" content="none">
+  <meta name="application-name" content="GeoAnnotation">
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#1f779e">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GeoAnnot">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Preserving Metadata Across Dataset Versions · GeoAnnotation">
+  <meta property="og:description" content="Geospatial machine learning pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data ">
+  <meta property="og:url" content="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">
+  <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Preserving Metadata Across Dataset Versions · GeoAnnotation">
+  <meta name="twitter:description" content="Geospatial machine learning pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data ">
+  <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- DNS prefetch + preconnect for mermaid CDN (only loaded when needed by the page) -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <script defer src="/assets/js/site.js"></script>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://www.geospatialannotation.com/#organization",
+  "name": "Geospatial Annotation &amp; ML Pipeline Automation",
+  "url": "https://www.geospatialannotation.com/",
+  "logo": {
+    "@type": "ImageObject",
+    "url": "https://www.geospatialannotation.com/icons/icon-512.png",
+    "width": 512,
+    "height": 512
+  }
+}
+</script>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.geospatialannotation.com/"
+    },{
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Dataset Versioning & Spatial Data Sync for Geospatial AI/ML Pipelines",
+      "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"
+    },{
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Preserving Metadata Across Dataset Versions",
+      "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/"
+    }]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "@id": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/#article",
+  "headline": "Preserving Metadata Across Dataset Versions",
+  "description": "Geospatial machine learning pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data ",
+  "url": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/"
+  },
+  "image": "https://www.geospatialannotation.com/icons/og-image.png",
+  "inLanguage": "en-US",
+  "isPartOf": { "@id": "https://www.geospatialannotation.com/#website" },
+  "publisher": { "@id": "https://www.geospatialannotation.com/#organization" },
+  "author": { "@id": "https://www.geospatialannotation.com/#organization" }
+}
+</script>
+
+
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  
+  
+<header class="site-header" role="banner">
+  <div class="site-header__inner">
+    <a class="brand" href="/" aria-label="Home — Geospatial Annotation &amp; ML Pipeline Automation">
+      <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="b1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#94d0e6"/>
+            <stop offset="55%" stop-color="#43b7a5"/>
+            <stop offset="100%" stop-color="#ffc73a"/>
+          </linearGradient>
+          <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff8e6d"/>
+            <stop offset="100%" stop-color="#f06a48"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#b1)"/>
+        <g fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.25" stroke-linecap="round">
+          <path d="M8 44 C 18 36, 28 42, 38 34 S 56 26, 58 20"/>
+          <path d="M8 50 C 20 44, 30 48, 42 40 S 56 32, 60 28"/>
+          <path d="M8 38 C 16 32, 24 36, 32 30 S 48 20, 56 14"/>
+        </g>
+        <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+        <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="url(#b2)" stroke="#fff" stroke-width="1.4"/>
+        <circle cx="33" cy="29.4" r="2.4" fill="#fff"/>
+      </svg>
+      <span class="brand__text">
+        <span>GeoAnnotation</span>
+        <span class="brand__sub">ML Pipeline Automation</span>
+      </span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <nav id="primary-nav" class="site-nav" aria-label="Primary">
+      <a href="/" class="">
+        <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="site-nav__label">Home</span>
+      </a>
+      
+      <a href="/dataset-versioning-spatial-data-sync/" class="is-active">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+        
+        <span class="site-nav__label">Dataset Versioning</span>
+      </a>
+      
+      <a href="/geospatial-annotation-fundamentals-architecture/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        
+        <span class="site-nav__label">Fundamentals</span>
+      </a>
+      
+      <a href="/labeling-workflows-toolchain-integration/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
+        
+        <span class="site-nav__label">Labeling Workflows</span>
+      </a>
+      
+    </nav>
+  </div>
+</header>
+
+
+  <main id="main-content" class="site-main">
+    
+
+
+
+
+
+
+<div class="shell">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      
+        
+          <li><a href="/">Home</a></li>
+        
+      
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync for Geospatial AI/ML Pipelines</a></li>
+        
+      
+        
+          <li aria-current="page">Preserving Metadata Across Dataset Versions</li>
+        
+      
+    </ol>
+  </nav>
+
+  <div class="content-shell">
+    <aside class="sidebar" aria-label="Section contents">
+      <h4>Dataset Versioning &amp; Spatial Data Sync for Geospatial AI/ML Pipelines</h4>
+      <ul>
+        <li><a href="/dataset-versioning-spatial-data-sync/" class="">Overview</a></li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/" class="">Implementing DVC for Geospatial Training Data</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/" class="">How to Version Control Large Satellite Imagery Datasets</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/" class="is-active">Preserving Metadata Across Dataset Versions</a>
+            
+          </li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/" class="">Rollback Strategies for Corrupted Spatial Datasets</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/" class="">Debugging Annotation Drift Across Dataset Versions</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/" class="">Tracking Annotation Changes with SHA Hashing</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/" class="">Using DVC Pipelines for Automated Dataset Snapshots</a></li>
+              
+            </ul>
+            
+          </li>
+        
+      </ul>
+    </aside>
+
+    <article class="article">
+      <h1>Preserving Metadata Across Dataset Versions</h1>
+<p>Geospatial machine learning pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. <strong>Preserving Metadata Across Dataset Versions</strong> is not an optional hygiene step; it is a structural requirement for reproducible training, regulatory compliance, and model auditability.</p>
+<p>When annotation teams iterate over satellite imagery, LiDAR point clouds, or vector boundaries, metadata loss typically occurs during format conversion, cropping, or batch processing. Without deterministic tracking, downstream training scripts inherit mismatched projections, stale bounding box scales, or orphaned sensor tags. This guide outlines a production-ready workflow for extracting, serializing, and versioning geospatial metadata alongside your training data.</p>
+<h2 id="why-geospatial-metadata-drift-breaks-ml-pipelines" tabindex="-1"><a class="header-anchor" href="#why-geospatial-metadata-drift-breaks-ml-pipelines"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Geospatial Metadata Drift Breaks ML Pipelines</h2>
+<p>Spatial formats like GeoTIFF, GeoJSON, and Cloud-Optimized GeoTIFF (COG) embed critical context in headers, XML blocks, or auxiliary files. Standard image processing libraries (e.g., OpenCV, PIL) strip this context by design, treating spatial arrays as generic pixel matrices. Even GDAL-based tools can silently drop metadata when drivers encounter unsupported tags or when files are rewritten without explicit metadata preservation flags. <a href="https://gdal.org/user/raster_data_model.html#metadata">GDAL’s raster data model documentation</a> outlines exactly which tags survive round-trip conversions and which require explicit driver configuration.</p>
+<p>The downstream impact is severe:</p>
+<ul>
+<li><strong>Projection Mismatch:</strong> A model trained on EPSG:4326 coordinates receives EPSG:32633 tiles during inference, causing spatial misalignment.</li>
+<li><strong>Temporal Drift:</strong> Acquisition timestamps are lost, breaking time-series models that rely on seasonal or diurnal patterns.</li>
+<li><strong>Annotation Misalignment:</strong> Bounding boxes or polygon masks shift when affine transforms are applied without updating coordinate offsets.</li>
+</ul>
+<p>Addressing these failures requires treating metadata as a first-class artifact, not a byproduct.</p>
+<h2 id="prerequisites-environment-setup" tabindex="-1"><a class="header-anchor" href="#prerequisites-environment-setup"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Environment Setup</h2>
+<p>Before implementing a metadata preservation pipeline, ensure your environment meets the following baseline requirements:</p>
+<ul>
+<li><strong>Python 3.9+</strong> with <code class="inline-code">pip</code> or <code class="inline-code">conda</code></li>
+<li><strong>Core Libraries</strong>: <code class="inline-code">rasterio&gt;=1.3</code>, <code class="inline-code">geopandas&gt;=0.13</code>, <code class="inline-code">pyproj&gt;=3.4</code>, <code class="inline-code">shapely&gt;=2.0</code>, <code class="inline-code">pyyaml&gt;=6.0</code></li>
+<li><strong>Version Control</strong>: Git for code tracking, paired with a data versioning layer. See <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> for storage orchestration and remote caching strategies.</li>
+<li><strong>Input Formats</strong>: GeoTIFF, COG, GeoJSON, or GeoPackage. For structured vector storage, the <a href="https://www.geopackage.org/">OGC GeoPackage specification</a> provides a reliable, SQLite-backed alternative to shapefiles.</li>
+<li><strong>Storage Layout</strong>: Flat or hierarchical directory structure with explicit <code class="inline-code">data/</code>, <code class="inline-code">metadata/</code>, and <code class="inline-code">annotations/</code> separation</li>
+</ul>
+<p>Install dependencies:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">bash</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-bash">pip <span class="token function">install</span> rasterio geopandas pyproj shapely pyyaml
+</code></pre>
+</div>
+<h2 id="step-by-step-metadata-preservation-workflow" tabindex="-1"><a class="header-anchor" href="#step-by-step-metadata-preservation-workflow"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step Metadata Preservation Workflow</h2>
+<h3 id="1-extract-normalize-baseline-metadata" tabindex="-1"><a class="header-anchor" href="#1-extract-normalize-baseline-metadata"><span aria-hidden="true" class="anchor-symbol">#</span></a> 1. Extract &amp; Normalize Baseline Metadata</h3>
+<p>Parse native headers (GDAL tags, PROJ strings, sensor metadata) and normalize into a schema-agnostic dictionary. Convert all CRS representations to EPSG codes or WKT2 strings. Standardize timestamps to ISO 8601 UTC. Store resolution, affine transform, and bounding box in a consistent numeric format.</p>
+<h3 id="2-apply-spatial-transformations-update-context" tabindex="-1"><a class="header-anchor" href="#2-apply-spatial-transformations-update-context"><span aria-hidden="true" class="anchor-symbol">#</span></a> 2. Apply Spatial Transformations &amp; Update Context</h3>
+<p>Execute cropping, tiling, augmentation, or label injection while explicitly updating spatial bounds and resolution fields. Use <code class="inline-code">rasterio.windows</code> for precise tile extraction and recalculate the affine transform matrix. Never assume the original CRS survives a crop operation without verification.</p>
+<h3 id="3-serialize-deterministic-sidecar-files" tabindex="-1"><a class="header-anchor" href="#3-serialize-deterministic-sidecar-files"><span aria-hidden="true" class="anchor-symbol">#</span></a> 3. Serialize Deterministic Sidecar Files</h3>
+<p>Write a structured YAML or JSON file alongside each dataset version. Avoid embedding metadata inside binary formats where GDAL truncation or driver limitations may occur. Sidecar files guarantee human readability, machine parseability, and driver-agnostic portability.</p>
+<h3 id="4-compute-hashes-build-version-manifests" tabindex="-1"><a class="header-anchor" href="#4-compute-hashes-build-version-manifests"><span aria-hidden="true" class="anchor-symbol">#</span></a> 4. Compute Hashes &amp; Build Version Manifests</h3>
+<p>Generate SHA-256 signatures for both the data file and its metadata sidecar. Store these in a centralized manifest for drift detection. For teams managing large-scale annotation campaigns, <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> provides a proven methodology for detecting silent label corruption.</p>
+<h3 id="5-commit-validate-automate-sync" tabindex="-1"><a class="header-anchor" href="#5-commit-validate-automate-sync"><span aria-hidden="true" class="anchor-symbol">#</span></a> 5. Commit, Validate &amp; Automate Sync</h3>
+<p>Push data and metadata to your version control layer. Validate that CRS, extent, and annotation counts match across environments. Integrate validation checks into CI/CD pipelines to block merges that introduce spatial inconsistencies. This workflow aligns with broader <a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> practices, ensuring that every pipeline stage consumes identical spatial context regardless of compute node or cloud region.</p>
+<h2 id="production-ready-code-implementation" tabindex="-1"><a class="header-anchor" href="#production-ready-code-implementation"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production-Ready Code Implementation</h2>
+<p>The following script demonstrates a robust, production-grade approach to metadata extraction, sidecar generation, and hash computation. It handles both raster and vector inputs, normalizes CRS, and outputs a deterministic YAML sidecar alongside a SHA-256 manifest.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> hashlib
+<span class="token keyword">import</span> json
+<span class="token keyword">import</span> os
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+<span class="token keyword">from</span> typing <span class="token keyword">import</span> Dict<span class="token punctuation">,</span> Any
+
+<span class="token keyword">import</span> rasterio
+<span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">import</span> yaml
+<span class="token keyword">import</span> pyproj
+
+<span class="token keyword">def</span> <span class="token function">compute_sha256</span><span class="token punctuation">(</span>file_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">str</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Compute SHA-256 hash of a file."""</span>
+    sha256 <span class="token operator">=</span> hashlib<span class="token punctuation">.</span>sha256<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span>file_path<span class="token punctuation">,</span> <span class="token string">"rb"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
+        <span class="token keyword">for</span> chunk <span class="token keyword">in</span> <span class="token builtin">iter</span><span class="token punctuation">(</span><span class="token keyword">lambda</span><span class="token punctuation">:</span> f<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token number">8192</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">b""</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            sha256<span class="token punctuation">.</span>update<span class="token punctuation">(</span>chunk<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> sha256<span class="token punctuation">.</span>hexdigest<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">normalize_crs</span><span class="token punctuation">(</span>crs_obj<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> Dict<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Normalize CRS to EPSG code and WKT2 string."""</span>
+    <span class="token keyword">try</span><span class="token punctuation">:</span>
+        crs <span class="token operator">=</span> pyproj<span class="token punctuation">.</span>CRS<span class="token punctuation">.</span>from_user_input<span class="token punctuation">(</span>crs_obj<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token punctuation">{</span>
+            <span class="token string">"epsg"</span><span class="token punctuation">:</span> crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"wkt2"</span><span class="token punctuation">:</span> crs<span class="token punctuation">.</span>to_wkt<span class="token punctuation">(</span>version<span class="token operator">=</span><span class="token string">"WKT2"</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"is_geographic"</span><span class="token punctuation">:</span> crs<span class="token punctuation">.</span>is_geographic
+        <span class="token punctuation">}</span>
+    <span class="token keyword">except</span> Exception <span class="token keyword">as</span> e<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">{</span><span class="token string">"error"</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"raw"</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>crs_obj<span class="token punctuation">)</span><span class="token punctuation">}</span>
+
+<span class="token keyword">def</span> <span class="token function">extract_raster_metadata</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> Dict<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">{</span>
+            <span class="token string">"driver"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>driver<span class="token punctuation">,</span>
+            <span class="token string">"width"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>width<span class="token punctuation">,</span>
+            <span class="token string">"height"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>height<span class="token punctuation">,</span>
+            <span class="token string">"count"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>count<span class="token punctuation">,</span>
+            <span class="token string">"dtype"</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>dtypes<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"nodata"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>nodata<span class="token punctuation">,</span>
+            <span class="token string">"crs"</span><span class="token punctuation">:</span> normalize_crs<span class="token punctuation">(</span>src<span class="token punctuation">.</span>crs<span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"transform"</span><span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>transform<span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"bounds"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>bounds<span class="token punctuation">.</span>_asdict<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token punctuation">}</span>
+
+<span class="token keyword">def</span> <span class="token function">extract_vector_metadata</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> Dict<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>path<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        <span class="token string">"driver"</span><span class="token punctuation">:</span> gdf<span class="token punctuation">.</span>__class__<span class="token punctuation">.</span>__name__<span class="token punctuation">,</span>
+        <span class="token string">"geometry_type"</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>iloc<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>geom_type<span class="token punctuation">)</span> <span class="token keyword">if</span> <span class="token keyword">not</span> gdf<span class="token punctuation">.</span>empty <span class="token keyword">else</span> <span class="token string">"empty"</span><span class="token punctuation">,</span>
+        <span class="token string">"feature_count"</span><span class="token punctuation">:</span> <span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">"crs"</span><span class="token punctuation">:</span> normalize_crs<span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>crs<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">"bounds"</span><span class="token punctuation">:</span> gdf<span class="token punctuation">.</span>total_bounds<span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token punctuation">}</span>
+
+<span class="token keyword">def</span> <span class="token function">build_sidecar</span><span class="token punctuation">(</span>data_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> output_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> Dict<span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    path <span class="token operator">=</span> Path<span class="token punctuation">(</span>data_path<span class="token punctuation">)</span>
+    suffix <span class="token operator">=</span> path<span class="token punctuation">.</span>suffix<span class="token punctuation">.</span>lower<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    
+    <span class="token keyword">if</span> suffix <span class="token keyword">in</span> <span class="token punctuation">(</span><span class="token string">".tif"</span><span class="token punctuation">,</span> <span class="token string">".tiff"</span><span class="token punctuation">,</span> <span class="token string">".gtiff"</span><span class="token punctuation">,</span> <span class="token string">".cog"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        meta <span class="token operator">=</span> extract_raster_metadata<span class="token punctuation">(</span>data_path<span class="token punctuation">)</span>
+    <span class="token keyword">elif</span> suffix <span class="token keyword">in</span> <span class="token punctuation">(</span><span class="token string">".geojson"</span><span class="token punctuation">,</span> <span class="token string">".gpkg"</span><span class="token punctuation">,</span> <span class="token string">".shp"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        meta <span class="token operator">=</span> extract_vector_metadata<span class="token punctuation">(</span>data_path<span class="token punctuation">)</span>
+    <span class="token keyword">else</span><span class="token punctuation">:</span>
+        <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Unsupported format: </span><span class="token interpolation"><span class="token punctuation">{</span>suffix<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Add file-level metadata</span>
+    meta<span class="token punctuation">[</span><span class="token string">"source_path"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span>
+    meta<span class="token punctuation">[</span><span class="token string">"file_size_bytes"</span><span class="token punctuation">]</span> <span class="token operator">=</span> path<span class="token punctuation">.</span>stat<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>st_size
+
+    <span class="token comment"># Write YAML sidecar</span>
+    sidecar_name <span class="token operator">=</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>path<span class="token punctuation">.</span>stem<span class="token punctuation">}</span></span><span class="token string">_metadata.yaml"</span></span>
+    sidecar_path <span class="token operator">=</span> Path<span class="token punctuation">(</span>output_dir<span class="token punctuation">)</span> <span class="token operator">/</span> sidecar_name
+    <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span>sidecar_path<span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
+        yaml<span class="token punctuation">.</span>dump<span class="token punctuation">(</span>meta<span class="token punctuation">,</span> f<span class="token punctuation">,</span> default_flow_style<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">,</span> sort_keys<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Compute hashes</span>
+    data_hash <span class="token operator">=</span> compute_sha256<span class="token punctuation">(</span>data_path<span class="token punctuation">)</span>
+    sidecar_hash <span class="token operator">=</span> compute_sha256<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>sidecar_path<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token keyword">return</span> <span class="token punctuation">{</span>
+        <span class="token string">"data_file"</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">"metadata_file"</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>sidecar_path<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token string">"data_sha256"</span><span class="token punctuation">:</span> data_hash<span class="token punctuation">,</span>
+        <span class="token string">"metadata_sha256"</span><span class="token punctuation">:</span> sidecar_hash<span class="token punctuation">,</span>
+        <span class="token string">"metadata"</span><span class="token punctuation">:</span> meta
+    <span class="token punctuation">}</span>
+
+<span class="token comment"># Usage example</span>
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    INPUT_DIR <span class="token operator">=</span> <span class="token string">"data/raw"</span>
+    OUTPUT_DIR <span class="token operator">=</span> <span class="token string">"metadata/v1"</span>
+    os<span class="token punctuation">.</span>makedirs<span class="token punctuation">(</span>OUTPUT_DIR<span class="token punctuation">,</span> exist_ok<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+    
+    <span class="token keyword">for</span> <span class="token builtin">file</span> <span class="token keyword">in</span> Path<span class="token punctuation">(</span>INPUT_DIR<span class="token punctuation">)</span><span class="token punctuation">.</span>glob<span class="token punctuation">(</span><span class="token string">"*"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> <span class="token builtin">file</span><span class="token punctuation">.</span>is_file<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            manifest_entry <span class="token operator">=</span> build_sidecar<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span><span class="token builtin">file</span><span class="token punctuation">)</span><span class="token punctuation">,</span> OUTPUT_DIR<span class="token punctuation">)</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"✅ Processed: </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">file</span><span class="token punctuation">.</span>name<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"   Data SHA: </span><span class="token interpolation"><span class="token punctuation">{</span>manifest_entry<span class="token punctuation">[</span><span class="token string">'data_sha256'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token format-spec">12]</span><span class="token punctuation">}</span></span><span class="token string">..."</span></span><span class="token punctuation">)</span>
+            <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"   Meta SHA: </span><span class="token interpolation"><span class="token punctuation">{</span>manifest_entry<span class="token punctuation">[</span><span class="token string">'metadata_sha256'</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token format-spec">12]</span><span class="token punctuation">}</span></span><span class="token string">..."</span></span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<h3 id="code-reliability-notes" tabindex="-1"><a class="header-anchor" href="#code-reliability-notes"><span aria-hidden="true" class="anchor-symbol">#</span></a> Code Reliability Notes</h3>
+<ul>
+<li><strong>CRS Normalization</strong>: Uses <code class="inline-code">pyproj</code> to convert ambiguous PROJ strings into standardized EPSG/WKT2 pairs, preventing silent projection mismatches.</li>
+<li><strong>Affine Transform Preservation</strong>: <code class="inline-code">rasterio.transform</code> is serialized as a flat list, ensuring exact reconstruction during data loading.</li>
+<li><strong>Hash Determinism</strong>: Reads files in binary chunks to handle multi-gigabyte COGs without memory overflow.</li>
+<li><strong>Extensibility</strong>: Easily adaptable to batch processing frameworks (Dask, Ray) or integrated into Airflow/Prefect DAGs.</li>
+</ul>
+<h2 id="common-pitfalls-mitigation-strategies" tabindex="-1"><a class="header-anchor" href="#common-pitfalls-mitigation-strategies"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Pitfalls &amp; Mitigation Strategies</h2>
+<div class="table-scroll"><table>
+<thead>
+<tr>
+<th>Pitfall</th>
+<th>Root Cause</th>
+<th>Mitigation</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Silent CRS Override</strong></td>
+<td>GDAL defaults to WGS84 when tags are missing</td>
+<td>Explicitly validate <code class="inline-code">crs.is_valid</code> before processing; reject files without defined projections</td>
+</tr>
+<tr>
+<td><strong>Timestamp Timezone Drift</strong></td>
+<td>EXIF/GDAL stores local time without offset</td>
+<td>Convert all timestamps to UTC ISO 8601 during normalization</td>
+</tr>
+<tr>
+<td><strong>Bounding Box Shift After Augmentation</strong></td>
+<td>Random crops/rotations applied without updating affine matrix</td>
+<td>Recompute <code class="inline-code">transform</code> and <code class="inline-code">bounds</code> post-augmentation; never hardcode original extents</td>
+</tr>
+<tr>
+<td><strong>Sidecar-Data Desync</strong></td>
+<td>Manual edits or partial commits</td>
+<td>Enforce atomic writes; validate SHA-256 pairs before pipeline execution</td>
+</tr>
+</tbody>
+</table>
+</div><h2 id="next-steps-ecosystem-integration" tabindex="-1"><a class="header-anchor" href="#next-steps-ecosystem-integration"><span aria-hidden="true" class="anchor-symbol">#</span></a> Next Steps &amp; Ecosystem Integration</h2>
+<p>Preserving metadata across dataset versions requires treating spatial context as immutable infrastructure. Once your sidecar generation and hashing pipeline is stable, integrate it with your data registry, CI validation gates, and model training schedulers. Automate drift detection by comparing manifest hashes across environments, and enforce strict schema validation before data enters the training queue.</p>
+<p>For teams scaling beyond single-node workloads, consider coupling this workflow with distributed storage orchestration and automated rollback triggers. The foundational patterns covered here directly support enterprise-grade spatial ML pipelines, where reproducibility, compliance, and auditability are non-negotiable.</p>
+
+
+      
+
+      
+      <section class="related" aria-label="Related pages">
+        <h2>Related in Dataset Versioning &amp; Spatial Data Sync for Geospatial AI/ML Pipelines</h2>
+        <div class="related__grid">
+          
+            <a class="related__card" href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">
+              <div class="title">Implementing DVC for Geospatial Training Data</div>
+              <div class="desc">Geospatial machine learning pipelines face unique versioning challenges that standard Git workflows cannot address. Satellite imagery, LiDAR point clouds, drone orthomosaics, and vector annotations routinely exceed repository size limits, carry complex coordinate reference systems (CRS), and require strict spatial alig</div>
+            </a>
+          
+            <a class="related__card" href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">
+              <div class="title">Rollback Strategies for Corrupted Spatial Datasets</div>
+              <div class="desc">Geospatial machine learning pipelines operate at the intersection of high-dimensional raster data, complex vector geometries, and iterative annotation workflows. A single corrupted tile, malformed coordinate reference system (CRS), or desynchronized annotation manifest can silently degrade model performance or trigger </div>
+            </a>
+          
+            <a class="related__card" href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">
+              <div class="title">Tracking Annotation Changes with SHA Hashing</div>
+              <div class="desc">Geospatial machine learning pipelines are highly sensitive to silent annotation drift. When bounding boxes shift by a few pixels, polygon vertices are re-ordered, or class labels are reassigned, traditional filesystem metadata (modification timestamps, file sizes) fails to capture semantic changes. Tracking Annotation </div>
+            </a>
+          
+        </div>
+      </section>
+      
+    </article>
+
+    <aside class="toc" aria-label="On this page"></aside>
+  </div>
+</div>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+  <div class="site-footer__inner">
+    <div>
+      <div class="site-footer__brand">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="fb1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#94d0e6"/>
+              <stop offset="55%" stop-color="#43b7a5"/>
+              <stop offset="100%" stop-color="#ffc73a"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#fb1)"/>
+          <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+          <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="#ff8e6d" stroke="#fff" stroke-width="1.4"/>
+        </svg>
+        <div>
+          <div style="font-weight:700;color:var(--ink);">GeoAnnotation</div>
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">ML Pipeline Automation</div>
+        </div>
+      </div>
+      <p>Engineering production-grade pipelines for spatial annotation, dataset versioning, and active learning at scale.</p>
+    </div>
+
+    
+    <div>
+      <h4>Versioning</h4>
+      <ul>
+        <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Fundamentals</h4>
+      <ul>
+        <li><a href="/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Labeling</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/">Overview</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+      </ul>
+    </div>
+    
+  </div>
+
+  <div class="site-footer__bottom">
+    <span>© 2026 Geospatial Annotation & ML Pipeline Automation</span>
+    <span>Built with care for spatial data teams.</span>
+  </div>
+</footer>
+
+</body>
+</html>

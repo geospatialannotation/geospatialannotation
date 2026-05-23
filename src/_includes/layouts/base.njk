@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+  {%- if title -%}
+    {%- if title.length + siteBrand.length + 3 <= 70 -%}
+      {%- set fullTitle = title ~ " · " ~ siteBrand -%}
+    {%- else -%}
+      {%- set fullTitle = title -%}
+    {%- endif -%}
+  {%- else -%}
+    {%- set fullTitle = siteTitle -%}
+  {%- endif -%}
+  {%- set canonicalPath = pageUrl or page.url -%}
+  {%- set canonicalUrl = siteUrl ~ canonicalPath -%}
+  {%- set metaDescription = description or "Automate geospatial annotation pipelines for AI/ML training — ROI labeling, vector/raster sync, dataset versioning, active learning, COCO/YOLO/GeoJSON exports, and CI/CD validation." -%}
+  {%- set socialImage = siteUrl ~ "/icons/og-image.png" -%}
+
+  <title>{{ fullTitle }}</title>
+  <meta name="description" content="{{ metaDescription }}">
+  <meta name="author" content="{{ siteTitle }}">
+  <meta name="robots" content="{{ robots or 'index, follow, max-image-preview:large, max-snippet:-1' }}">
+  <meta name="googlebot" content="{{ robots or 'index, follow' }}">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="{{ canonicalUrl }}">
+
+  <!-- Theme + tile colors -->
+  <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="msapplication-TileColor" content="#1f779e">
+  <meta name="msapplication-config" content="none">
+  <meta name="application-name" content="GeoAnnotation">
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#1f779e">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GeoAnnot">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="{{ ogType or 'website' }}">
+  <meta property="og:title" content="{{ fullTitle }}">
+  <meta property="og:description" content="{{ metaDescription }}">
+  <meta property="og:url" content="{{ canonicalUrl }}">
+  <meta property="og:site_name" content="{{ siteTitle }}">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="{{ socialImage }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{ siteTitle }} — production-grade geospatial annotation pipelines">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ fullTitle }}">
+  <meta name="twitter:description" content="{{ metaDescription }}">
+  <meta name="twitter:image" content="{{ socialImage }}">
+  <meta name="twitter:image:alt" content="{{ siteTitle }} — production-grade geospatial annotation pipelines">
+
+  <!-- DNS prefetch + preconnect for mermaid CDN (only loaded when needed by the page) -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <script defer src="/assets/js/site.js"></script>
+
+  {% include "partials/jsonld.njk" %}
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  {% set topSection = page.url | topSection %}
+  {% include "partials/header.njk" %}
+
+  <main id="main-content" class="site-main">
+    {{ content | safe }}
+  </main>
+
+  {% include "partials/footer.njk" %}
+</body>
+</html>

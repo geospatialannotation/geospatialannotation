@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Converting Label Studio Exports to YOLOv8 Format · GeoAnnotation</title>
+  <meta name="description" content="Converting Label Studio exports to YOLOv8 format requires parsing the exported JSON payload, extracting bounding box coordinates, and transforming them into YOLO’s normalized [classid, xcenter, ycente">
+  <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="googlebot" content="index, follow">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/">
+
+  <!-- Theme + tile colors -->
+  <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="msapplication-TileColor" content="#1f779e">
+  <meta name="msapplication-config" content="none">
+  <meta name="application-name" content="GeoAnnotation">
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#1f779e">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GeoAnnot">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Converting Label Studio Exports to YOLOv8 Format · GeoAnnotation">
+  <meta property="og:description" content="Converting Label Studio exports to YOLOv8 format requires parsing the exported JSON payload, extracting bounding box coordinates, and transforming them into YOLO’s normalized [classid, xcenter, ycente">
+  <meta property="og:url" content="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/">
+  <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Converting Label Studio Exports to YOLOv8 Format · GeoAnnotation">
+  <meta name="twitter:description" content="Converting Label Studio exports to YOLOv8 format requires parsing the exported JSON payload, extracting bounding box coordinates, and transforming them into YOLO’s normalized [classid, xcenter, ycente">
+  <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- DNS prefetch + preconnect for mermaid CDN (only loaded when needed by the page) -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="stylesheet" href="/assets/css/site.css">
+  <script defer src="/assets/js/site.js"></script>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://www.geospatialannotation.com/#organization",
+  "name": "Geospatial Annotation &amp; ML Pipeline Automation",
+  "url": "https://www.geospatialannotation.com/",
+  "logo": {
+    "@type": "ImageObject",
+    "url": "https://www.geospatialannotation.com/icons/icon-512.png",
+    "width": 512,
+    "height": 512
+  }
+}
+</script>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.geospatialannotation.com/"
+    },{
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Labeling Workflows & Toolchain Integration for Geospatial AI",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"
+    },{
+      "@type": "ListItem",
+      "position": 3,
+      "name": "Automating Pre-Labeling with Foundation Models",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/"
+    },{
+      "@type": "ListItem",
+      "position": 4,
+      "name": "Converting Label Studio Exports to YOLOv8 Format",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/"
+    }]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/#article",
+  "headline": "Converting Label Studio Exports to YOLOv8 Format",
+  "description": "Converting Label Studio exports to YOLOv8 format requires parsing the exported JSON payload, extracting bounding box coordinates, and transforming them into YOLO’s normalized [classid, xcenter, ycente",
+  "url": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/"
+  },
+  "image": "https://www.geospatialannotation.com/icons/og-image.png",
+  "inLanguage": "en-US",
+  "isPartOf": { "@id": "https://www.geospatialannotation.com/#website" },
+  "publisher": { "@id": "https://www.geospatialannotation.com/#organization" },
+  "author": { "@id": "https://www.geospatialannotation.com/#organization" }
+}
+</script>
+
+
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  
+  
+<header class="site-header" role="banner">
+  <div class="site-header__inner">
+    <a class="brand" href="/" aria-label="Home — Geospatial Annotation &amp; ML Pipeline Automation">
+      <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="b1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#94d0e6"/>
+            <stop offset="55%" stop-color="#43b7a5"/>
+            <stop offset="100%" stop-color="#ffc73a"/>
+          </linearGradient>
+          <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff8e6d"/>
+            <stop offset="100%" stop-color="#f06a48"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#b1)"/>
+        <g fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.25" stroke-linecap="round">
+          <path d="M8 44 C 18 36, 28 42, 38 34 S 56 26, 58 20"/>
+          <path d="M8 50 C 20 44, 30 48, 42 40 S 56 32, 60 28"/>
+          <path d="M8 38 C 16 32, 24 36, 32 30 S 48 20, 56 14"/>
+        </g>
+        <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+        <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="url(#b2)" stroke="#fff" stroke-width="1.4"/>
+        <circle cx="33" cy="29.4" r="2.4" fill="#fff"/>
+      </svg>
+      <span class="brand__text">
+        <span>GeoAnnotation</span>
+        <span class="brand__sub">ML Pipeline Automation</span>
+      </span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <nav id="primary-nav" class="site-nav" aria-label="Primary">
+      <a href="/" class="">
+        <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="site-nav__label">Home</span>
+      </a>
+      
+      <a href="/dataset-versioning-spatial-data-sync/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+        
+        <span class="site-nav__label">Dataset Versioning</span>
+      </a>
+      
+      <a href="/geospatial-annotation-fundamentals-architecture/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        
+        <span class="site-nav__label">Fundamentals</span>
+      </a>
+      
+      <a href="/labeling-workflows-toolchain-integration/" class="is-active">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
+        
+        <span class="site-nav__label">Labeling Workflows</span>
+      </a>
+      
+    </nav>
+  </div>
+</header>
+
+
+  <main id="main-content" class="site-main">
+    
+
+
+
+
+
+
+<div class="shell">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      
+        
+          <li><a href="/">Home</a></li>
+        
+      
+        
+          <li><a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration for Geospatial AI</a></li>
+        
+      
+        
+          <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
+        
+      
+        
+          <li aria-current="page">Converting Label Studio Exports to YOLOv8 Format</li>
+        
+      
+    </ol>
+  </nav>
+
+  <div class="content-shell">
+    <aside class="sidebar" aria-label="Section contents">
+      <h4>Labeling Workflows &amp; Toolchain Integration for Geospatial AI</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/" class="">Overview</a></li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/" class="is-active">Automating Pre-Labeling with Foundation Models</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/" class="is-active">Converting Label Studio Exports to YOLOv8 Format</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/" class="">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/" class="">Syncing QGIS Edits to Cloud Annotation Platforms</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/" class="">Integrating Label Studio with Geospatial Workflows</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/" class="">Step-by-Step CVAT Setup for Drone Imagery Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating batch pre-labeling with SAM and QGIS</a></li>
+              
+            </ul>
+            
+          </li>
+        
+      </ul>
+    </aside>
+
+    <article class="article">
+      <h1>Converting Label Studio Exports to YOLOv8 Format</h1>
+<p>Converting Label Studio exports to YOLOv8 format requires parsing the exported JSON payload, extracting bounding box coordinates, and transforming them into YOLO’s normalized <code class="inline-code">[class_id, x_center, y_center, width, height]</code> structure. Label Studio outputs coordinates as percentages (0–100) relative to the original image or raster tile, while YOLOv8 expects values normalized to the 0–1 range representing center points and dimensions. For geospatial workflows, this conversion typically runs as a post-processing step after tiling GeoTIFFs or orthomosaics into fixed-resolution PNG/JPEG chips. A lightweight Python script handles the batch transformation, generates the required <code class="inline-code">images/</code> and <code class="inline-code">labels/</code> directory layout, and outputs a <code class="inline-code">data.yaml</code> configuration file ready for <code class="inline-code">yolo train</code>.</p>
+<h2 id="coordinate-transformation-logic" tabindex="-1"><a class="header-anchor" href="#coordinate-transformation-logic"><span aria-hidden="true" class="anchor-symbol">#</span></a> Coordinate Transformation Logic</h2>
+<p>Label Studio’s object detection export uses a nested JSON structure where each annotation contains <code class="inline-code">original_width</code>, <code class="inline-code">original_height</code>, and a <code class="inline-code">value</code> dictionary with <code class="inline-code">x</code>, <code class="inline-code">y</code>, <code class="inline-code">width</code>, and <code class="inline-code">height</code> expressed as percentages. YOLOv8 requires absolute normalized coordinates calculated as:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">code</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code">x_center = (x + width / 2) / 100
+y_center = (y + height / 2) / 100
+w_norm   = width / 100
+h_norm   = height / 100
+</code></pre>
+</div>
+<p>Geospatial annotation teams must verify that <code class="inline-code">original_width</code> and <code class="inline-code">original_height</code> match the actual pixel dimensions of the exported tile. Mismatched resolutions cause normalized coordinates to drift, resulting in misaligned bounding boxes during training. If your pipeline uses dynamic tiling (e.g., <code class="inline-code">rasterio</code> or <code class="inline-code">gdal_translate</code>), bake the tile dimensions into the conversion metadata rather than relying on Label Studio’s stored values. For teams scaling annotation throughput, integrating AI-assisted pre-labeling before manual review significantly reduces bounding box drift and accelerates dataset curation. See <a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a> for pipeline patterns that inject foundation model outputs directly into Label Studio projects prior to export.</p>
+<h2 id="production-ready-conversion-script" tabindex="-1"><a class="header-anchor" href="#production-ready-conversion-script"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production-Ready Conversion Script</h2>
+<p>The following Python script handles batch conversion, class mapping, directory generation, and basic coordinate validation. It assumes a standard Label Studio JSON export (<code class="inline-code">tasks.json</code> from the UI) and requires no external dependencies beyond the Python standard library.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> json
+<span class="token keyword">import</span> logging
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+logging<span class="token punctuation">.</span>basicConfig<span class="token punctuation">(</span>level<span class="token operator">=</span>logging<span class="token punctuation">.</span>INFO<span class="token punctuation">,</span> <span class="token builtin">format</span><span class="token operator">=</span><span class="token string">"%(levelname)s: %(message)s"</span><span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">convert_labelstudio_to_yolo</span><span class="token punctuation">(</span>
+    export_json<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    output_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    class_names<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    image_dir<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> <span class="token boolean">None</span>
+<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""
+    Converts Label Studio object detection JSON to YOLOv8 format.
+    Handles geospatial tile validation, normalized coordinate mapping,
+    and generates a compliant data.yaml.
+    """</span>
+    output_path <span class="token operator">=</span> Path<span class="token punctuation">(</span>output_dir<span class="token punctuation">)</span>
+    images_dir <span class="token operator">=</span> output_path <span class="token operator">/</span> <span class="token string">"images"</span>
+    labels_dir <span class="token operator">=</span> output_path <span class="token operator">/</span> <span class="token string">"labels"</span>
+    images_dir<span class="token punctuation">.</span>mkdir<span class="token punctuation">(</span>parents<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> exist_ok<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+    labels_dir<span class="token punctuation">.</span>mkdir<span class="token punctuation">(</span>parents<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> exist_ok<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+
+    class_map <span class="token operator">=</span> <span class="token punctuation">{</span>name<span class="token punctuation">:</span> idx <span class="token keyword">for</span> idx<span class="token punctuation">,</span> name <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>class_names<span class="token punctuation">)</span><span class="token punctuation">}</span>
+
+    <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span>export_json<span class="token punctuation">,</span> <span class="token string">"r"</span><span class="token punctuation">,</span> encoding<span class="token operator">=</span><span class="token string">"utf-8"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
+        tasks <span class="token operator">=</span> json<span class="token punctuation">.</span>load<span class="token punctuation">(</span>f<span class="token punctuation">)</span>
+
+    <span class="token keyword">for</span> task <span class="token keyword">in</span> tasks<span class="token punctuation">:</span>
+        <span class="token comment"># Extract image filename from Label Studio payload</span>
+        image_url <span class="token operator">=</span> task<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"data"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"image"</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">)</span>
+        image_filename <span class="token operator">=</span> Path<span class="token punctuation">(</span>image_url<span class="token punctuation">)</span><span class="token punctuation">.</span>name <span class="token keyword">if</span> image_url <span class="token keyword">else</span> <span class="token string-interpolation"><span class="token string">f"image_</span><span class="token interpolation"><span class="token punctuation">{</span>task<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">'id'</span><span class="token punctuation">,</span> <span class="token string">'unknown'</span><span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string">.jpg"</span></span>
+
+        <span class="token comment"># Optional: symlink or copy source images</span>
+        <span class="token keyword">if</span> image_dir<span class="token punctuation">:</span>
+            src_img <span class="token operator">=</span> Path<span class="token punctuation">(</span>image_dir<span class="token punctuation">)</span> <span class="token operator">/</span> image_filename
+            <span class="token keyword">if</span> src_img<span class="token punctuation">.</span>exists<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                dest_img <span class="token operator">=</span> images_dir <span class="token operator">/</span> image_filename
+                dest_img<span class="token punctuation">.</span>symlink_to<span class="token punctuation">(</span>src_img<span class="token punctuation">.</span>resolve<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+        label_lines <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+        annotations <span class="token operator">=</span> task<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"annotations"</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> annotations<span class="token punctuation">:</span>
+            <span class="token keyword">continue</span>
+
+        <span class="token comment"># Process results from the first completed annotation</span>
+        <span class="token keyword">for</span> result <span class="token keyword">in</span> annotations<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"result"</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">if</span> result<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"type"</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token string">"rectanglelabels"</span><span class="token punctuation">:</span>
+                <span class="token keyword">continue</span>
+
+            value <span class="token operator">=</span> result<span class="token punctuation">[</span><span class="token string">"value"</span><span class="token punctuation">]</span>
+            cls_name <span class="token operator">=</span> value<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"rectanglelabels"</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token string">"unknown"</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>
+            <span class="token keyword">if</span> cls_name <span class="token keyword">not</span> <span class="token keyword">in</span> class_map<span class="token punctuation">:</span>
+                logging<span class="token punctuation">.</span>warning<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Skipping unknown class: </span><span class="token interpolation"><span class="token punctuation">{</span>cls_name<span class="token punctuation">}</span></span><span class="token string"> in </span><span class="token interpolation"><span class="token punctuation">{</span>image_filename<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+                <span class="token keyword">continue</span>
+
+            <span class="token comment"># Label Studio percentages (0-100)</span>
+            x_pct <span class="token operator">=</span> value<span class="token punctuation">[</span><span class="token string">"x"</span><span class="token punctuation">]</span>
+            y_pct <span class="token operator">=</span> value<span class="token punctuation">[</span><span class="token string">"y"</span><span class="token punctuation">]</span>
+            w_pct <span class="token operator">=</span> value<span class="token punctuation">[</span><span class="token string">"width"</span><span class="token punctuation">]</span>
+            h_pct <span class="token operator">=</span> value<span class="token punctuation">[</span><span class="token string">"height"</span><span class="token punctuation">]</span>
+
+            <span class="token comment"># YOLO normalized coordinates (0-1)</span>
+            x_center <span class="token operator">=</span> <span class="token punctuation">(</span>x_pct <span class="token operator">+</span> w_pct <span class="token operator">/</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token number">100.0</span>
+            y_center <span class="token operator">=</span> <span class="token punctuation">(</span>y_pct <span class="token operator">+</span> h_pct <span class="token operator">/</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token operator">/</span> <span class="token number">100.0</span>
+            w_norm <span class="token operator">=</span> w_pct <span class="token operator">/</span> <span class="token number">100.0</span>
+            h_norm <span class="token operator">=</span> h_pct <span class="token operator">/</span> <span class="token number">100.0</span>
+
+            <span class="token comment"># Clamp to [0, 1] to prevent YOLOv8 assertion errors</span>
+            x_center <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span><span class="token number">0.0</span><span class="token punctuation">,</span> <span class="token builtin">min</span><span class="token punctuation">(</span><span class="token number">1.0</span><span class="token punctuation">,</span> x_center<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            y_center <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span><span class="token number">0.0</span><span class="token punctuation">,</span> <span class="token builtin">min</span><span class="token punctuation">(</span><span class="token number">1.0</span><span class="token punctuation">,</span> y_center<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            w_norm <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span><span class="token number">0.0</span><span class="token punctuation">,</span> <span class="token builtin">min</span><span class="token punctuation">(</span><span class="token number">1.0</span><span class="token punctuation">,</span> w_norm<span class="token punctuation">)</span><span class="token punctuation">)</span>
+            h_norm <span class="token operator">=</span> <span class="token builtin">max</span><span class="token punctuation">(</span><span class="token number">0.0</span><span class="token punctuation">,</span> <span class="token builtin">min</span><span class="token punctuation">(</span><span class="token number">1.0</span><span class="token punctuation">,</span> h_norm<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+            label_lines<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>class_map<span class="token punctuation">[</span>cls_name<span class="token punctuation">]</span><span class="token punctuation">}</span></span><span class="token string"> </span><span class="token interpolation"><span class="token punctuation">{</span>x_center<span class="token punctuation">:</span><span class="token format-spec">.6f</span><span class="token punctuation">}</span></span><span class="token string"> </span><span class="token interpolation"><span class="token punctuation">{</span>y_center<span class="token punctuation">:</span><span class="token format-spec">.6f</span><span class="token punctuation">}</span></span><span class="token string"> </span><span class="token interpolation"><span class="token punctuation">{</span>w_norm<span class="token punctuation">:</span><span class="token format-spec">.6f</span><span class="token punctuation">}</span></span><span class="token string"> </span><span class="token interpolation"><span class="token punctuation">{</span>h_norm<span class="token punctuation">:</span><span class="token format-spec">.6f</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+        <span class="token keyword">if</span> label_lines<span class="token punctuation">:</span>
+            label_file <span class="token operator">=</span> labels_dir <span class="token operator">/</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>Path<span class="token punctuation">(</span>image_filename<span class="token punctuation">)</span><span class="token punctuation">.</span>stem<span class="token punctuation">}</span></span><span class="token string">.txt"</span></span>
+            <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span>label_file<span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">,</span> encoding<span class="token operator">=</span><span class="token string">"utf-8"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> lf<span class="token punctuation">:</span>
+                lf<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string">"\n"</span><span class="token punctuation">.</span>join<span class="token punctuation">(</span>label_lines<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># Generate YOLOv8-compliant data.yaml</span>
+    yaml_path <span class="token operator">=</span> output_path <span class="token operator">/</span> <span class="token string">"data.yaml"</span>
+    <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span>yaml_path<span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">,</span> encoding<span class="token operator">=</span><span class="token string">"utf-8"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> yf<span class="token punctuation">:</span>
+        yf<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"path: </span><span class="token interpolation"><span class="token punctuation">{</span>output_path<span class="token punctuation">.</span>resolve<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string">\n"</span></span><span class="token punctuation">)</span>
+        yf<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string">"train: images\n"</span><span class="token punctuation">)</span>
+        yf<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string">"val: images\n"</span><span class="token punctuation">)</span>
+        yf<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"nc: </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>class_names<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string">\n"</span></span><span class="token punctuation">)</span>
+        yf<span class="token punctuation">.</span>write<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"names: </span><span class="token interpolation"><span class="token punctuation">{</span>class_names<span class="token punctuation">}</span></span><span class="token string">\n"</span></span><span class="token punctuation">)</span>
+
+    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Conversion complete. Output saved to </span><span class="token interpolation"><span class="token punctuation">{</span>output_path<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<h2 id="geospatial-validation-pipeline-integration" tabindex="-1"><a class="header-anchor" href="#geospatial-validation-pipeline-integration"><span aria-hidden="true" class="anchor-symbol">#</span></a> Geospatial Validation &amp; Pipeline Integration</h2>
+<p>When working with satellite imagery, aerial orthomosaics, or drone surveys, coordinate drift often stems from mismatched tile boundaries or unaccounted padding. Before running the conversion script, validate that each exported chip matches the <code class="inline-code">original_width</code>/<code class="inline-code">original_height</code> metadata stored in Label Studio. If your tiling pipeline applies overlap or padding (common in <code class="inline-code">rasterio</code> or <code class="inline-code">torchgeo</code> workflows), adjust the percentage coordinates by the pixel offset before normalization.</p>
+<p>For robust dataset management, integrate this conversion step into a broader <a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration</a> strategy. Automating the export-to-YOLO handoff via CI/CD or Airflow prevents manual file shuffling and ensures reproducible training runs. Always verify your final dataset against the official <a href="https://docs.ultralytics.com/datasets/detect/">Ultralytics YOLOv8 dataset specification</a> to confirm directory structure, class indexing, and YAML syntax align with trainer expectations.</p>
+<h2 id="pre-flight-checklist-for-training" tabindex="-1"><a class="header-anchor" href="#pre-flight-checklist-for-training"><span aria-hidden="true" class="anchor-symbol">#</span></a> Pre-Flight Checklist for Training</h2>
+<p>Run these checks before invoking <code class="inline-code">yolo train</code>:</p>
+<ul>
+<li><strong>Class Index Consistency:</strong> Ensure <code class="inline-code">class_names</code> order matches your model’s expected label mapping. YOLOv8 uses zero-based indexing.</li>
+<li><strong>Coordinate Bounds:</strong> All <code class="inline-code">x_center</code>, <code class="inline-code">y_center</code>, <code class="inline-code">width</code>, and <code class="inline-code">height</code> values must fall within <code class="inline-code">[0, 1]</code>. The script clamps values, but investigate outliers &gt;0.95 or &lt;0.05 as they often indicate annotation errors.</li>
+<li><strong>File Pairing:</strong> Every <code class="inline-code">.txt</code> label file must have a corresponding image in <code class="inline-code">images/</code>. Missing pairs trigger YOLO’s dataset validation warnings.</li>
+<li><strong>Export Format Verification:</strong> Label Studio occasionally exports <code class="inline-code">predictions</code> instead of <code class="inline-code">annotations</code> when using auto-labeling. Update the script’s <code class="inline-code">task.get(&quot;annotations&quot;, [])</code> fallback to <code class="inline-code">task.get(&quot;predictions&quot;, [])</code> if your project relies on model-assisted labeling. Refer to the official <a href="https://labelstud.io/guide/export.html">Label Studio export documentation</a> for payload variations across project types.</li>
+</ul>
+
+
+      
+
+      
+    </article>
+
+    <aside class="toc" aria-label="On this page"></aside>
+  </div>
+</div>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+  <div class="site-footer__inner">
+    <div>
+      <div class="site-footer__brand">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="fb1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#94d0e6"/>
+              <stop offset="55%" stop-color="#43b7a5"/>
+              <stop offset="100%" stop-color="#ffc73a"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#fb1)"/>
+          <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+          <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="#ff8e6d" stroke="#fff" stroke-width="1.4"/>
+        </svg>
+        <div>
+          <div style="font-weight:700;color:var(--ink);">GeoAnnotation</div>
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">ML Pipeline Automation</div>
+        </div>
+      </div>
+      <p>Engineering production-grade pipelines for spatial annotation, dataset versioning, and active learning at scale.</p>
+    </div>
+
+    
+    <div>
+      <h4>Versioning</h4>
+      <ul>
+        <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Fundamentals</h4>
+      <ul>
+        <li><a href="/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Labeling</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/">Overview</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+      </ul>
+    </div>
+    
+  </div>
+
+  <div class="site-footer__bottom">
+    <span>© 2026 Geospatial Annotation & ML Pipeline Automation</span>
+    <span>Built with care for spatial data teams.</span>
+  </div>
+</footer>
+
+</body>
+</html>

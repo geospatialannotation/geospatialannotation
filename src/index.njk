@@ -1,0 +1,91 @@
+---
+layout: layouts/base.njk
+description: Production-grade geospatial annotation pipelines — ROI labeling, vector/raster sync, dataset versioning, active learning, COCO/YOLO/GeoJSON exports, and CI/CD validation.
+permalink: /index.html
+---
+<section class="hero">
+  <div class="hero__inner">
+    <div>
+      <span class="hero__eyebrow">Spatial AI · Annotation · Versioning</span>
+      <h1>Annotate, version, and ship geospatial ML datasets with confidence.</h1>
+      <p>
+        Build production-grade pipelines that automate geospatial data annotation for AI/ML training.
+        Standardize ROI labeling, keep vector and raster layers in sync, version every dataset change,
+        and close the loop with active learning — without sacrificing spatial accuracy.
+      </p>
+      <p>
+        Validate exports to COCO, YOLO, and GeoJSON. Enforce CI/CD gates that catch CRS drift,
+        broken topology, and class imbalance before a single tile reaches your training cluster.
+        Whether you're labeling 500 drone tiles or a planetary archive, the architecture is the same:
+        deterministic, auditable, and built for spatial complexity.
+      </p>
+
+      <div class="cta-row">
+        <a class="cta cta--sky" href="/geospatial-annotation-fundamentals-architecture/">
+          <span class="cta__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          </span>
+          <div>
+            <div class="cta__title">Fundamentals & Architecture</div>
+            <div class="cta__sub">CRS, taxonomies, QA, multi-temporal</div>
+          </div>
+        </a>
+        <a class="cta cta--teal" href="/labeling-workflows-toolchain-integration/">
+          <span class="cta__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
+          </span>
+          <div>
+            <div class="cta__title">Labeling Workflows</div>
+            <div class="cta__sub">Label Studio · CVAT · QGIS · SAM</div>
+          </div>
+        </a>
+        <a class="cta cta--gold" href="/dataset-versioning-spatial-data-sync/">
+          <span class="cta__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+          </span>
+          <div>
+            <div class="cta__title">Dataset Versioning</div>
+            <div class="cta__sub">DVC · SHA hashing · sync · rollback</div>
+          </div>
+        </a>
+      </div>
+    </div>
+    <div class="hero__art" aria-hidden="true">
+      <img src="/assets/img/hero-illustration.svg" alt="" loading="eager" decoding="async">
+    </div>
+  </div>
+</section>
+
+<section class="shell">
+  <h2 style="font-size:1.6rem;margin:0 0 10px;color:var(--sky-800);">Three pillars of production geospatial AI</h2>
+  <p style="color:var(--muted);max-width:78ch;margin:0 0 8px;">
+    Every guide is written for spatial data scientists, ML engineers, GIS annotation teams, and the Python
+    builders connecting them. Pick a pillar to dive deeper.
+  </p>
+
+  <div class="section-grid">
+    {% for section in navTree.children %}
+    <article class="section-card {% if 'labeling' in section.url %}section-card--teal{% elif 'versioning' in section.url %}section-card--gold{% endif %}">
+      <span class="section-card__icon" aria-hidden="true">
+        {% if 'fundamentals' in section.url %}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        {% elif 'labeling' in section.url %}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
+        {% elif 'versioning' in section.url %}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+        {% endif %}
+      </span>
+      <h3>{{ section.title }}</h3>
+      <p>{{ section.description }}</p>
+      {% if section.children.length %}
+      <ul>
+        {% for child in section.children %}
+          <li><a href="{{ child.url }}">{{ child.title }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <a class="section-card__more" href="{{ section.url }}">Explore the section</a>
+    </article>
+    {% endfor %}
+  </div>
+</section>
