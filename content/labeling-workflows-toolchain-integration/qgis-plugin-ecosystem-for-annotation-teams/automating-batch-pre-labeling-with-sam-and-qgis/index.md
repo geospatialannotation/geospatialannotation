@@ -47,7 +47,7 @@ mask_generator = SamAutomaticMaskGenerator(
     min_mask_region_area=AREA_FILTER
 )
 
-def pixel_to_geo(mask_binary, transform):
+def pixel_to_geo(mask_binary, affine_transform):
     """Convert a binary mask to georeferenced Shapely polygons."""
     contours, _ = cv2.findContours(
         mask_binary.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
@@ -55,12 +55,20 @@ def pixel_to_geo(mask_binary, transform):
     polys = []
     for contour in contours:
         if cv2.contourArea(contour) >= AREA_FILTER:
-            # Convert OpenCV contour to Shapely Polygon
-            poly = shape({"type": "Polygon", "coordinates": [contour.squeeze().tolist()]})
-            # Apply raster affine transform to shift from pixel to map space
-            geo_poly = shapely_transform(
-                lambda x, y: transform * (x, y, 1), poly
-            )
+            # Convert OpenCV contour (col, row) pixel coords to a Shapely Polygon
+            pixel_coords = contour.squeeze().tolist()
+            if len(pixel_coords) < 3:
+                continue
+            poly = shape({"type": "Polygon", "coordinates": [pixel_coords]})
+            # Apply raster affine transform: maps (col, row) pixel pairs to (x, y) map coords
+            def affine_fn(xs, ys):
+                geo_xs, geo_ys = [], []
+                for col, row in zip(xs, ys):
+                    x, y = affine_transform * (col, row)
+                    geo_xs.append(x)
+                    geo_ys.append(y)
+                return geo_xs, geo_ys
+            geo_poly = shapely_transform(affine_fn, poly)
             polys.append(geo_poly)
     return polys
 
@@ -107,7 +115,7 @@ For teams managing large annotation campaigns, integrating this pipeline into a 
 
 ## Scaling & Performance Optimization
 
-Running SAM at scale requires careful resource management. The official [Segment Anything Repository](https://github.com/facebookresearch/segment-anything) recommends using `vit_b` or `vit_l` checkpoints for production environments where `vit_h` exceeds available VRAM. To optimize throughput:
+Running SAM at scale requires careful resource management. The official [Segment Anything Repository](https://github.com/facebookresearch/segment-anything) recommends using `vit_b` or `vit_l` checkpoints for production environments where `vit_h` exceeds available VRAM. Teams starting fresh may also evaluate Meta's [SAM 2](https://github.com/facebookresearch/sam2), which offers faster inference and a Hiera backbone; the tiling-to-vector logic above applies unchanged, only the model-loading and mask-generation calls differ. To optimize throughput:
 
 - **Tile Overlap Management:** Maintain a 15–20% overlap between adjacent tiles to prevent edge-cut artifacts. Deduplicate intersecting polygons post-inference using `gpd.overlay()` with the `intersection` operator.
 - **Batched GPU Inference:** Wrap `mask_generator.generate()` in a `torch.no_grad()` context and enable mixed-precision (`torch.autocast(device_type="cuda", dtype=torch.float16)`) to reduce memory pressure by ~40%.

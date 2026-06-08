@@ -104,11 +104,16 @@ def prepare_geojson_for_ml(
 Once normalized, the GeoJSON file can be ingested by modern spatial dataloaders without custom parsing. Frameworks like `TorchGeo` or `rasterio` + `shapely` expect this exact structure. When loading, map `properties` keys directly to tensor targets:
 
 ```python
-# Pseudocode for DataLoader mapping
-for feature in geojson_data["features"]:
-    coords = np.array(feature["geometry"]["coordinates"][0])
-    label = feature["properties"]["class_id"]
-    yield torch.tensor(coords), torch.tensor(label)
+import numpy as np
+import torch
+
+# Example: iterate features and convert to tensors for a custom Dataset
+def geojson_to_tensors(geojson_data: dict):
+    """Yield (coords_tensor, label_tensor) pairs from a FeatureCollection."""
+    for feature in geojson_data["features"]:
+        coords = np.array(feature["geometry"]["coordinates"][0], dtype=np.float32)
+        label = int(feature["properties"]["class_id"])
+        yield torch.tensor(coords), torch.tensor(label)
 ```
 
 Avoid on-the-fly CRS transformations or property parsing inside the training loop. Precompute and cache the normalized structure. This aligns with best practices in [Vector vs Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), where deterministic preprocessing separates data engineering from model optimization.

@@ -1,3 +1,6 @@
+---
+title: DVC Pipelines for Automated Dataset Snapshots
+---
 # Using DVC Pipelines for Automated Dataset Snapshots
 
 **Using DVC pipelines for automated dataset snapshots** eliminates manual version control bottlenecks by treating geospatial annotations, satellite imagery, and training splits as reproducible, hash-tracked artifacts. Instead of committing multi-gigabyte `.tif` or `.geojson` files to Git, you define a declarative `dvc.yaml` workflow that triggers on annotation updates, computes SHA-256 checksums, stages outputs to remote storage, and tags the exact state of your training data for downstream ML jobs. This approach guarantees that every model training run traces back to the precise coordinate geometry, label schema, and raster alignment used at snapshot time.

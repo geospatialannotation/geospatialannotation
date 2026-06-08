@@ -1,3 +1,6 @@
+---
+title: Dataset Versioning & Spatial Data Sync
+---
 # Dataset Versioning & Spatial Data Sync for Geospatial AI/ML Pipelines
 
 Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop annotations. When training pipelines scale beyond proof-of-concept, the absence of rigorous **Dataset Versioning & Spatial Data Sync** becomes the primary bottleneck to reproducibility, model stability, and deployment velocity. Spatial data scientists, ML engineers, and GIS annotation teams require infrastructure that treats coordinate systems, tiling schemes, and annotation geometries as first-class versioned entities.
@@ -102,7 +105,7 @@ def validate_sync(manifest: dict, target_dir: str) -> bool:
     return True
 ```
 
-These patterns form the backbone of automated sync jobs. When integrated with orchestration tools like Apache Airflow or Prefect, they enable scheduled dataset refreshes, automated retraining triggers, and strict version pinning for compliance audits. For teams dealing with class imbalance or rare geographic features, Synthetic Data Generation for Spatial ML outlines how to version synthetic augmentations alongside real-world acquisitions without polluting the primary training lineage.
+These patterns form the backbone of automated sync jobs. When integrated with orchestration tools like Apache Airflow or Prefect, they enable scheduled dataset refreshes, automated retraining triggers, and strict version pinning for compliance audits.
 
 ## Operational Protocols & Governance
 
@@ -118,8 +121,8 @@ Versioning and sync infrastructure only delivers value when paired with strict o
 
 As geospatial AI moves toward foundation models and multi-temporal forecasting, dataset versioning must evolve from static snapshots to continuous streaming architectures. Emerging patterns include:
 - **Delta-Encoded Syncs:** Transmit only changed tiles or annotation vertices using binary diff formats, reducing sync latency for global-scale datasets.
-- **Vector Tile Versioning:** Adopt Mapbox GL or OGC API-Tiles standards to serve annotation layers as versioned vector tiles, enabling real-time visualization in annotation UIs.
-- **Federated Dataset Registries:** Cross-organization ML initiatives require decentralized version control. Content-addressable identifiers (CIDs) and IPFS-like storage layers enable secure, auditable sharing without centralizing petabytes of raster data.
+- **Vector Tile Versioning:** Adopt OGC API-Tiles standards to serve annotation layers as versioned vector tiles, enabling real-time visualization in annotation UIs.
+- **Federated Dataset Registries:** Cross-organization ML initiatives require decentralized version control. Content-addressable identifiers and IPFS-like storage layers enable secure, auditable sharing without centralizing petabytes of raster data.
 
 Implementing these patterns early prevents technical debt from accumulating as annotation teams grow and model architectures become more compute-intensive. The goal is not merely to store data, but to create a deterministic, queryable lineage that connects every pixel and polygon to a specific model checkpoint.
 

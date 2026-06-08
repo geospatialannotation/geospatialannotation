@@ -46,7 +46,7 @@ Once composite scores are computed, route labels into three tiers:
 - **Medium confidence (`0.60–0.84`)**: Retained for training but down-weighted via focal loss or sample weighting. Flagged for periodic review.
 - **Low confidence (`< 0.60`)**: Excluded from training until manually verified. Routed to QA queues with automated context (e.g., "ambiguous boundary," "class overlap," "low annotator agreement").
 
-Thresholds should be dynamically adjusted per class. Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) often reveals that certain classes (e.g., shadowed rooftops, transitional vegetation) inherently produce lower agreement scores. Hard-coding a universal threshold across all classes will systematically bias your training distribution.
+Thresholds should be dynamically adjusted per class. [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) often reveals that certain classes (e.g., shadowed rooftops, transitional vegetation) inherently produce lower agreement scores. Hard-coding a universal threshold across all classes will systematically bias your training distribution.
 
 ## Production-Ready Implementation
 

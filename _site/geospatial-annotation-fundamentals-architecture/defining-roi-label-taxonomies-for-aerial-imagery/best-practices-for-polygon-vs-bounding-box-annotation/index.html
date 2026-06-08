@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Best practices for polygon vs bounding box annotation · GeoAnnotation</title>
-  <meta name="description" content="Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons when precise spatial extent, area calculatio">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Polygon vs Bounding Box Annotation Guide · GeoAnnotation</title>
+  <meta name="description" content="Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -33,8 +33,8 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="article">
-  <meta property="og:title" content="Best practices for polygon vs bounding box annotation · GeoAnnotation">
-  <meta property="og:description" content="Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons when precise spatial extent, area calculatio">
+  <meta property="og:title" content="Polygon vs Bounding Box Annotation Guide · GeoAnnotation">
+  <meta property="og:description" content="Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons">
   <meta property="og:url" content="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -45,8 +45,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Best practices for polygon vs bounding box annotation · GeoAnnotation">
-  <meta name="twitter:description" content="Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons when precise spatial extent, area calculatio">
+  <meta name="twitter:title" content="Polygon vs Bounding Box Annotation Guide · GeoAnnotation">
+  <meta name="twitter:description" content="Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -107,8 +107,8 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/#article",
-  "headline": "Best practices for polygon vs bounding box annotation",
-  "description": "Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons when precise spatial extent, area calculatio",
+  "headline": "Polygon vs Bounding Box Annotation Guide",
+  "description": "Direct Answer: Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons",
   "url": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -352,12 +352,12 @@
 <p>Bounding box QA is simpler but still requires attention to edge cases. Enforce minimum/maximum area thresholds, validate aspect ratios against known object priors, and run Non-Maximum Suppression (NMS) during export to remove duplicate proposals. Automated scripts should flag boxes with &lt;0.5 IoU against ground truth or those that consistently trigger false positives during validation sweeps.</p>
 <h2 id="implementation-checklist" tabindex="-1"><a class="header-anchor" href="#implementation-checklist"><span aria-hidden="true" class="anchor-symbol">#</span></a> Implementation Checklist</h2>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2317906"><label class="task-list-item-label" for="task-item-2317906"> Define class criticality tiers before starting annotation</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3625578"><label class="task-list-item-label" for="task-item-3625578"> Set vertex limits and topology rules in your annotation platform</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3015732"> Run automated validation scripts (<code class="inline-code">shapely</code>, <code class="inline-code">opencv</code>, or <code class="inline-code">rasterio</code><label class="task-list-item-label" for="task-item-3015732"> Run automated validation scripts (`shapely`, `opencv`, or `rasterio`) pre-export</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4542470"><label class="task-list-item-label" for="task-item-4542470"> Convert formats to match your framework's dataloader expectations</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2848457"><label class="task-list-item-label" for="task-item-2848457"> Implement active learning routing to minimize manual polygon tracing</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9434941"><label class="task-list-item-label" for="task-item-9434941"> Track annotation throughput, QA pass rates, and model mAP@IoU per class</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5953062"><label class="task-list-item-label" for="task-item-5953062"> Define class criticality tiers before starting annotation</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2986101"><label class="task-list-item-label" for="task-item-2986101"> Set vertex limits and topology rules in your annotation platform</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1273878"> Run automated validation scripts (<code class="inline-code">shapely</code>, <code class="inline-code">opencv</code>, or <code class="inline-code">rasterio</code><label class="task-list-item-label" for="task-item-1273878"> Run automated validation scripts (`shapely`, `opencv`, or `rasterio`) pre-export</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9397381"><label class="task-list-item-label" for="task-item-9397381"> Convert formats to match your framework's dataloader expectations</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1646139"><label class="task-list-item-label" for="task-item-1646139"> Implement active learning routing to minimize manual polygon tracing</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3037633"><label class="task-list-item-label" for="task-item-3037633"> Track annotation throughput, QA pass rates, and model mAP@IoU per class</label></li>
 </ul>
 <p>By matching annotation geometry to model requirements, budget constraints, and downstream analytics, teams can scale geospatial datasets without sacrificing precision or inflating compute costs.</p>
 

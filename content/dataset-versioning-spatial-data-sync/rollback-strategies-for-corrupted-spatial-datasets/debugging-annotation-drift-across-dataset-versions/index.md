@@ -1,3 +1,6 @@
+---
+title: Debugging Annotation Drift in Datasets
+---
 # Debugging Annotation Drift Across Dataset Versions
 
 Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, or pipeline serialization artifacts. The fastest resolution path is computing deterministic spatial and semantic deltas between consecutive version snapshots using geometry tolerance checks, attribute alignment, and statistical distribution profiling before allowing the data to enter training queues.
@@ -34,8 +37,8 @@ import shapely
 from scipy.spatial.distance import jensenshannon
 
 def detect_annotation_drift(
-    v1_path: str, 
-    v2_path: str, 
+    v1_path: str,
+    v2_path: str,
     tolerance_meters: float = 0.5,
     label_col: str = "class_id"
 ) -> tuple[pd.DataFrame, float]:
@@ -46,44 +49,52 @@ def detect_annotation_drift(
     # 1. Load & align CRS
     v1 = gpd.read_file(v1_path)
     v2 = gpd.read_file(v2_path)
-    
+
     if v1.crs != v2.crs:
         v2 = v2.to_crs(v1.crs)
-        
+
     # 2. Enforce valid geometries
-    v1.geometry = v1.geometry.apply(shapely.make_valid)
-    v2.geometry = v2.geometry.apply(shapely.make_valid)
-    
+    v1 = v1.copy()
+    v2 = v2.copy()
+    v1["geometry"] = v1.geometry.apply(shapely.make_valid)
+    v2["geometry"] = v2.geometry.apply(shapely.make_valid)
+
     # 3. Spatial matching with tolerance (requires geopandas >= 0.10)
     # Docs: https://geopandas.org/en/stable/docs/reference/api/geopandas.sjoin_nearest.html
+    # Store v2 geometries separately before the join; sjoin_nearest retains only the
+    # left GeoDataFrame's active geometry column in the result.
+    v2_geoms = v2.geometry.rename("geometry_v2")
     matched = gpd.sjoin_nearest(
         v1, v2, max_distance=tolerance_meters, how="inner", suffixes=("_v1", "_v2")
     )
-    
+
     if matched.empty:
         raise ValueError("No spatial matches found. Verify CRS, tolerance, or data overlap.")
-        
-    # 4. Compute geometric drift
+
+    # Re-attach v2 geometries by index_right so we can compute pair-wise metrics
+    matched = matched.join(v2_geoms, on="index_right")
+
+    # 4. Compute geometric drift (matched.geometry is v1's geometry after the join)
     matched["hausdorff_dist"] = matched.apply(
-        lambda r: shapely.hausdorff_distance(r.geometry_v1, r.geometry_v2), axis=1
+        lambda r: shapely.hausdorff_distance(r.geometry, r.geometry_v2), axis=1
     )
-    matched["centroid_shift_m"] = matched.geometry_v1.distance(matched.geometry_v2.centroid)
-    
+    matched["centroid_shift_m"] = matched.geometry.distance(matched["geometry_v2"].centroid)
+
     # 5. Detect label/schema drift
     matched["label_mismatch"] = matched[f"{label_col}_v1"] != matched[f"{label_col}_v2"]
-    
+
     # 6. Statistical distribution shift (Jensen-Shannon distance)
     # Docs: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jensenshannon.html
     dist_v1 = v1[label_col].value_counts(normalize=True).sort_index()
     dist_v2 = v2[label_col].value_counts(normalize=True).sort_index()
-    
+
     # Align indices to prevent NaN padding
     common_idx = dist_v1.index.union(dist_v2.index)
     dist_v1 = dist_v1.reindex(common_idx, fill_value=0.0)
     dist_v2 = dist_v2.reindex(common_idx, fill_value=0.0)
-    
+
     jsd = jensenshannon(dist_v1.values, dist_v2.values, base=2)
-    
+
     return matched, jsd
 ```
 

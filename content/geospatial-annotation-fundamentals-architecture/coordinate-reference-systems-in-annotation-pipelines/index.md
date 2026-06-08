@@ -1,3 +1,6 @@
+---
+title: Coordinate Reference Systems for Annotation
+---
 # Coordinate Reference Systems in Annotation Pipelines
 
 Coordinate Reference Systems in Annotation Pipelines form the mathematical backbone of any production-grade geospatial machine learning workflow. When annotation teams label aerial imagery, LiDAR point clouds, or satellite mosaics, the underlying spatial reference dictates how geometries align, how evaluation metrics are computed, and whether trained models generalize across regions. A single unhandled datum shift or silent projection mismatch can cascade into degraded IoU scores, misaligned training targets, and costly re-annotation cycles.
@@ -48,16 +51,18 @@ Check that coordinates fall within the valid extent of the declared CRS. Out-of-
 
 ```python
 def validate_bounds_and_topology(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    from shapely.geometry import box as shapely_box
     crs_obj = CRS.from_user_input(gdf.crs)
     if crs_obj.is_geographic:
         bounds = (-180, -90, 180, 90)
     else:
         bounds = crs_obj.area_of_use.bounds  # Returns (west, south, east, north)
-    
+
     # Filter out geometries completely outside valid extent
-    valid_mask = gdf.within(gpd.GeoSeries([gpd.box(*bounds)], crs=gdf.crs).iloc[0])
+    extent_geom = shapely_box(*bounds)
+    valid_mask = gdf.within(gpd.GeoSeries([extent_geom], crs=gdf.crs).iloc[0])
     gdf = gdf[valid_mask].copy()
-    
+
     # Remove invalid geometries
     gdf = gdf[gdf.is_valid]
     return gdf
@@ -70,20 +75,18 @@ Transform validated geometries to the pipeline's canonical CRS. Always use `alwa
 ```python
 def standardize_to_target(gdf: gpd.GeoDataFrame, target_epsg: int) -> gpd.GeoDataFrame:
     target_crs = CRS.from_epsg(target_epsg)
-    # Use pyproj Transformer for explicit, auditable transformations
-    transformer = Transformer.from_crs(gdf.crs, target_crs, always_xy=True)
-    
-    # Apply transformation
+
+    # Apply transformation via geopandas (uses pyproj under the hood with always_xy)
     gdf_transformed = gdf.to_crs(target_crs)
     gdf_transformed.attrs["target_crs"] = target_crs.to_epsg()
     gdf_transformed.attrs["transform_method"] = "pyproj_transformer"
-    
-    # Optional: round coordinates to avoid floating-point drift
-    precision = 0.01 if target_crs.is_geographic else 0.001
-    gdf_transformed.geometry = gdf_transformed.geometry.apply(
-        lambda geom: __import__("shapely").wkt.loads(
-            __import__("shapely").wkt.dumps(geom, rounding_precision=6)
-        )
+
+    # Optional: round coordinates to 6 decimal places to reduce floating-point drift.
+    # Uses shapely.set_precision (shapely >= 2.0) which is more reliable than WKT round-trips.
+    import shapely
+    grid_size = 1e-6  # ~0.11 m at the equator for geographic CRS; adjust for projected CRS
+    gdf_transformed["geometry"] = gdf_transformed.geometry.apply(
+        lambda geom: shapely.set_precision(geom, grid_size=grid_size)
     )
     return gdf_transformed
 ```
@@ -94,7 +97,8 @@ Serialize transformed labels with embedded spatial metadata. GeoParquet is the m
 
 ```python
 def export_with_provenance(gdf: gpd.GeoDataFrame, output_path: str):
-    gdf.to_parquet(output_path, schema_version="1.0.0-beta.1")
+    # to_parquet writes GeoParquet format (requires geopandas >= 0.12 and pyarrow)
+    gdf.to_parquet(output_path)
     # Log transformation chain for CI/CD tracking
     print(f"Exported {len(gdf)} features to {output_path} | CRS: {gdf.attrs.get('target_crs')}")
 ```
@@ -116,11 +120,15 @@ Automated validation should gate every annotation batch before it enters trainin
 4. Fail the pipeline if precision loss exceeds a defined tolerance (e.g., >0.5m in projected space)
 
 ```python
-def ci_crs_gate(gdf: gpd.GeoDataFrame, target_epsg: int, max_drift_m: float = 0.5):
+def ci_crs_gate(gdf: gpd.GeoDataFrame, source_epsg: int, target_epsg: int, max_drift_m: float = 0.5):
+    """
+    Validates CRS transformation quality by performing a round-trip check.
+    Both source_epsg and target_epsg must be valid EPSG codes.
+    """
     original = gdf.copy()
     transformed = standardize_to_target(original, target_epsg)
-    # Round-trip check to measure drift
-    roundtrip = standardize_to_target(transformed, original.crs.to_epsg())
+    # Round-trip: transform back to source CRS and measure coordinate drift
+    roundtrip = standardize_to_target(transformed, source_epsg)
     drift = original.geometry.distance(roundtrip.geometry).max()
     if drift > max_drift_m:
         raise RuntimeError(f"CRS transformation drift exceeds tolerance: {drift:.3f}m")

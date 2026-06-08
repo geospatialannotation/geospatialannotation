@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Debugging Annotation Drift Across Dataset Versions · GeoAnnotation</title>
-  <meta name="description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Debugging Annotation Drift in Datasets · GeoAnnotation</title>
+  <meta name="description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations,">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -33,8 +33,8 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="article">
-  <meta property="og:title" content="Debugging Annotation Drift Across Dataset Versions · GeoAnnotation">
-  <meta property="og:description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o">
+  <meta property="og:title" content="Debugging Annotation Drift in Datasets · GeoAnnotation">
+  <meta property="og:description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations,">
   <meta property="og:url" content="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -45,8 +45,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Debugging Annotation Drift Across Dataset Versions · GeoAnnotation">
-  <meta name="twitter:description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o">
+  <meta name="twitter:title" content="Debugging Annotation Drift in Datasets · GeoAnnotation">
+  <meta name="twitter:description" content="Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations,">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -107,8 +107,8 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/#article",
-  "headline": "Debugging Annotation Drift Across Dataset Versions",
-  "description": "Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations, schema mutations, label taxonomy shifts, o",
+  "headline": "Debugging Annotation Drift in Datasets",
+  "description": "Debugging annotation drift across dataset versions requires isolating whether discrepancies originate from coordinate reference system (CRS) transformations,",
   "url": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -338,8 +338,8 @@
 <span class="token keyword">from</span> scipy<span class="token punctuation">.</span>spatial<span class="token punctuation">.</span>distance <span class="token keyword">import</span> jensenshannon
 
 <span class="token keyword">def</span> <span class="token function">detect_annotation_drift</span><span class="token punctuation">(</span>
-    v1_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> 
-    v2_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> 
+    v1_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    v2_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
     tolerance_meters<span class="token punctuation">:</span> <span class="token builtin">float</span> <span class="token operator">=</span> <span class="token number">0.5</span><span class="token punctuation">,</span>
     label_col<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> <span class="token string">"class_id"</span>
 <span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">tuple</span><span class="token punctuation">[</span>pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">,</span> <span class="token builtin">float</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
@@ -350,44 +350,52 @@
     <span class="token comment"># 1. Load &amp; align CRS</span>
     v1 <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>v1_path<span class="token punctuation">)</span>
     v2 <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>v2_path<span class="token punctuation">)</span>
-    
+
     <span class="token keyword">if</span> v1<span class="token punctuation">.</span>crs <span class="token operator">!=</span> v2<span class="token punctuation">.</span>crs<span class="token punctuation">:</span>
         v2 <span class="token operator">=</span> v2<span class="token punctuation">.</span>to_crs<span class="token punctuation">(</span>v1<span class="token punctuation">.</span>crs<span class="token punctuation">)</span>
-        
+
     <span class="token comment"># 2. Enforce valid geometries</span>
-    v1<span class="token punctuation">.</span>geometry <span class="token operator">=</span> v1<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>shapely<span class="token punctuation">.</span>make_valid<span class="token punctuation">)</span>
-    v2<span class="token punctuation">.</span>geometry <span class="token operator">=</span> v2<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>shapely<span class="token punctuation">.</span>make_valid<span class="token punctuation">)</span>
-    
+    v1 <span class="token operator">=</span> v1<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    v2 <span class="token operator">=</span> v2<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    v1<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> v1<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>shapely<span class="token punctuation">.</span>make_valid<span class="token punctuation">)</span>
+    v2<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> v2<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>shapely<span class="token punctuation">.</span>make_valid<span class="token punctuation">)</span>
+
     <span class="token comment"># 3. Spatial matching with tolerance (requires geopandas >= 0.10)</span>
     <span class="token comment"># Docs: https://geopandas.org/en/stable/docs/reference/api/geopandas.sjoin_nearest.html</span>
+    <span class="token comment"># Store v2 geometries separately before the join; sjoin_nearest retains only the</span>
+    <span class="token comment"># left GeoDataFrame's active geometry column in the result.</span>
+    v2_geoms <span class="token operator">=</span> v2<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>rename<span class="token punctuation">(</span><span class="token string">"geometry_v2"</span><span class="token punctuation">)</span>
     matched <span class="token operator">=</span> gpd<span class="token punctuation">.</span>sjoin_nearest<span class="token punctuation">(</span>
         v1<span class="token punctuation">,</span> v2<span class="token punctuation">,</span> max_distance<span class="token operator">=</span>tolerance_meters<span class="token punctuation">,</span> how<span class="token operator">=</span><span class="token string">"inner"</span><span class="token punctuation">,</span> suffixes<span class="token operator">=</span><span class="token punctuation">(</span><span class="token string">"_v1"</span><span class="token punctuation">,</span> <span class="token string">"_v2"</span><span class="token punctuation">)</span>
     <span class="token punctuation">)</span>
-    
+
     <span class="token keyword">if</span> matched<span class="token punctuation">.</span>empty<span class="token punctuation">:</span>
         <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"No spatial matches found. Verify CRS, tolerance, or data overlap."</span><span class="token punctuation">)</span>
-        
-    <span class="token comment"># 4. Compute geometric drift</span>
+
+    <span class="token comment"># Re-attach v2 geometries by index_right so we can compute pair-wise metrics</span>
+    matched <span class="token operator">=</span> matched<span class="token punctuation">.</span>join<span class="token punctuation">(</span>v2_geoms<span class="token punctuation">,</span> on<span class="token operator">=</span><span class="token string">"index_right"</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># 4. Compute geometric drift (matched.geometry is v1's geometry after the join)</span>
     matched<span class="token punctuation">[</span><span class="token string">"hausdorff_dist"</span><span class="token punctuation">]</span> <span class="token operator">=</span> matched<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>
-        <span class="token keyword">lambda</span> r<span class="token punctuation">:</span> shapely<span class="token punctuation">.</span>hausdorff_distance<span class="token punctuation">(</span>r<span class="token punctuation">.</span>geometry_v1<span class="token punctuation">,</span> r<span class="token punctuation">.</span>geometry_v2<span class="token punctuation">)</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span>
+        <span class="token keyword">lambda</span> r<span class="token punctuation">:</span> shapely<span class="token punctuation">.</span>hausdorff_distance<span class="token punctuation">(</span>r<span class="token punctuation">.</span>geometry<span class="token punctuation">,</span> r<span class="token punctuation">.</span>geometry_v2<span class="token punctuation">)</span><span class="token punctuation">,</span> axis<span class="token operator">=</span><span class="token number">1</span>
     <span class="token punctuation">)</span>
-    matched<span class="token punctuation">[</span><span class="token string">"centroid_shift_m"</span><span class="token punctuation">]</span> <span class="token operator">=</span> matched<span class="token punctuation">.</span>geometry_v1<span class="token punctuation">.</span>distance<span class="token punctuation">(</span>matched<span class="token punctuation">.</span>geometry_v2<span class="token punctuation">.</span>centroid<span class="token punctuation">)</span>
-    
+    matched<span class="token punctuation">[</span><span class="token string">"centroid_shift_m"</span><span class="token punctuation">]</span> <span class="token operator">=</span> matched<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>distance<span class="token punctuation">(</span>matched<span class="token punctuation">[</span><span class="token string">"geometry_v2"</span><span class="token punctuation">]</span><span class="token punctuation">.</span>centroid<span class="token punctuation">)</span>
+
     <span class="token comment"># 5. Detect label/schema drift</span>
     matched<span class="token punctuation">[</span><span class="token string">"label_mismatch"</span><span class="token punctuation">]</span> <span class="token operator">=</span> matched<span class="token punctuation">[</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>label_col<span class="token punctuation">}</span></span><span class="token string">_v1"</span></span><span class="token punctuation">]</span> <span class="token operator">!=</span> matched<span class="token punctuation">[</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>label_col<span class="token punctuation">}</span></span><span class="token string">_v2"</span></span><span class="token punctuation">]</span>
-    
+
     <span class="token comment"># 6. Statistical distribution shift (Jensen-Shannon distance)</span>
     <span class="token comment"># Docs: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.jensenshannon.html</span>
     dist_v1 <span class="token operator">=</span> v1<span class="token punctuation">[</span>label_col<span class="token punctuation">]</span><span class="token punctuation">.</span>value_counts<span class="token punctuation">(</span>normalize<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">.</span>sort_index<span class="token punctuation">(</span><span class="token punctuation">)</span>
     dist_v2 <span class="token operator">=</span> v2<span class="token punctuation">[</span>label_col<span class="token punctuation">]</span><span class="token punctuation">.</span>value_counts<span class="token punctuation">(</span>normalize<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">.</span>sort_index<span class="token punctuation">(</span><span class="token punctuation">)</span>
-    
+
     <span class="token comment"># Align indices to prevent NaN padding</span>
     common_idx <span class="token operator">=</span> dist_v1<span class="token punctuation">.</span>index<span class="token punctuation">.</span>union<span class="token punctuation">(</span>dist_v2<span class="token punctuation">.</span>index<span class="token punctuation">)</span>
     dist_v1 <span class="token operator">=</span> dist_v1<span class="token punctuation">.</span>reindex<span class="token punctuation">(</span>common_idx<span class="token punctuation">,</span> fill_value<span class="token operator">=</span><span class="token number">0.0</span><span class="token punctuation">)</span>
     dist_v2 <span class="token operator">=</span> dist_v2<span class="token punctuation">.</span>reindex<span class="token punctuation">(</span>common_idx<span class="token punctuation">,</span> fill_value<span class="token operator">=</span><span class="token number">0.0</span><span class="token punctuation">)</span>
-    
+
     jsd <span class="token operator">=</span> jensenshannon<span class="token punctuation">(</span>dist_v1<span class="token punctuation">.</span>values<span class="token punctuation">,</span> dist_v2<span class="token punctuation">.</span>values<span class="token punctuation">,</span> base<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">)</span>
-    
+
     <span class="token keyword">return</span> matched<span class="token punctuation">,</span> jsd
 </code></pre>
 </div>

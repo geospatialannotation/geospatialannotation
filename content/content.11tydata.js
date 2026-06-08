@@ -27,7 +27,11 @@ function extractDescription(md) {
     .replace(/[*_`]/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  return text.slice(0, 200);
+  // Truncate to 160 chars max (SEO best practice: 50–165 chars), breaking at a word boundary
+  if (text.length <= 160) return text;
+  const cut = text.slice(0, 160);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > 100 ? cut.slice(0, lastSpace) : cut).trimEnd();
 }
 
 module.exports = {

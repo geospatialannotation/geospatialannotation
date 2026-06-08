@@ -1,3 +1,6 @@
+---
+title: Polygon vs Bounding Box Annotation Guide
+---
 # Best practices for polygon vs bounding box annotation
 
 **Direct Answer:** Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons when precise spatial extent, area calculation, or boundary-aware model training is required. The optimal strategy depends on your target architecture, annotation budget, and downstream inference constraints. For most aerial imagery pipelines, start with bounding boxes to bootstrap large-scale datasets, then refine high-value classes with polygons where boundary precision directly impacts model performance, regulatory compliance, or geospatial analytics.

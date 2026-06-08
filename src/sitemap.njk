@@ -7,6 +7,7 @@ eleventyExcludeFromCollections: true
 {%- macro walk(node, depth) %}
   <url>
     <loc>{{ siteUrl }}{{ node.url }}</loc>
+    <lastmod>{{ buildTime | truncate(10, false, "") }}</lastmod>
     <changefreq>monthly</changefreq>
     <priority>{% if depth == 0 %}1.0{% elif depth == 1 %}0.9{% elif depth == 2 %}0.7{% else %}0.5{% endif %}</priority>
   </url>

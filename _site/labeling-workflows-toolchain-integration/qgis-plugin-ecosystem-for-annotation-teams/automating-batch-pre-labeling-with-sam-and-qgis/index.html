@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Automating batch pre-labeling with SAM and QGIS · GeoAnnotation</title>
-  <meta name="description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster tiles, converting binary masks to vector polyg">
+  <meta name="description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -34,7 +34,7 @@
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Automating batch pre-labeling with SAM and QGIS · GeoAnnotation">
-  <meta property="og:description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster tiles, converting binary masks to vector polyg">
+  <meta property="og:description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster">
   <meta property="og:url" content="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -46,7 +46,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Automating batch pre-labeling with SAM and QGIS · GeoAnnotation">
-  <meta name="twitter:description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster tiles, converting binary masks to vector polyg">
+  <meta name="twitter:description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -108,7 +108,7 @@
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/#article",
   "headline": "Automating batch pre-labeling with SAM and QGIS",
-  "description": "Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster tiles, converting binary masks to vector polyg",
+  "description": "Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster",
   "url": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -334,7 +334,7 @@ mask_generator <span class="token operator">=</span> SamAutomaticMaskGenerator<s
     min_mask_region_area<span class="token operator">=</span>AREA_FILTER
 <span class="token punctuation">)</span>
 
-<span class="token keyword">def</span> <span class="token function">pixel_to_geo</span><span class="token punctuation">(</span>mask_binary<span class="token punctuation">,</span> transform<span class="token punctuation">)</span><span class="token punctuation">:</span>
+<span class="token keyword">def</span> <span class="token function">pixel_to_geo</span><span class="token punctuation">(</span>mask_binary<span class="token punctuation">,</span> affine_transform<span class="token punctuation">)</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Convert a binary mask to georeferenced Shapely polygons."""</span>
     contours<span class="token punctuation">,</span> _ <span class="token operator">=</span> cv2<span class="token punctuation">.</span>findContours<span class="token punctuation">(</span>
         mask_binary<span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span><span class="token punctuation">,</span> cv2<span class="token punctuation">.</span>RETR_EXTERNAL<span class="token punctuation">,</span> cv2<span class="token punctuation">.</span>CHAIN_APPROX_SIMPLE
@@ -342,12 +342,20 @@ mask_generator <span class="token operator">=</span> SamAutomaticMaskGenerator<s
     polys <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
     <span class="token keyword">for</span> contour <span class="token keyword">in</span> contours<span class="token punctuation">:</span>
         <span class="token keyword">if</span> cv2<span class="token punctuation">.</span>contourArea<span class="token punctuation">(</span>contour<span class="token punctuation">)</span> <span class="token operator">>=</span> AREA_FILTER<span class="token punctuation">:</span>
-            <span class="token comment"># Convert OpenCV contour to Shapely Polygon</span>
-            poly <span class="token operator">=</span> shape<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"Polygon"</span><span class="token punctuation">,</span> <span class="token string">"coordinates"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>contour<span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
-            <span class="token comment"># Apply raster affine transform to shift from pixel to map space</span>
-            geo_poly <span class="token operator">=</span> shapely_transform<span class="token punctuation">(</span>
-                <span class="token keyword">lambda</span> x<span class="token punctuation">,</span> y<span class="token punctuation">:</span> transform <span class="token operator">*</span> <span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> poly
-            <span class="token punctuation">)</span>
+            <span class="token comment"># Convert OpenCV contour (col, row) pixel coords to a Shapely Polygon</span>
+            pixel_coords <span class="token operator">=</span> contour<span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span>
+            <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>pixel_coords<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">:</span>
+                <span class="token keyword">continue</span>
+            poly <span class="token operator">=</span> shape<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"Polygon"</span><span class="token punctuation">,</span> <span class="token string">"coordinates"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>pixel_coords<span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
+            <span class="token comment"># Apply raster affine transform: maps (col, row) pixel pairs to (x, y) map coords</span>
+            <span class="token keyword">def</span> <span class="token function">affine_fn</span><span class="token punctuation">(</span>xs<span class="token punctuation">,</span> ys<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                geo_xs<span class="token punctuation">,</span> geo_ys <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+                <span class="token keyword">for</span> col<span class="token punctuation">,</span> row <span class="token keyword">in</span> <span class="token builtin">zip</span><span class="token punctuation">(</span>xs<span class="token punctuation">,</span> ys<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                    x<span class="token punctuation">,</span> y <span class="token operator">=</span> affine_transform <span class="token operator">*</span> <span class="token punctuation">(</span>col<span class="token punctuation">,</span> row<span class="token punctuation">)</span>
+                    geo_xs<span class="token punctuation">.</span>append<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
+                    geo_ys<span class="token punctuation">.</span>append<span class="token punctuation">(</span>y<span class="token punctuation">)</span>
+                <span class="token keyword">return</span> geo_xs<span class="token punctuation">,</span> geo_ys
+            geo_poly <span class="token operator">=</span> shapely_transform<span class="token punctuation">(</span>affine_fn<span class="token punctuation">,</span> poly<span class="token punctuation">)</span>
             polys<span class="token punctuation">.</span>append<span class="token punctuation">(</span>geo_poly<span class="token punctuation">)</span>
     <span class="token keyword">return</span> polys
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Confidence Scoring for Geospatial Labels · GeoAnnotation</title>
-  <meta name="description" content="Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active learning prioritization, and quality ass">
+  <meta name="description" content="Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -34,7 +34,7 @@
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Confidence Scoring for Geospatial Labels · GeoAnnotation">
-  <meta property="og:description" content="Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active learning prioritization, and quality ass">
+  <meta property="og:description" content="Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active">
   <meta property="og:url" content="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -46,7 +46,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Confidence Scoring for Geospatial Labels · GeoAnnotation">
-  <meta name="twitter:description" content="Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active learning prioritization, and quality ass">
+  <meta name="twitter:description" content="Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -103,7 +103,7 @@
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/#article",
   "headline": "Confidence Scoring for Geospatial Labels",
-  "description": "Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active learning prioritization, and quality ass",
+  "description": "Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active",
   "url": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -306,7 +306,7 @@
 <li><strong>Medium confidence (<code class="inline-code">0.60–0.84</code>)</strong>: Retained for training but down-weighted via focal loss or sample weighting. Flagged for periodic review.</li>
 <li><strong>Low confidence (<code class="inline-code">&lt; 0.60</code>)</strong>: Excluded from training until manually verified. Routed to QA queues with automated context (e.g., “ambiguous boundary,” “class overlap,” “low annotator agreement”).</li>
 </ul>
-<p>Thresholds should be dynamically adjusted per class. Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) often reveals that certain classes (e.g., shadowed rooftops, transitional vegetation) inherently produce lower agreement scores. Hard-coding a universal threshold across all classes will systematically bias your training distribution.</p>
+<p>Thresholds should be dynamically adjusted per class. <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a> often reveals that certain classes (e.g., shadowed rooftops, transitional vegetation) inherently produce lower agreement scores. Hard-coding a universal threshold across all classes will systematically bias your training distribution.</p>
 <h2 id="production-ready-implementation" tabindex="-1"><a class="header-anchor" href="#production-ready-implementation"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production-Ready Implementation</h2>
 <p>The following Python implementation demonstrates a vectorized, production-grade scoring module. It prioritizes memory efficiency, explicit error handling, and CRS validation.</p>
 <div class="code-block">

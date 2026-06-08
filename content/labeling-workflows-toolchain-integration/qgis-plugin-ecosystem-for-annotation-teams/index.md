@@ -29,7 +29,7 @@ Automate profile provisioning using the `qgis --profile` CLI flag and a `require
 Raw spatial data rarely arrives in a unified coordinate reference system. Misaligned CRS values introduce silent topology errors that corrupt downstream training datasets. Use PyQGIS to enforce a project-wide CRS and reproject layers on load. The following script demonstrates a thread-safe approach to batch-reproject vector layers while preserving attribute schemas:
 
 ```python
-from qgis.core import QgsProject, QgsCoordinateTransform, QgsCoordinateReferenceSystem
+from qgis.core import QgsProject, QgsCoordinateTransform, QgsCoordinateReferenceSystem, QgsMapLayer
 import os
 
 TARGET_CRS = QgsCoordinateReferenceSystem("EPSG:3857")

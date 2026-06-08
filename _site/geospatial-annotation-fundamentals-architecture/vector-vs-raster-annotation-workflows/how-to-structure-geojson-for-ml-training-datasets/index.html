@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>How to Structure GeoJSON for ML Training Datasets · GeoAnnotation</title>
-  <meta name="description" content="To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store model targets in a flat properties dictionary">
+  <meta name="description" content="To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -34,7 +34,7 @@
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="How to Structure GeoJSON for ML Training Datasets · GeoAnnotation">
-  <meta property="og:description" content="To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store model targets in a flat properties dictionary">
+  <meta property="og:description" content="To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store">
   <meta property="og:url" content="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -46,7 +46,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="How to Structure GeoJSON for ML Training Datasets · GeoAnnotation">
-  <meta name="twitter:description" content="To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store model targets in a flat properties dictionary">
+  <meta name="twitter:description" content="To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -108,7 +108,7 @@
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/#article",
   "headline": "How to Structure GeoJSON for ML Training Datasets",
-  "description": "To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store model targets in a flat properties dictionary",
+  "description": "To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store",
   "url": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -400,23 +400,28 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token comment"># Pseudocode for DataLoader mapping</span>
-<span class="token keyword">for</span> feature <span class="token keyword">in</span> geojson_data<span class="token punctuation">[</span><span class="token string">"features"</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
-    coords <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>feature<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"coordinates"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
-    label <span class="token operator">=</span> feature<span class="token punctuation">[</span><span class="token string">"properties"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span>
-    <span class="token keyword">yield</span> torch<span class="token punctuation">.</span>tensor<span class="token punctuation">(</span>coords<span class="token punctuation">)</span><span class="token punctuation">,</span> torch<span class="token punctuation">.</span>tensor<span class="token punctuation">(</span>label<span class="token punctuation">)</span>
+  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> torch
+
+<span class="token comment"># Example: iterate features and convert to tensors for a custom Dataset</span>
+<span class="token keyword">def</span> <span class="token function">geojson_to_tensors</span><span class="token punctuation">(</span>geojson_data<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Yield (coords_tensor, label_tensor) pairs from a FeatureCollection."""</span>
+    <span class="token keyword">for</span> feature <span class="token keyword">in</span> geojson_data<span class="token punctuation">[</span><span class="token string">"features"</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+        coords <span class="token operator">=</span> np<span class="token punctuation">.</span>array<span class="token punctuation">(</span>feature<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"coordinates"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span>np<span class="token punctuation">.</span>float32<span class="token punctuation">)</span>
+        label <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>feature<span class="token punctuation">[</span><span class="token string">"properties"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token keyword">yield</span> torch<span class="token punctuation">.</span>tensor<span class="token punctuation">(</span>coords<span class="token punctuation">)</span><span class="token punctuation">,</span> torch<span class="token punctuation">.</span>tensor<span class="token punctuation">(</span>label<span class="token punctuation">)</span>
 </code></pre>
 </div>
 <p>Avoid on-the-fly CRS transformations or property parsing inside the training loop. Precompute and cache the normalized structure. This aligns with best practices in <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a>, where deterministic preprocessing separates data engineering from model optimization.</p>
 <h3 id="final-checklist-before-training" tabindex="-1"><a class="header-anchor" href="#final-checklist-before-training"><span aria-hidden="true" class="anchor-symbol">#</span></a> Final Checklist Before Training</h3>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7451170"> Root object is <label class="task-list-item-label" for="task-item-7451170"> Root object is `FeatureCollection`</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1762539"> All coordinates are <code class="inline-code">[lon, lat]</code> in <label class="task-list-item-label" for="task-item-1762539"> All coordinates are `[lon, lat]` in `EPSG:4326`</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8463045"> <code class="inline-code">properties</code><label class="task-list-item-label" for="task-item-8463045"> `properties` contains only flat, snake_case training targets</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4962707"> No <code class="inline-code">__meta_</code><label class="task-list-item-label" for="task-item-4962707"> No `__meta_` keys remain</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6709706"><label class="task-list-item-label" for="task-item-6709706"> All geometries are valid and homogeneous per batch</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4456262"><label class="task-list-item-label" for="task-item-4456262"> Coordinate precision is capped at 5–6 decimals</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6789105"><label class="task-list-item-label" for="task-item-6789105"> File validates against the official GeoJSON spec</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5680860"> Root object is <label class="task-list-item-label" for="task-item-5680860"> Root object is `FeatureCollection`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5602071"> All coordinates are <code class="inline-code">[lon, lat]</code> in <label class="task-list-item-label" for="task-item-5602071"> All coordinates are `[lon, lat]` in `EPSG:4326`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6537820"> <code class="inline-code">properties</code><label class="task-list-item-label" for="task-item-6537820"> `properties` contains only flat, snake_case training targets</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4950155"> No <code class="inline-code">__meta_</code><label class="task-list-item-label" for="task-item-4950155"> No `__meta_` keys remain</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9680768"><label class="task-list-item-label" for="task-item-9680768"> All geometries are valid and homogeneous per batch</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5556597"><label class="task-list-item-label" for="task-item-5556597"> Coordinate precision is capped at 5–6 decimals</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1158031"><label class="task-list-item-label" for="task-item-1158031"> File validates against the official GeoJSON spec</label></li>
 </ul>
 <p>Adhering to this structure eliminates silent spatial misalignments, accelerates dataloader throughput, and ensures your vector annotations scale cleanly from annotation tools to distributed training clusters.</p>
 

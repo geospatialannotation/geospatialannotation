@@ -1,3 +1,6 @@
+---
+title: Geospatial Annotation Fundamentals
+---
 # Geospatial Annotation Fundamentals & Architecture
 
 Geospatial artificial intelligence has transitioned from experimental research to enterprise-grade deployment, but the bottleneck remains consistent: high-quality, spatially accurate labeled data. Building robust computer vision and predictive models for satellite, aerial, LiDAR, and drone imagery requires more than standard bounding boxes or pixel masks. It demands rigorous spatial reasoning, coordinate system integrity, and pipeline automation that respects geographic topology. This guide establishes the **Geospatial Annotation Fundamentals & Architecture** required by spatial data scientists, ML engineers, GIS annotation teams, and Python automation builders to design scalable, production-ready training data workflows.
@@ -40,7 +43,7 @@ When defining ROI boundaries for aerial or satellite imagery, scale and sensor r
 Automated validation catches syntax errors; human-in-the-loop QA catches semantic drift. Production geospatial annotation pipelines require multi-tier quality assurance that scales with dataset size while maintaining spatial fidelity. Traditional metrics like pixel accuracy or bounding box IoU fail to capture geographic context. A building mask shifted by 5 meters may score 0.85 IoU but violate cadastral boundaries, rendering it useless for urban planning models.
 
 Modern QA architectures implement:
-- **Inter-Annotator Agreement (IAA):** Calculated via Cohen’s Kappa or Fleiss’ Kappa across overlapping annotation batches
+- **Inter-Annotator Agreement (IAA):** Calculated via Cohen's Kappa or Fleiss' Kappa across overlapping annotation batches
 - **Spatial Consistency Checks:** Topology validation, area/length thresholds, and adjacency rule enforcement
 - **Uncertainty Quantification:** Flagging edge cases, low-contrast regions, or sensor artifacts for expert review
 
@@ -57,7 +60,7 @@ Multi-temporal annotation requires:
 - **Delta Tracking:** Recording modifications as additive changes rather than destructive overwrites
 - **Cross-Epoch Validation:** Ensuring that historical annotations remain spatially consistent when projected to newer CRS versions or orthorectified baselines
 
-Change detection models perform best when annotation pipelines explicitly label transition states: `pre_event`, `during_event`, `post_event`, or `stable`, `degraded`, `restored`. Synchronizing labels across epochs also demands robust data versioning. Tools like DVC, LakeFS, or cloud-native geospatial catalogs (e.g., STAC) should be integrated into the annotation storage layer. Advanced Multi-Temporal Annotation Sync covers temporal alignment strategies, delta export formats, and STAC-compliant metadata schemas for time-series training data.
+Change detection models perform best when annotation pipelines explicitly label transition states: `pre_event`, `during_event`, `post_event`, or `stable`, `degraded`, `restored`. Synchronizing labels across epochs also demands robust data versioning. Tools like DVC, LakeFS, or cloud-native geospatial catalogs (e.g., STAC) should be integrated into the annotation storage layer to track dataset lineage and enable reproducible training runs.
 
 ## Pipeline Architecture & Automation Patterns
 
@@ -82,7 +85,7 @@ Training frameworks rarely consume raw GIS formats natively. Export pipelines sh
 - **COCO/JSON:** For instance segmentation and object detection
 - **GeoJSON/GeoParquet:** For spatially aware tabular workflows
 - **Mask Raster (PNG/TIFF):** For semantic segmentation with aligned geotransforms
-- **YOLOv8/v11 TXT:** For lightweight bounding box training
+- **YOLOv8 TXT:** For lightweight bounding box training
 
 Automated translation scripts must preserve spatial metadata, handle class mapping dictionaries, and validate output against schema definitions.
 

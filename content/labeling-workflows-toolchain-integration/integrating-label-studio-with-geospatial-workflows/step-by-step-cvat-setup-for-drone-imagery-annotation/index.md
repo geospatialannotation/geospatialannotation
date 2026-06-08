@@ -1,3 +1,6 @@
+---
+title: CVAT Setup for Drone Imagery Annotation
+---
 # Step-by-Step CVAT Setup for Drone Imagery Annotation
 
 To execute a **step-by-step CVAT setup for drone imagery annotation**, deploy CVAT via Docker Compose, preprocess orthomosaics into browser-compatible tiles, and automate task ingestion using the `cvat-sdk` Python client. Geospatial ML pipelines require explicit coordinate reference system (CRS) handling, chunked raster delivery, and persistent volume mapping before annotation begins. The following workflow covers production deployment, spatial preprocessing, and programmatic ingestion tailored for high-throughput drone datasets.
@@ -7,7 +10,7 @@ To execute a **step-by-step CVAT setup for drone imagery annotation**, deploy CV
 |-----------|---------------------|-------|
 | OS | Ubuntu 22.04 LTS / macOS 13+ / WSL2 | Linux preferred for volume I/O performance |
 | Docker Engine | ≥ 24.0 | Must support Compose V2 (`docker compose`) |
-| CVAT Version | v2.14+ (stable) | Verify with `docker compose version` |
+| CVAT Version | v2.14+ (stable) | Check the checked-out release tag with `git describe --tags` |
 | Python | ≥ 3.10 | Required for `cvat-sdk` and GDAL bindings |
 | RAM | 16GB (32GB recommended) | Orthomosaics >5GB trigger OOM without chunking |
 | Imagery Format | JPEG/PNG (native), GeoTIFF (requires tiling) | CVAT browser renderer strips CRS metadata |

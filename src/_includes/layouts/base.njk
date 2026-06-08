@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 
   {%- if title -%}
-    {%- if title.length + siteBrand.length + 3 <= 70 -%}
+    {%- if title.length + siteBrand.length + 3 <= 65 -%}
       {%- set fullTitle = title ~ " · " ~ siteBrand -%}
     {%- else -%}
       {%- set fullTitle = title -%}
@@ -15,7 +15,7 @@
   {%- endif -%}
   {%- set canonicalPath = pageUrl or page.url -%}
   {%- set canonicalUrl = siteUrl ~ canonicalPath -%}
-  {%- set metaDescription = description or "Automate geospatial annotation pipelines for AI/ML training — ROI labeling, vector/raster sync, dataset versioning, active learning, COCO/YOLO/GeoJSON exports, and CI/CD validation." -%}
+  {%- set metaDescription = description or "Automate geospatial annotation pipelines for AI/ML training — ROI labeling, vector/raster sync, dataset versioning, active learning, and CI/CD validation." -%}
   {%- set socialImage = siteUrl ~ "/icons/og-image.png" -%}
 
   <title>{{ fullTitle }}</title>

@@ -1,3 +1,6 @@
+---
+title: Label Studio for Geospatial Workflows
+---
 # Integrating Label Studio with Geospatial Workflows
 
 Integrating Label Studio with Geospatial Workflows requires bridging the gap between general-purpose annotation platforms and spatially aware data pipelines. While Label Studio excels at multimodal labeling, geospatial projects introduce unique constraints: coordinate reference system (CRS) alignment, topology validation, tile-based rendering, and strict interoperability with GIS standards. For spatial data scientists and ML engineers, establishing a repeatable pipeline transforms raw satellite, aerial, or drone imagery into training-ready vector datasets without manual coordinate wrangling.

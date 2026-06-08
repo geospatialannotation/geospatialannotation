@@ -1,3 +1,6 @@
+---
+title: Rollback Strategies for Spatial Datasets
+---
 # Rollback Strategies for Corrupted Spatial Datasets
 
 Geospatial machine learning pipelines operate at the intersection of high-dimensional raster data, complex vector geometries, and iterative annotation workflows. A single corrupted tile, malformed coordinate reference system (CRS), or desynchronized annotation manifest can silently degrade model performance or trigger catastrophic training failures. When corruption occurs mid-pipeline, manual intervention is rarely scalable. Production teams require deterministic **Rollback Strategies for Corrupted Spatial Datasets** that isolate failures, restore known-good states, and resume training without compromising reproducibility. This guide outlines a tested, automation-first approach to spatial data recovery, complete with workflow architecture, implementation patterns, and failure-mode diagnostics.
