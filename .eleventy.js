@@ -1,5 +1,6 @@
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const markdownIt = require("markdown-it");
 const markdownItAnchor = require("markdown-it-anchor");
 const markdownItAttrs = require("markdown-it-attrs");
@@ -340,6 +341,18 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.addFilter("topSection", (url) => {
     const m = url.match(/^\/([^\/]+)\//);
     return m ? `/${m[1]}/` : "/";
+  });
+
+  // Filter: cache-bust asset URLs by appending a short content hash as ?v=<hash>
+  // Assets are stored under src/assets/ and served at /assets/*.
+  eleventyConfig.addFilter("assetHash", (url) => {
+    try {
+      const filePath = path.join(__dirname, "src", url.replace(/^\//, "").split("?")[0]);
+      const hash = crypto.createHash("md5").update(fs.readFileSync(filePath)).digest("hex").slice(0, 8);
+      return `${url}?v=${hash}`;
+    } catch {
+      return url;
+    }
   });
 
   // Transform: post-process HTML for code blocks + FAQ accordions
