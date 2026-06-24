@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Dataset Versioning &amp; Spatial Data Sync · GeoAnnotation</title>
-  <meta name="description" content="Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop">
+  <meta name="description" content="Production-grade dataset versioning and spatial data sync for geospatial AI/ML pipelines: content-addressable hashing, atomic tiling manifests, CRS governance, and CI/CD integration patterns for reproducible training datasets.">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -34,7 +34,7 @@
   <!-- Open Graph -->
   <meta property="og:type" content="article">
   <meta property="og:title" content="Dataset Versioning &amp; Spatial Data Sync · GeoAnnotation">
-  <meta property="og:description" content="Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop">
+  <meta property="og:description" content="Production-grade dataset versioning and spatial data sync for geospatial AI/ML pipelines: content-addressable hashing, atomic tiling manifests, CRS governance, and CI/CD integration patterns for reproducible training datasets.">
   <meta property="og:url" content="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -46,7 +46,7 @@
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Dataset Versioning &amp; Spatial Data Sync · GeoAnnotation">
-  <meta name="twitter:description" content="Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop">
+  <meta name="twitter:description" content="Production-grade dataset versioning and spatial data sync for geospatial AI/ML pipelines: content-addressable hashing, atomic tiling manifests, CRS governance, and CI/CD integration patterns for reproducible training datasets.">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -54,8 +54,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css">
-  <script defer src="/assets/js/site.js"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
+  <script defer src="/assets/js/site.js?v=60200a44"></script>
 
   <script type="application/ld+json">
 {
@@ -98,7 +98,7 @@
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/#article",
   "headline": "Dataset Versioning & Spatial Data Sync",
-  "description": "Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop",
+  "description": "Production-grade dataset versioning and spatial data sync for geospatial AI/ML pipelines: content-addressable hashing, atomic tiling manifests, CRS governance, and CI/CD integration patterns for reproducible training datasets.",
   "url": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -257,47 +257,138 @@
     </aside>
 
     <article class="article">
-      <h1>Dataset Versioning &amp; Spatial Data Sync for Geospatial AI/ML Pipelines</h1>
-<p>Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop annotations. When training pipelines scale beyond proof-of-concept, the absence of rigorous <strong>Dataset Versioning &amp; Spatial Data Sync</strong> becomes the primary bottleneck to reproducibility, model stability, and deployment velocity. Spatial data scientists, ML engineers, and GIS annotation teams require infrastructure that treats coordinate systems, tiling schemes, and annotation geometries as first-class versioned entities.</p>
-<p>This guide outlines production-grade architectures, Python automation patterns, and operational protocols for synchronizing and versioning spatial training datasets. By treating geospatial assets with the same rigor as code, teams can eliminate silent data drift, accelerate annotation workflows, and guarantee that every model checkpoint maps to a deterministic, auditable dataset snapshot.</p>
-<h2 id="the-geospatial-data-challenge-in-ml-pipelines" tabindex="-1"><a class="header-anchor" href="#the-geospatial-data-challenge-in-ml-pipelines"><span aria-hidden="true" class="anchor-symbol">#</span></a> The Geospatial Data Challenge in ML Pipelines</h2>
-<p>Traditional version control systems like Git were engineered for text-based source code, not multi-gigabyte GeoTIFFs, LiDAR point clouds, or polygon-heavy GeoJSON files. Attempting to commit spatial data directly to standard repositories results in repository bloat, unresolvable merge conflicts, and broken CI/CD pipelines. Beyond raw file size, spatial datasets introduce unique synchronization challenges that standard DevOps tooling cannot natively resolve:</p>
-<ul>
-<li><strong>Coordinate Reference System (CRS) Drift:</strong> Annotations created in EPSG:4326 may silently misalign with imagery stored in EPSG:3857 or a local UTM zone. Without explicit CRS tracking, pixel-to-geometry offsets compound during training.</li>
-<li><strong>Tiling &amp; Chunking Inconsistencies:</strong> Raster datasets are routinely split into overlapping or non-overlapping tiles for GPU memory optimization. Version mismatches between tile manifests, boundary geometries, and annotation extents cause silent training failures or gradient instability.</li>
-<li><strong>Annotation Topology Changes:</strong> GIS teams frequently adjust polygon vertices, merge overlapping labels, or correct misclassified regions. Without cryptographic tracking, these edits become invisible until validation metrics degrade.</li>
-<li><strong>Multi-Modal Sync Latency:</strong> Satellite imagery, digital elevation models (DEMs), SAR backscatter, and vector labels update at different acquisition cadences. Pipelines that pull stale layers produce misaligned training batches and hallucinated feature correlations.</li>
-</ul>
-<p>To address these constraints, modern geospatial ML pipelines decouple storage from version control, rely on content-addressable hashing, and enforce atomic sync operations. The <a href="https://www.ogc.org/standards">Open Geospatial Consortium (OGC) standards</a> provide the foundational interoperability framework, but production implementation requires custom orchestration tailored to AI training workflows. Tools like <a href="https://gdal.org/">GDAL</a> handle low-level raster/vector translation, but they do not natively track lineage across training iterations.</p>
-<h2 id="architectural-blueprint-for-spatial-dataset-versioning-sync" tabindex="-1"><a class="header-anchor" href="#architectural-blueprint-for-spatial-dataset-versioning-sync"><span aria-hidden="true" class="anchor-symbol">#</span></a> Architectural Blueprint for Spatial Dataset Versioning &amp; Sync</h2>
-<p>A production-ready spatial versioning architecture consists of four interconnected layers. Each layer must operate deterministically to ensure that model training is fully reproducible across distributed compute environments.</p>
-<h3 id="1-object-storage-spatial-registry" tabindex="-1"><a class="header-anchor" href="#1-object-storage-spatial-registry"><span aria-hidden="true" class="anchor-symbol">#</span></a> 1. Object Storage &amp; Spatial Registry</h3>
-<p>Cloud-native storage (AWS S3, Google Cloud Storage, Azure Blob) serves as the immutable backing store. Datasets are organized by a hierarchical path structure: <code class="inline-code">/{project_id}/{dataset_name}/{version_hash}/{layer_type}/</code>. A lightweight metadata registry (PostgreSQL, SQLite, or a managed catalog like AWS Glue) tracks spatial extents, CRS definitions, acquisition timestamps, and dependency graphs. This registry acts as the single source of truth for pipeline orchestration.</p>
-<h3 id="2-content-addressable-version-control" tabindex="-1"><a class="header-anchor" href="#2-content-addressable-version-control"><span aria-hidden="true" class="anchor-symbol">#</span></a> 2. Content-Addressable Version Control</h3>
-<p>Instead of tracking file modifications by timestamp, spatial pipelines should use cryptographic hashes (SHA-256) derived from file contents, CRS metadata, and tiling configurations. When a single tile or annotation vertex changes, only the affected hash updates, triggering a delta sync rather than a full dataset re-upload. For teams transitioning from ad-hoc scripts to structured pipelines, <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> provides a proven migration path that bridges Git workflows with heavy spatial assets.</p>
-<h3 id="3-atomic-sync-tiling-manifest-engine" tabindex="-1"><a class="header-anchor" href="#3-atomic-sync-tiling-manifest-engine"><span aria-hidden="true" class="anchor-symbol">#</span></a> 3. Atomic Sync &amp; Tiling Manifest Engine</h3>
-<p>Spatial sync operations must be atomic. Partial uploads or interrupted tile generations should never leave the dataset in a corrupted state. A manifest engine generates JSON or Parquet files that map each tile to its bounding box, parent raster, and associated annotation IDs. During sync, the engine validates checksums against the registry before promoting a new version to the <code class="inline-code">latest</code> pointer.</p>
-<h3 id="4-compute-aware-data-loading-layer" tabindex="-1"><a class="header-anchor" href="#4-compute-aware-data-loading-layer"><span aria-hidden="true" class="anchor-symbol">#</span></a> 4. Compute-Aware Data Loading Layer</h3>
-<p>The final layer interfaces directly with PyTorch, TensorFlow, or JAX. Custom data loaders read the versioned manifest, apply on-the-fly CRS transformations, and stream tiles into GPU memory. By decoupling storage from compute, teams can spin up ephemeral training clusters without duplicating terabytes of spatial data.</p>
-<h2 id="core-workflows-for-production-pipelines" tabindex="-1"><a class="header-anchor" href="#core-workflows-for-production-pipelines"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Workflows for Production Pipelines</h2>
-<h3 id="content-addressable-storage-cryptographic-hashing" tabindex="-1"><a class="header-anchor" href="#content-addressable-storage-cryptographic-hashing"><span aria-hidden="true" class="anchor-symbol">#</span></a> Content-Addressable Storage &amp; Cryptographic Hashing</h3>
-<p>Hashing spatial data requires more than a simple file digest. GeoTIFFs contain embedded metadata blocks that can change without altering pixel values (e.g., TIFF tags updated by GDAL utilities). Production pipelines should hash only the pixel array, CRS string, and geotransform matrix. Vector formats like GeoJSON or Shapefiles require topology normalization before hashing to ensure that vertex ordering or floating-point precision differences do not generate false version drift. <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> details how to normalize geometries and compute deterministic digests for complex label sets.</p>
-<h3 id="atomic-sync-operations-tiling-manifests" tabindex="-1"><a class="header-anchor" href="#atomic-sync-operations-tiling-manifests"><span aria-hidden="true" class="anchor-symbol">#</span></a> Atomic Sync Operations &amp; Tiling Manifests</h3>
-<p>When new satellite imagery arrives, the pipeline must slice it into training-ready chunks while preserving spatial continuity. Overlapping tiles (typically 10–20% overlap) prevent boundary artifacts during convolutional inference. The sync workflow follows a strict sequence:</p>
-<ol>
-<li>Ingest raw raster to a staging bucket.</li>
-<li>Validate CRS and geotransform against project standards.</li>
-<li>Generate tiles and compute per-tile SHA-256 hashes.</li>
-<li>Cross-reference existing annotation layers to extract overlapping label polygons.</li>
-<li>Write a versioned manifest and update the registry pointer.</li>
-<li>Promote to production storage only after all checksums verify.</li>
-</ol>
-<p>If a sync job fails mid-stream, the pipeline should automatically quarantine partial artifacts and trigger a retry from the last verified checkpoint.</p>
-<h3 id="crs-alignment-annotation-topology-management" tabindex="-1"><a class="header-anchor" href="#crs-alignment-annotation-topology-management"><span aria-hidden="true" class="anchor-symbol">#</span></a> CRS Alignment &amp; Annotation Topology Management</h3>
-<p>Spatial misalignment is the most common cause of degraded model performance. Pipelines must enforce a canonical CRS for training (often a local projected system like UTM or a custom equal-area projection). During sync, all vector annotations are transformed to the canonical CRS using robust reprojection libraries. Topology validation checks for self-intersecting polygons, sliver geometries, and orphaned vertices. When annotation teams modify boundaries, the pipeline computes a diff against the previous version, logs the change, and updates the training manifest without requiring full re-annotation.</p>
-<h2 id="python-automation-patterns-tooling" tabindex="-1"><a class="header-anchor" href="#python-automation-patterns-tooling"><span aria-hidden="true" class="anchor-symbol">#</span></a> Python Automation Patterns &amp; Tooling</h2>
-<p>Python remains the lingua franca for geospatial ML automation. Below are production-tested patterns for versioning and sync operations.</p>
-<h3 id="deterministic-hashing-pipeline" tabindex="-1"><a class="header-anchor" href="#deterministic-hashing-pipeline"><span aria-hidden="true" class="anchor-symbol">#</span></a> Deterministic Hashing Pipeline</h3>
+      <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "Dataset Versioning & Spatial Data Sync for Geospatial AI/ML Pipelines",
+      "description": "Production-grade dataset versioning and spatial data sync for geospatial AI/ML pipelines: content-addressable hashing, atomic tiling manifests, CRS governance, and CI/CD integration patterns for reproducible training datasets.",
+      "datePublished": "2025-03-10",
+      "dateModified": "2026-06-24",
+      "author": {"@type": "Organization", "name": "Geospatial Annotation"},
+      "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "How to version control geospatial training datasets",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Configure object storage with a spatial registry"},
+        {"@type": "HowToStep", "position": 2, "name": "Implement content-addressable hashing for rasters and vectors"},
+        {"@type": "HowToStep", "position": 3, "name": "Generate and validate atomic tiling manifests"},
+        {"@type": "HowToStep", "position": 4, "name": "Enforce canonical CRS alignment across all layers"},
+        {"@type": "HowToStep", "position": 5, "name": "Wire validation into CI/CD gates"},
+        {"@type": "HowToStep", "position": 6, "name": "Implement rollback triggers for corrupted dataset states"}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why can't I use Git to version geospatial training data?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Git stores complete file snapshots and diffs against text. Multi-gigabyte GeoTIFFs and dense GeoJSON files bloat the pack file, slow every clone and pull, and produce merge conflicts that Git cannot resolve. Content-addressable tools like DVC decouple large spatial assets from the Git object store while keeping lineage metadata in the repo."}
+        },
+        {
+          "@type": "Question",
+          "name": "What hash function should I use for spatial tiles?",
+          "acceptedAnswer": {"@type": "Answer", "text": "SHA-256 over the pixel array, CRS string, and geotransform matrix — not the raw file bytes. GeoTIFFs embed volatile metadata blocks that GDAL utilities rewrite without changing pixel values, so hashing the file directly creates false version drift."}
+        },
+        {
+          "@type": "Question",
+          "name": "How do I prevent CRS drift between annotation layers and raster imagery?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Declare a canonical CRS for each project (typically a local projected system such as UTM). Enforce reprojection of all incoming vector annotations to that CRS during ingestion, and validate every tile's CRS against the project standard before it enters the versioned manifest."}
+        }
+      ]
+    }
+  ]
+}
+</script>
+<h1>Dataset Versioning &amp; Spatial Data Sync for Geospatial AI/ML Pipelines</h1>
+<p>Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop annotations. When training pipelines scale beyond proof-of-concept, the absence of rigorous dataset versioning and spatial data sync becomes the primary bottleneck to reproducibility, model stability, and deployment velocity. Spatial data scientists, ML engineers, and GIS annotation teams require infrastructure that treats <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems</a>, tiling schemes, and annotation geometries as first-class versioned entities — not afterthoughts attached to model checkpoints.</p>
+<p>This guide covers production-grade architectures, Python automation patterns, and operational protocols for synchronizing and versioning spatial training datasets. By treating geospatial assets with the same rigor as code, teams can eliminate silent data drift, accelerate annotation workflows, and guarantee that every model checkpoint maps to a deterministic, auditable dataset snapshot.</p>
+<hr>
+<h2 id="core-concepts-spatial-data-modalities-and-version-primitives" tabindex="-1"><a class="header-anchor" href="#core-concepts-spatial-data-modalities-and-version-primitives" aria-label="Permalink to section &quot;Core Concepts: Spatial Data Modalities and Version Primitives&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Concepts: Spatial Data Modalities and Version Primitives</h2>
+<p>Before choosing a versioning strategy, teams must understand what makes geospatial data structurally different from the file types standard DevOps tooling was designed for.</p>
+<p><strong>Raster assets</strong> — GeoTIFFs, Cloud-Optimized GeoTIFFs (COGs), HDF5 stacks, NetCDF archives — are multi-dimensional arrays anchored to the earth’s surface via a geotransform matrix and a <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a>. A single Sentinel-2 scene can exceed 1 GB per acquisition date. Tiling pipelines split these into overlapping patches (typically 256×256 or 512×512 pixels), and every tile inherits the parent’s spatial metadata.</p>
+<p><strong>Vector annotation layers</strong> — GeoJSON, Shapefile, FlatGeobuf, GeoParquet — encode geometries as coordinate sequences. A polygon’s identity does not change when an annotator adjusts one vertex, but its SHA-256 hash does. <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI label taxonomies</a> for aerial imagery is the upstream task that determines how these geometries are classified and which geometry type (polygon vs bounding box) the annotation team produces.</p>
+<p><strong>Version primitives</strong> in spatial pipelines are not files — they are tuples of <code class="inline-code">(pixel_array, crs_string, geotransform, annotation_ids)</code>. Any change to any element of that tuple constitutes a new dataset version. This distinction drives every architectural choice below.</p>
+<hr>
+<h2 id="dataset-versioning-pipeline-architecture-overview" tabindex="-1"><a class="header-anchor" href="#dataset-versioning-pipeline-architecture-overview" aria-label="Permalink to section &quot;Dataset Versioning Pipeline: Architecture Overview&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Dataset Versioning Pipeline: Architecture Overview</h2>
+<p>A production spatial versioning architecture has four interconnected layers. Each must operate deterministically to ensure that model training is fully reproducible across distributed compute environments.</p>
+<svg viewBox="0 0 780 320" role="img" aria-label="Dataset versioning pipeline: four layers from object storage through version control, manifest engine, and compute data loader" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+  <title>Dataset Versioning Pipeline Architecture</title>
+  <desc>Four-layer architecture diagram showing data flowing from Object Storage and Spatial Registry, through Content-Addressable Version Control, into the Atomic Manifest Engine, and finally the Compute-Aware Data Loader for PyTorch/TensorFlow/JAX.</desc>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
+    </marker>
+  </defs>
+  <!-- Layer boxes -->
+  <rect x="20" y="30" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="100" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Object Storage</text>
+  <text x="100" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">S3 / GCS / Azure Blob</text>
+  <text x="100" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Spatial Registry (PG/SQLite)</text>
+  <rect x="210" y="30" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="290" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Content-Addressable</text>
+  <text x="290" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Version Control (DVC)</text>
+  <text x="290" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">SHA-256 per tile+CRS</text>
+  <rect x="400" y="30" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="480" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Atomic Manifest</text>
+  <text x="480" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Engine (JSON/Parquet)</text>
+  <text x="480" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Checksum + bbox index</text>
+  <rect x="590" y="30" width="170" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="675" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Compute Data Loader</text>
+  <text x="675" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">PyTorch / TF / JAX</text>
+  <text x="675" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">On-the-fly CRS warp</text>
+  <!-- Arrows between layers -->
+  <line x1="182" y1="70" x2="207" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="372" y1="70" x2="397" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="562" y1="70" x2="587" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <!-- Data flow stages below -->
+  <text x="390" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor" opacity="0.7">DATA FLOW STAGES</text>
+  <rect x="20" y="170" width="100" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="70" y="193" text-anchor="middle" font-size="10" fill="currentColor">Ingest raster</text>
+  <rect x="138" y="170" width="100" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="188" y="193" text-anchor="middle" font-size="10" fill="currentColor">Validate CRS</text>
+  <rect x="256" y="170" width="100" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="306" y="193" text-anchor="middle" font-size="10" fill="currentColor">Tile + hash</text>
+  <rect x="374" y="170" width="110" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="429" y="193" text-anchor="middle" font-size="10" fill="currentColor">Overlay labels</text>
+  <rect x="502" y="170" width="110" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="557" y="193" text-anchor="middle" font-size="10" fill="currentColor">Write manifest</text>
+  <rect x="630" y="170" width="110" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="685" y="193" text-anchor="middle" font-size="10" fill="currentColor">Promote version</text>
+  <!-- Stage arrows -->
+  <line x1="122" y1="188" x2="135" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <line x1="240" y1="188" x2="253" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <line x1="358" y1="188" x2="371" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <line x1="486" y1="188" x2="499" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <line x1="614" y1="188" x2="627" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <!-- Feedback arrow -->
+  <path d="M685,208 Q685,270 390,270 Q95,270 70,208" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arr)" opacity="0.4"/>
+  <text x="390" y="290" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">training feedback loop — metric regression triggers rollback</text>
+</svg>
+<h3 id="layer-1-object-storage-and-spatial-registry" tabindex="-1"><a class="header-anchor" href="#layer-1-object-storage-and-spatial-registry" aria-label="Permalink to section &quot;Layer 1: Object Storage and Spatial Registry&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Layer 1: Object Storage and Spatial Registry</h3>
+<p>Cloud-native storage (AWS S3, Google Cloud Storage, Azure Blob) serves as the immutable backing store. Datasets follow a hierarchical path: <code class="inline-code">/{project_id}/{dataset_name}/{version_hash}/{layer_type}/</code>. A lightweight metadata registry — PostgreSQL, SQLite, or a managed catalog like AWS Glue — tracks spatial extents, <code class="inline-code">EPSG</code> codes, acquisition timestamps, sensor type, and dependency graphs. This registry is the single source of truth for pipeline orchestration and must be queried before any training run begins.</p>
+<h3 id="layer-2-content-addressable-version-control" tabindex="-1"><a class="header-anchor" href="#layer-2-content-addressable-version-control" aria-label="Permalink to section &quot;Layer 2: Content-Addressable Version Control&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Layer 2: Content-Addressable Version Control</h3>
+<p>Instead of tracking file modifications by timestamp, spatial pipelines use cryptographic hashes (SHA-256) derived from pixel arrays, CRS metadata, and tiling configurations. When a single tile or annotation vertex changes, only the affected hash updates, triggering a delta sync rather than a full dataset re-upload. <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for geospatial training data</a> provides the canonical migration path from ad-hoc scripts to structured DVC pipelines that bridge Git workflows with heavy spatial assets.</p>
+<h3 id="layer-3-atomic-sync-and-tiling-manifest-engine" tabindex="-1"><a class="header-anchor" href="#layer-3-atomic-sync-and-tiling-manifest-engine" aria-label="Permalink to section &quot;Layer 3: Atomic Sync and Tiling Manifest Engine&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Layer 3: Atomic Sync and Tiling Manifest Engine</h3>
+<p>Spatial sync operations must be atomic. Partial uploads or interrupted tile generation should never leave a dataset in a corrupted state. A manifest engine generates JSON or Parquet files that map each tile to its bounding box, parent raster, and associated annotation IDs. During sync, the engine validates checksums against the registry before promoting a new version to the <code class="inline-code">latest</code> pointer. Failed sync jobs quarantine partial artifacts and restart from the last verified checkpoint.</p>
+<h3 id="layer-4-compute-aware-data-loading" tabindex="-1"><a class="header-anchor" href="#layer-4-compute-aware-data-loading" aria-label="Permalink to section &quot;Layer 4: Compute-Aware Data Loading&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Layer 4: Compute-Aware Data Loading</h3>
+<p>The final layer interfaces with PyTorch, TensorFlow, or JAX. Custom data loaders read the versioned manifest, apply on-the-fly CRS transformations, and stream tiles into GPU memory. Decoupling storage from compute lets teams spin up ephemeral training clusters without duplicating terabytes of spatial data across regions.</p>
+<hr>
+<h2 id="per-stage-deep-dives" tabindex="-1"><a class="header-anchor" href="#per-stage-deep-dives" aria-label="Permalink to section &quot;Per-Stage Deep Dives&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Per-Stage Deep Dives</h2>
+<h3 id="stage-1-raster-ingestion" tabindex="-1"><a class="header-anchor" href="#stage-1-raster-ingestion" aria-label="Permalink to section &quot;Stage 1: Raster Ingestion&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 1: Raster Ingestion</h3>
+<p>Raw satellite imagery arrives as full-scene GeoTIFFs. The ingestion stage converts these to COG format, validates the coordinate reference system against the project’s canonical CRS, and records acquisition metadata in the registry.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -308,27 +399,75 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> hashlib
-<span class="token keyword">import</span> rasterio
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> rasterio
+<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>enums <span class="token keyword">import</span> Resampling
+<span class="token keyword">import</span> rio_cogeo<span class="token punctuation">.</span>cogeo <span class="token keyword">as</span> cogeo
+
+<span class="token keyword">def</span> <span class="token function">ingest_to_cog</span><span class="token punctuation">(</span>
+    src_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    dst_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    canonical_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">32637</span><span class="token punctuation">,</span>  <span class="token comment"># e.g. UTM zone 37N</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">dict</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Reproject to canonical CRS and convert to Cloud-Optimized GeoTIFF."""</span>
+    config <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">"GDAL_TIFF_INTERNAL_MASK"</span><span class="token punctuation">:</span> <span class="token boolean">True</span><span class="token punctuation">,</span> <span class="token string">"GDAL_TIFF_OVR_BLOCKSIZE"</span><span class="token punctuation">:</span> <span class="token number">512</span><span class="token punctuation">}</span>
+    <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span>Env<span class="token punctuation">(</span><span class="token operator">**</span>config<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>src_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+            <span class="token keyword">if</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> canonical_epsg<span class="token punctuation">:</span>
+                <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span>
+                    <span class="token string-interpolation"><span class="token string">f"CRS mismatch: got EPSG:</span><span class="token interpolation"><span class="token punctuation">{</span>src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string">, "</span></span>
+                    <span class="token string-interpolation"><span class="token string">f"expected EPSG:</span><span class="token interpolation"><span class="token punctuation">{</span>canonical_epsg<span class="token punctuation">}</span></span><span class="token string">"</span></span>
+                <span class="token punctuation">)</span>
+            meta <span class="token operator">=</span> <span class="token punctuation">{</span>
+                <span class="token string">"crs"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_string<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token string">"transform"</span><span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>transform<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token string">"width"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>width<span class="token punctuation">,</span>
+                <span class="token string">"height"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>height<span class="token punctuation">,</span>
+                <span class="token string">"count"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>count<span class="token punctuation">,</span>
+                <span class="token string">"dtype"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>dtypes<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            <span class="token punctuation">}</span>
+    cogeo<span class="token punctuation">.</span>cog_translate<span class="token punctuation">(</span>src_path<span class="token punctuation">,</span> dst_path<span class="token punctuation">,</span> cogeo<span class="token punctuation">.</span>cog_profiles<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"deflate"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> meta
+</code></pre>
+</div>
+<h3 id="stage-2-deterministic-tile-hashing" tabindex="-1"><a class="header-anchor" href="#stage-2-deterministic-tile-hashing" aria-label="Permalink to section &quot;Stage 2: Deterministic Tile Hashing&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 2: Deterministic Tile Hashing</h3>
+<p>GeoTIFFs contain volatile metadata blocks that GDAL utilities can rewrite without altering pixel values. Hashing raw file bytes therefore produces false version drift. The correct approach hashes only the semantic content:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> hashlib
 <span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">import</span> rasterio
 <span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> shape
 <span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> make_valid
 
 <span class="token keyword">def</span> <span class="token function">hash_raster_tile</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">str</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""SHA-256 over pixel data, CRS string, and geotransform — not raw file bytes."""</span>
     <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
-        <span class="token comment"># Hash only pixel data, CRS, and transform to ignore metadata drift</span>
-        data <span class="token operator">=</span> src<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
-        meta <span class="token operator">=</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_string<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string">|</span><span class="token interpolation"><span class="token punctuation">{</span>src<span class="token punctuation">.</span>transform<span class="token punctuation">}</span></span><span class="token string">"</span></span>
-        payload <span class="token operator">=</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>data<span class="token punctuation">.</span>tobytes<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string">|</span><span class="token interpolation"><span class="token punctuation">{</span>meta<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">.</span>encode<span class="token punctuation">(</span><span class="token string">"utf-8"</span><span class="token punctuation">)</span>
-        <span class="token keyword">return</span> hashlib<span class="token punctuation">.</span>sha256<span class="token punctuation">(</span>payload<span class="token punctuation">)</span><span class="token punctuation">.</span>hexdigest<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        data<span class="token punctuation">:</span> np<span class="token punctuation">.</span>ndarray <span class="token operator">=</span> src<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        crs_str <span class="token operator">=</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_string<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        transform_str <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span><span class="token builtin">list</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>transform<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    payload <span class="token operator">=</span> <span class="token punctuation">(</span>data<span class="token punctuation">.</span>tobytes<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> crs_str<span class="token punctuation">.</span>encode<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> transform_str<span class="token punctuation">.</span>encode<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> hashlib<span class="token punctuation">.</span>sha256<span class="token punctuation">(</span>payload<span class="token punctuation">)</span><span class="token punctuation">.</span>hexdigest<span class="token punctuation">(</span><span class="token punctuation">)</span>
 
-<span class="token keyword">def</span> <span class="token function">normalize_geojson_geometry</span><span class="token punctuation">(</span>geojson_feature<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">dict</span><span class="token punctuation">:</span>
-    geom <span class="token operator">=</span> shape<span class="token punctuation">(</span>geojson_feature<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+<span class="token keyword">def</span> <span class="token function">hash_vector_feature</span><span class="token punctuation">(</span>feature<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">str</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Normalize geometry before hashing to eliminate vertex-order false positives."""</span>
+    geom <span class="token operator">=</span> shape<span class="token punctuation">(</span>feature<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
     valid_geom <span class="token operator">=</span> make_valid<span class="token punctuation">(</span>geom<span class="token punctuation">)</span>
-    <span class="token keyword">return</span> <span class="token punctuation">{</span><span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"Feature"</span><span class="token punctuation">,</span> <span class="token string">"geometry"</span><span class="token punctuation">:</span> valid_geom<span class="token punctuation">.</span>__geo_interface__<span class="token punctuation">,</span> <span class="token string">"properties"</span><span class="token punctuation">:</span> geojson_feature<span class="token punctuation">[</span><span class="token string">"properties"</span><span class="token punctuation">]</span><span class="token punctuation">}</span>
+    <span class="token comment"># Canonical WKT is vertex-order stable for simple geometries</span>
+    payload <span class="token operator">=</span> <span class="token punctuation">(</span>valid_geom<span class="token punctuation">.</span>wkt <span class="token operator">+</span> <span class="token builtin">str</span><span class="token punctuation">(</span><span class="token builtin">sorted</span><span class="token punctuation">(</span>feature<span class="token punctuation">[</span><span class="token string">"properties"</span><span class="token punctuation">]</span><span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span>encode<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> hashlib<span class="token punctuation">.</span>sha256<span class="token punctuation">(</span>payload<span class="token punctuation">)</span><span class="token punctuation">.</span>hexdigest<span class="token punctuation">(</span><span class="token punctuation">)</span>
 </code></pre>
 </div>
-<h3 id="manifest-generation-sync-validation" tabindex="-1"><a class="header-anchor" href="#manifest-generation-sync-validation"><span aria-hidden="true" class="anchor-symbol">#</span></a> Manifest Generation &amp; Sync Validation</h3>
+<p><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking annotation changes with SHA hashing</a> covers topology normalization in depth — including how to handle multi-polygon dissolves and floating-point precision across annotator workstations.</p>
+<h3 id="stage-3-manifest-generation-and-validation" tabindex="-1"><a class="header-anchor" href="#stage-3-manifest-generation-and-validation" aria-label="Permalink to section &quot;Stage 3: Manifest Generation and Validation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 3: Manifest Generation and Validation</h3>
+<p>The manifest is the authoritative record of a dataset version. It maps every tile to its bounding box, hash, and overlapping annotation IDs:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -339,50 +478,231 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> json
-<span class="token keyword">import</span> os
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> json
 <span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+<span class="token keyword">from</span> typing <span class="token keyword">import</span> Any
 
-<span class="token keyword">def</span> <span class="token function">generate_manifest</span><span class="token punctuation">(</span>tile_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> version<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">dict</span><span class="token punctuation">:</span>
-    manifest <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">"version"</span><span class="token punctuation">:</span> version<span class="token punctuation">,</span> <span class="token string">"tiles"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token string">"crs"</span><span class="token punctuation">:</span> <span class="token boolean">None</span><span class="token punctuation">}</span>
-    <span class="token keyword">for</span> tile_path <span class="token keyword">in</span> Path<span class="token punctuation">(</span>tile_dir<span class="token punctuation">)</span><span class="token punctuation">.</span>glob<span class="token punctuation">(</span><span class="token string">"*.tif"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+<span class="token keyword">def</span> <span class="token function">generate_manifest</span><span class="token punctuation">(</span>tile_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> version<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> crs<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">|</span> <span class="token boolean">None</span> <span class="token operator">=</span> <span class="token boolean">None</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    manifest<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">"version"</span><span class="token punctuation">:</span> version<span class="token punctuation">,</span> <span class="token string">"crs"</span><span class="token punctuation">:</span> crs<span class="token punctuation">,</span> <span class="token string">"tiles"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">}</span>
+    <span class="token keyword">for</span> tile_path <span class="token keyword">in</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>Path<span class="token punctuation">(</span>tile_dir<span class="token punctuation">)</span><span class="token punctuation">.</span>glob<span class="token punctuation">(</span><span class="token string">"*.tif"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
         <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
             manifest<span class="token punctuation">[</span><span class="token string">"crs"</span><span class="token punctuation">]</span> <span class="token operator">=</span> manifest<span class="token punctuation">[</span><span class="token string">"crs"</span><span class="token punctuation">]</span> <span class="token keyword">or</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_string<span class="token punctuation">(</span><span class="token punctuation">)</span>
             manifest<span class="token punctuation">[</span><span class="token string">"tiles"</span><span class="token punctuation">]</span><span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span>
                 <span class="token string">"filename"</span><span class="token punctuation">:</span> tile_path<span class="token punctuation">.</span>name<span class="token punctuation">,</span>
                 <span class="token string">"bbox"</span><span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>bounds<span class="token punctuation">)</span><span class="token punctuation">,</span>
-                <span class="token string">"hash"</span><span class="token punctuation">:</span> hash_raster_tile<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                <span class="token string">"hash"</span><span class="token punctuation">:</span> hash_raster_tile<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token string">"epsg"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
             <span class="token punctuation">}</span><span class="token punctuation">)</span>
     <span class="token keyword">return</span> manifest
 
-<span class="token keyword">def</span> <span class="token function">validate_sync</span><span class="token punctuation">(</span>manifest<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">,</span> target_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">bool</span><span class="token punctuation">:</span>
+<span class="token keyword">def</span> <span class="token function">validate_manifest</span><span class="token punctuation">(</span>manifest<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">,</span> target_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Return list of invalid tile filenames (empty list = all pass)."""</span>
+    failures<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
     <span class="token keyword">for</span> tile <span class="token keyword">in</span> manifest<span class="token punctuation">[</span><span class="token string">"tiles"</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
-        path <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>join<span class="token punctuation">(</span>target_dir<span class="token punctuation">,</span> tile<span class="token punctuation">[</span><span class="token string">"filename"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
-        <span class="token keyword">if</span> <span class="token keyword">not</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>exists<span class="token punctuation">(</span>path<span class="token punctuation">)</span> <span class="token keyword">or</span> hash_raster_tile<span class="token punctuation">(</span>path<span class="token punctuation">)</span> <span class="token operator">!=</span> tile<span class="token punctuation">[</span><span class="token string">"hash"</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
-            <span class="token keyword">return</span> <span class="token boolean">False</span>
-    <span class="token keyword">return</span> <span class="token boolean">True</span>
+        path <span class="token operator">=</span> Path<span class="token punctuation">(</span>target_dir<span class="token punctuation">)</span> <span class="token operator">/</span> tile<span class="token punctuation">[</span><span class="token string">"filename"</span><span class="token punctuation">]</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> path<span class="token punctuation">.</span>exists<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">or</span> hash_raster_tile<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">!=</span> tile<span class="token punctuation">[</span><span class="token string">"hash"</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+            failures<span class="token punctuation">.</span>append<span class="token punctuation">(</span>tile<span class="token punctuation">[</span><span class="token string">"filename"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> failures
 </code></pre>
 </div>
-<p>These patterns form the backbone of automated sync jobs. When integrated with orchestration tools like Apache Airflow or Prefect, they enable scheduled dataset refreshes, automated retraining triggers, and strict version pinning for compliance audits.</p>
-<h2 id="operational-protocols-governance" tabindex="-1"><a class="header-anchor" href="#operational-protocols-governance"><span aria-hidden="true" class="anchor-symbol">#</span></a> Operational Protocols &amp; Governance</h2>
-<p>Versioning and sync infrastructure only delivers value when paired with strict operational protocols. Geospatial ML teams should implement the following governance practices:</p>
-<ul>
-<li><strong>Immutable Version Pointers:</strong> Never overwrite a versioned dataset. Use symbolic links or registry pointers (<code class="inline-code">latest</code>, <code class="inline-code">stable</code>, <code class="inline-code">v2.1.4</code>) to reference specific hashes. This guarantees that historical model checkpoints can be reproduced exactly.</li>
-<li><strong>Access Control &amp; Audit Logging:</strong> Restrict write access to the sync orchestration service. All read/write operations should log to an immutable audit trail (e.g., CloudTrail, Datadog, or ELK stack) with user ID, timestamp, and dataset hash.</li>
-<li><strong>Automated Rollback Triggers:</strong> When validation metrics drop below a defined threshold or a sync job produces corrupted manifests, the pipeline should automatically revert to the previous stable version. <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a> provides step-by-step recovery patterns for both object storage and training cluster states.</li>
-<li><strong>Metadata Preservation Across Iterations:</strong> Spatial datasets carry critical provenance data: sensor type, cloud cover percentage, acquisition angle, and annotation confidence scores. Stripping this metadata during sync breaks downstream analysis. <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> demonstrates how to embed provenance directly into Parquet manifests and GeoTIFF sidecar files.</li>
-<li><strong>CI/CD Integration for Spatial Data:</strong> Treat dataset sync as a deployment step. Use GitHub Actions or GitLab CI to validate manifests, run topology checks, and block merges if CRS mismatches or hash collisions are detected. Python’s built-in <a href="https://docs.python.org/3/library/hashlib.html">hashlib</a> and rasterio validation routines can be wrapped into pre-commit hooks to catch spatial drift before it reaches production.</li>
+<h3 id="stage-4-annotation-overlay-and-label-extraction" tabindex="-1"><a class="header-anchor" href="#stage-4-annotation-overlay-and-label-extraction" aria-label="Permalink to section &quot;Stage 4: Annotation Overlay and Label Extraction&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 4: Annotation Overlay and Label Extraction</h3>
+<p>After tiles are generated, the pipeline extracts annotation polygons that spatially intersect each tile’s bounding box. <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence scoring for geospatial labels</a> determines which annotations are included in training versus held out for review, and those scores must be preserved in the manifest alongside geometry hashes.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> box
+
+<span class="token keyword">def</span> <span class="token function">extract_tile_labels</span><span class="token punctuation">(</span>
+    tile_bbox<span class="token punctuation">:</span> <span class="token builtin">tuple</span><span class="token punctuation">[</span><span class="token builtin">float</span><span class="token punctuation">,</span> <span class="token builtin">float</span><span class="token punctuation">,</span> <span class="token builtin">float</span><span class="token punctuation">,</span> <span class="token builtin">float</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    label_gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span>
+    min_confidence<span class="token punctuation">:</span> <span class="token builtin">float</span> <span class="token operator">=</span> <span class="token number">0.7</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Clip annotation GeoDataFrame to tile extent, filtering by confidence threshold."""</span>
+    tile_geom <span class="token operator">=</span> box<span class="token punctuation">(</span><span class="token operator">*</span>tile_bbox<span class="token punctuation">)</span>
+    clipped <span class="token operator">=</span> label_gdf<span class="token punctuation">[</span>
+        label_gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>intersects<span class="token punctuation">(</span>tile_geom<span class="token punctuation">)</span>
+        <span class="token operator">&amp;</span> <span class="token punctuation">(</span>label_gdf<span class="token punctuation">[</span><span class="token string">"confidence"</span><span class="token punctuation">]</span> <span class="token operator">>=</span> min_confidence<span class="token punctuation">)</span>
+    <span class="token punctuation">]</span><span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    clipped<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> clipped<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>intersection<span class="token punctuation">(</span>tile_geom<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> clipped<span class="token punctuation">[</span>clipped<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_valid <span class="token operator">&amp;</span> <span class="token operator">~</span>clipped<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_empty<span class="token punctuation">]</span>
+</code></pre>
+</div>
+<h3 id="stage-5-version-promotion-and-registry-update" tabindex="-1"><a class="header-anchor" href="#stage-5-version-promotion-and-registry-update" aria-label="Permalink to section &quot;Stage 5: Version Promotion and Registry Update&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 5: Version Promotion and Registry Update</h3>
+<p>Promotion is a two-step atomic operation: first, write the manifest to object storage; second, update the registry pointer. If either step fails, the pipeline rolls back to the previous pointer:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> boto3
+<span class="token keyword">import</span> json
+<span class="token keyword">import</span> psycopg2
+<span class="token keyword">from</span> contextlib <span class="token keyword">import</span> contextmanager
+
+<span class="token keyword">def</span> <span class="token function">promote_version</span><span class="token punctuation">(</span>
+    manifest<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">,</span>
+    bucket<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    project_id<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    dataset_name<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    db_conn_str<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">str</span><span class="token punctuation">:</span>
+    version_hash <span class="token operator">=</span> manifest<span class="token punctuation">[</span><span class="token string">"version"</span><span class="token punctuation">]</span>
+    key <span class="token operator">=</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>project_id<span class="token punctuation">}</span></span><span class="token string">/</span><span class="token interpolation"><span class="token punctuation">{</span>dataset_name<span class="token punctuation">}</span></span><span class="token string">/</span><span class="token interpolation"><span class="token punctuation">{</span>version_hash<span class="token punctuation">}</span></span><span class="token string">/manifest.json"</span></span>
+    s3 <span class="token operator">=</span> boto3<span class="token punctuation">.</span>client<span class="token punctuation">(</span><span class="token string">"s3"</span><span class="token punctuation">)</span>
+    s3<span class="token punctuation">.</span>put_object<span class="token punctuation">(</span>Bucket<span class="token operator">=</span>bucket<span class="token punctuation">,</span> Key<span class="token operator">=</span>key<span class="token punctuation">,</span> Body<span class="token operator">=</span>json<span class="token punctuation">.</span>dumps<span class="token punctuation">(</span>manifest<span class="token punctuation">)</span><span class="token punctuation">,</span> ContentType<span class="token operator">=</span><span class="token string">"application/json"</span><span class="token punctuation">)</span>
+    <span class="token keyword">with</span> psycopg2<span class="token punctuation">.</span>connect<span class="token punctuation">(</span>db_conn_str<span class="token punctuation">)</span> <span class="token keyword">as</span> conn<span class="token punctuation">:</span>
+        <span class="token keyword">with</span> conn<span class="token punctuation">.</span>cursor<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">as</span> cur<span class="token punctuation">:</span>
+            cur<span class="token punctuation">.</span>execute<span class="token punctuation">(</span>
+                <span class="token string">"UPDATE dataset_versions SET latest_hash = %s WHERE dataset_name = %s"</span><span class="token punctuation">,</span>
+                <span class="token punctuation">(</span>version_hash<span class="token punctuation">,</span> dataset_name<span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">)</span>
+    <span class="token keyword">return</span> key
+</code></pre>
+</div>
+<hr>
+<h2 id="spatial-specific-gotchas-and-failure-modes" tabindex="-1"><a class="header-anchor" href="#spatial-specific-gotchas-and-failure-modes" aria-label="Permalink to section &quot;Spatial-Specific Gotchas and Failure Modes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial-Specific Gotchas and Failure Modes</h2>
+<p>Standard DevOps pipelines do not surface these failure patterns — they are unique to geospatial data engineering.</p>
+<p><strong>CRS drift across annotation layers.</strong> Annotations created in <code class="inline-code">EPSG:4326</code> (geographic, degrees) silently misalign with imagery stored in <code class="inline-code">EPSG:3857</code> (Web Mercator) or a local UTM zone. At mid-latitudes, a 1-metre pixel in UTM corresponds to roughly 0.00001 degrees, but the mapping is non-linear. Without enforcing a single canonical CRS at ingestion, pixel-to-polygon offsets compound silently until validation IoU metrics collapse. Always enforce reprojection at the boundary of the ingestion stage, not during training.</p>
+<p><strong>Tiling scheme mismatch between model versions.</strong> Changing from 256×256 to 512×512 tiles, or shifting the tile grid origin by one pixel, invalidates all existing manifests even though the underlying imagery is identical. Record the tile grid parameters (size, overlap percentage, origin offset, and CRS) as first-class fields in the manifest rather than as implicit pipeline defaults.</p>
+<p><strong>Topology corruption in annotation updates.</strong> GIS operators frequently correct polygon boundaries in QGIS or Label Studio. Operations like snapping, merging, or splitting can introduce self-intersecting rings, sliver polygons, or orphaned vertices. These do not raise errors during export but cause <code class="inline-code">shapely</code> to return <code class="inline-code">None</code> area values during training data loading. Always run <code class="inline-code">make_valid()</code> and area-threshold filters after any annotation update is ingested.</p>
+<p><strong>Multi-temporal layer misalignment.</strong> Satellite imagery, digital elevation models (DEMs), SAR backscatter, and vector label layers update at different acquisition cadences. A training batch that pairs a summer optical image with a winter DEM and annotations from a different season can produce hallucinated feature correlations. The manifest must record the acquisition timestamp of every layer and include a multi-temporal alignment check as a sync prerequisite.</p>
+<p><strong>Silent float32 vs float64 rounding in hashes.</strong> <code class="inline-code">rasterio</code> reads pixel values as <code class="inline-code">float32</code> by default on most datasets, but some export pipelines produce <code class="inline-code">float64</code>. Two tiles with identical visual content but different dtypes produce different SHA-256 hashes, causing the versioning system to treat them as unrelated. Normalize to a declared dtype at ingestion and record it in the manifest.</p>
+<p><strong>GeoJSON coordinate precision inflation.</strong> Annotation export tools sometimes serialize coordinates to 15 decimal places (double precision), while others round to 6. When annotations from different platforms are merged, the same physical polygon gets two different hashes. Apply a coordinate precision normalization step (6 decimal places is sub-millimetre for geographic coordinates) before hashing vector features.</p>
+<hr>
+<h2 id="cicd-integration-patterns" tabindex="-1"><a class="header-anchor" href="#cicd-integration-patterns" aria-label="Permalink to section &quot;CI/CD Integration Patterns&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> CI/CD Integration Patterns</h2>
+<p>Dataset sync should be treated as a deployment step, gated by the same quality controls as code merges.</p>
+<h3 id="github-actions-manifest-validation-gate" tabindex="-1"><a class="header-anchor" href="#github-actions-manifest-validation-gate" aria-label="Permalink to section &quot;GitHub Actions: Manifest Validation Gate&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> GitHub Actions: Manifest Validation Gate</h3>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">yaml</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-yaml"><span class="token key atrule">name</span><span class="token punctuation">:</span> Validate spatial dataset manifest
+<span class="token key atrule">on</span><span class="token punctuation">:</span>
+  <span class="token key atrule">pull_request</span><span class="token punctuation">:</span>
+    <span class="token key atrule">paths</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token string">'manifests/**'</span>
+      <span class="token punctuation">-</span> <span class="token string">'pipelines/sync*.py'</span>
+
+<span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+  <span class="token key atrule">validate-manifest</span><span class="token punctuation">:</span>
+    <span class="token key atrule">runs-on</span><span class="token punctuation">:</span> ubuntu<span class="token punctuation">-</span>latest
+    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/checkout@v4
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Set up Python
+        <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/setup<span class="token punctuation">-</span>python@v5
+        <span class="token key atrule">with</span><span class="token punctuation">:</span>
+          <span class="token key atrule">python-version</span><span class="token punctuation">:</span> <span class="token string">"3.11"</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Install dependencies
+        <span class="token key atrule">run</span><span class="token punctuation">:</span> pip install rasterio==1.3.10 shapely==2.0.4 geopandas==0.14.3 pyproj==3.6.1
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Validate tile checksums
+        <span class="token key atrule">run</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          python - &lt;&lt;'EOF'
+          import json, sys, pathlib
+          from pipelines.versioning import validate_manifest
+          manifest = json.loads(pathlib.Path("manifests/latest.json").read_text())
+          failures = validate_manifest(manifest, "tiles/")
+          if failures:
+              print(f"FAIL: {len(failures)} tiles failed checksum: {failures[:5]}")
+              sys.exit(1)
+          print(f"PASS: {len(manifest['tiles'])} tiles verified")
+          EOF</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> CRS uniformity check
+        <span class="token key atrule">run</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          python - &lt;&lt;'EOF'
+          import json, pathlib
+          manifest = json.loads(pathlib.Path("manifests/latest.json").read_text())
+          epsgs = {t["epsg"] for t in manifest["tiles"]}
+          assert len(epsgs) == 1, f"Multiple EPSG codes in manifest: {epsgs}"
+          print(f"PASS: all tiles in EPSG:{epsgs.pop()}")
+          EOF</span>
+</code></pre>
+</div>
+<h3 id="dvc-pipeline-hook-for-automated-snapshots" tabindex="-1"><a class="header-anchor" href="#dvc-pipeline-hook-for-automated-snapshots" aria-label="Permalink to section &quot;DVC Pipeline Hook for Automated Snapshots&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> DVC Pipeline Hook for Automated Snapshots</h3>
+<p><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">Using DVC pipelines for automated dataset snapshots</a> integrates directly with this CI/CD pattern. A <code class="inline-code">dvc.yaml</code> stage runs <code class="inline-code">generate_manifest</code> after every tile job, and <code class="inline-code">dvc repro</code> enforces that no training run can proceed without a valid, committed manifest.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">yaml</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-yaml"><span class="token comment"># dvc.yaml</span>
+<span class="token key atrule">stages</span><span class="token punctuation">:</span>
+  <span class="token key atrule">tile_and_hash</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cmd</span><span class="token punctuation">:</span> python pipelines/tile_pipeline.py <span class="token punctuation">-</span><span class="token punctuation">-</span>input data/raw/ <span class="token punctuation">-</span><span class="token punctuation">-</span>output data/tiles/ <span class="token punctuation">-</span><span class="token punctuation">-</span>manifest manifests/latest.json
+    <span class="token key atrule">deps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> data/raw/
+      <span class="token punctuation">-</span> pipelines/tile_pipeline.py
+    <span class="token key atrule">outs</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> data/tiles/
+      <span class="token punctuation">-</span> manifests/latest.json
+  <span class="token key atrule">validate</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cmd</span><span class="token punctuation">:</span> python pipelines/validate_sync.py <span class="token punctuation">-</span><span class="token punctuation">-</span>manifest manifests/latest.json <span class="token punctuation">-</span><span class="token punctuation">-</span>tile<span class="token punctuation">-</span>dir data/tiles/
+    <span class="token key atrule">deps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> manifests/latest.json
+      <span class="token punctuation">-</span> data/tiles/
+      <span class="token punctuation">-</span> pipelines/validate_sync.py
+</code></pre>
+</div>
+<h3 id="apache-airflow-for-scheduled-dataset-refreshes" tabindex="-1"><a class="header-anchor" href="#apache-airflow-for-scheduled-dataset-refreshes" aria-label="Permalink to section &quot;Apache Airflow for Scheduled Dataset Refreshes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Apache Airflow for Scheduled Dataset Refreshes</h3>
+<p>When new satellite imagery is delivered on a fixed cadence, an Airflow DAG orchestrates the full ingestion → tile → hash → manifest → promote sequence. The <code class="inline-code">validate_sync</code> task is gated by a short-circuit operator: if any checksum fails, the DAG alerts on Slack and halts before promoting to <code class="inline-code">latest</code>.</p>
+<hr>
+<h2 id="operational-governance" tabindex="-1"><a class="header-anchor" href="#operational-governance" aria-label="Permalink to section &quot;Operational Governance&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Operational Governance</h2>
+<p>Versioning infrastructure only delivers value when paired with strict operational protocols.</p>
+<p><strong>Immutable version pointers.</strong> Never overwrite a versioned dataset. Use symbolic registry pointers (<code class="inline-code">latest</code>, <code class="inline-code">stable</code>, <code class="inline-code">v2.1.4</code>) to reference specific hashes. This guarantees that historical model checkpoints can be reproduced exactly months or years later.</p>
+<p><strong>Access control and audit logging.</strong> Restrict write access to the sync orchestration service account. All read/write operations log to an immutable audit trail (CloudTrail, Datadog, or ELK stack) with user ID, timestamp, and dataset hash. Any manual write to a versioned path should trigger an alert.</p>
+<p><strong>Automated rollback triggers.</strong> When validation metrics drop below a defined threshold or a sync job produces corrupted manifests, the pipeline should automatically revert to the previous stable version. <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback strategies for corrupted spatial datasets</a> details step-by-step recovery patterns for both object storage and training cluster states — including how to identify the last clean version hash from the registry.</p>
+<p><strong>Metadata preservation across iterations.</strong> Spatial datasets carry critical provenance: sensor type, cloud cover percentage, acquisition angle, and per-annotation confidence scores. Stripping this metadata during sync breaks downstream quality analysis. <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving metadata across dataset versions</a> demonstrates how to embed provenance directly into Parquet manifests and GeoTIFF sidecar files so that every training sample traces back to its source observation.</p>
+<p><strong>Pre-commit hooks for spatial drift.</strong> Python’s built-in <code class="inline-code">hashlib</code> and <code class="inline-code">rasterio</code> validation routines can be wrapped into pre-commit hooks to catch CRS mismatches or topology errors before they reach the shared data store.</p>
+<hr>
+<h2 id="implementation-checklist" tabindex="-1"><a class="header-anchor" href="#implementation-checklist" aria-label="Permalink to section &quot;Implementation Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Implementation Checklist</h2>
+<p>The following gates define a production-ready spatial versioning system. Incomplete gates should block model training runs.</p>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6655604"><label class="task-list-item-label" for="task-item-6655604"> Canonical CRS declared per project; all incoming layers validated and reprojected at ingestion boundary</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4063803"> SHA-256 hash computed over <code class="inline-code">(pixel_array, crs_string, geotransform)</code><label class="task-list-item-label" for="task-item-4063803"> SHA-256 hash computed over `(pixel_array, crs_string, geotransform)` — not raw file bytes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9364483"><label class="task-list-item-label" for="task-item-9364483"> Tiling parameters (size, overlap, grid origin, CRS) recorded as explicit manifest fields</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7162691"><label class="task-list-item-label" for="task-item-7162691"> Manifest generated and committed to version control before any training run</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9694239"> <code class="inline-code">validate_manifest()</code><label class="task-list-item-label" for="task-item-9694239"> `validate_manifest()` passes on 100% of tiles in CI before merging pipeline changes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5714916"> Topology validation (<code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-5714916"> Topology validation (`make_valid()` + area threshold) runs on every annotation ingest</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2532403"><label class="task-list-item-label" for="task-item-2532403"> Multi-temporal alignment check: acquisition timestamps for all layers within declared tolerance</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1747113"><label class="task-list-item-label" for="task-item-1747113"> Coordinate precision normalized to 6 decimal places before hashing vector features</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9179577"><label class="task-list-item-label" for="task-item-9179577"> Immutable version pointers in registry; no overwrite of versioned paths in object storage</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7554343"><label class="task-list-item-label" for="task-item-7554343"> Automated rollback configured: metric regression or manifest corruption reverts to previous stable hash</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3587132"><label class="task-list-item-label" for="task-item-3587132"> Audit log captures every read/write with user, timestamp, and dataset hash</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3813646"> DVC or Airflow pipeline enforces that training is gated on <code class="inline-code">validate_manifest</code><label class="task-list-item-label" for="task-item-3813646"> DVC or Airflow pipeline enforces that training is gated on `validate_manifest` success</label></li>
 </ul>
-<h2 id="future-proofing-spatial-training-data" tabindex="-1"><a class="header-anchor" href="#future-proofing-spatial-training-data"><span aria-hidden="true" class="anchor-symbol">#</span></a> Future-Proofing Spatial Training Data</h2>
-<p>As geospatial AI moves toward foundation models and multi-temporal forecasting, dataset versioning must evolve from static snapshots to continuous streaming architectures. Emerging patterns include:</p>
+<hr>
+<h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
 <ul>
-<li><strong>Delta-Encoded Syncs:</strong> Transmit only changed tiles or annotation vertices using binary diff formats, reducing sync latency for global-scale datasets.</li>
-<li><strong>Vector Tile Versioning:</strong> Adopt OGC API-Tiles standards to serve annotation layers as versioned vector tiles, enabling real-time visualization in annotation UIs.</li>
-<li><strong>Federated Dataset Registries:</strong> Cross-organization ML initiatives require decentralized version control. Content-addressable identifiers and IPFS-like storage layers enable secure, auditable sharing without centralizing petabytes of raster data.</li>
+<li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> — migrate from ad-hoc sync scripts to DVC pipelines with S3/GCS remotes</li>
+<li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — normalize and hash complex label geometries for deterministic drift detection</li>
+<li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a> — recover from corrupted COG exports, registry pointer failures, and partial sync states</li>
+<li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> — embed sensor provenance, confidence scores, and acquisition context into Parquet manifests</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — foundational CRS contracts that every versioning pipeline depends on</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/">Geospatial Annotation Fundamentals &amp; Architecture</a> — the upstream architecture that produces the annotation layers this pipeline versions</li>
 </ul>
-<p>Implementing these patterns early prevents technical debt from accumulating as annotation teams grow and model architectures become more compute-intensive. The goal is not merely to store data, but to create a deterministic, queryable lineage that connects every pixel and polygon to a specific model checkpoint.</p>
-<h2 id="conclusion" tabindex="-1"><a class="header-anchor" href="#conclusion"><span aria-hidden="true" class="anchor-symbol">#</span></a> Conclusion</h2>
-<p><strong>Dataset Versioning &amp; Spatial Data Sync</strong> is not an optional overhead—it is the foundational control plane for production geospatial AI. By decoupling storage from version control, enforcing content-addressable hashing, and automating atomic sync operations, teams eliminate the silent failures that plague spatial ML pipelines. Python automation, strict CRS governance, and immutable manifests transform chaotic annotation workflows into reproducible engineering systems. As datasets grow in size and complexity, investing in robust versioning infrastructure pays compounding dividends in model stability, team velocity, and audit readiness.</p>
 
 
       
@@ -392,22 +712,22 @@
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">
               <div class="title">Implementing DVC for Geospatial Training Data</div>
-              <div class="desc">Geospatial machine learning pipelines face unique versioning challenges that standard Git workflows cannot address. Satellite imagery, LiDAR point clouds, drone orthomosaics, and vector annotations routinely exceed repository size limits, carry complex coordinate reference systems (CRS), and require strict spatial alig</div>
+              <div class="desc">Geospatial ML pipelines fail in ways that generic data science tooling cannot anticipate. A satellite scene reprojected to the wrong datum, a batch of annotation GeoJSON files silently truncated to five decimal places, or an interrupted multipart upload to object storage — any of these can corrupt a training run while </div>
             </a>
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">
               <div class="title">Preserving Metadata Across Dataset Versions</div>
-              <div class="desc">Geospatial machine learning pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit</div>
+              <div class="desc">Geospatial ML pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving t</div>
             </a>
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">
               <div class="title">Rollback Strategies for Corrupted Spatial Datasets</div>
-              <div class="desc">Geospatial machine learning pipelines operate at the intersection of high-dimensional raster data, complex vector geometries, and iterative annotation workflows. A single corrupted tile, malformed coordinate reference system (CRS), or desynchronized annotation manifest can silently degrade model performance or trigger </div>
+              <div class="desc">A corrupted geospatial training dataset rarely announces itself. A malformed coordinate reference system embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation</div>
             </a>
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">
               <div class="title">Tracking Annotation Changes with SHA Hashing</div>
-              <div class="desc">Geospatial machine learning pipelines are highly sensitive to silent annotation drift. When bounding boxes shift by a few pixels, polygon vertices are re-ordered, or class labels are reassigned, traditional filesystem metadata (modification timestamps, file sizes) fails to capture semantic changes. Tracking Annotation </div>
+              <div class="desc">Geospatial ML pipelines fail silently in ways that are difficult to detect after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file&#39;s modificati</div>
             </a>
           
         </div>
@@ -475,7 +795,7 @@
         
           <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
         
-          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a></li>
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows for Geospatial ML</a></li>
         
       </ul>
     </div>

@@ -1,125 +1,371 @@
-# Automating batch pre-labeling with SAM and QGIS
+---
+title: "Automating Batch Pre-Labeling with SAM and QGIS"
+description: "Run Meta's Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review."
+slug: "automating-batch-pre-labeling-with-sam-and-qgis"
+type: "long_tail"
+breadcrumb:
+  - label: "Home"
+    url: "/"
+  - label: "Labeling Workflows & Toolchain Integration"
+    url: "/labeling-workflows-toolchain-integration/"
+  - label: "QGIS Plugin Ecosystem for Annotation Teams"
+    url: "/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"
+  - label: "Automating Batch Pre-Labeling with SAM and QGIS"
+    url: "/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/"
+datePublished: "2025-03-10"
+dateModified: "2026-06-24"
+---
 
-Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster tiles, converting binary masks to vector polygons, and exporting spatially aligned GeoJSON layers. This headless Python pipeline generates high-confidence initial annotations that spatial data scientists and GIS annotation teams can rapidly validate, merge, or correct inside QGIS. By decoupling inference from the desktop environment, teams achieve reproducible, scalable pre-labeling that plugs directly into modern [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) systems.
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "Automating Batch Pre-Labeling with SAM and QGIS",
+      "description": "Run Meta's Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review.",
+      "datePublished": "2025-03-10",
+      "dateModified": "2026-06-24",
+      "author": {"@type": "Organization", "name": "Geospatial Annotation"},
+      "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"},
+        {"@type": "ListItem", "position": 4, "name": "Automating Batch Pre-Labeling with SAM and QGIS", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "Automating Batch Pre-Labeling with SAM and QGIS",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Tile rasters and normalize CRS", "text": "Split orthomosaics into 1024×1024 pixel tiles with 15–20% overlap, projected to a metric CRS such as EPSG:32634."},
+        {"@type": "HowToStep", "position": 2, "name": "Run batch SAM inference", "text": "Load a SAM checkpoint and run SamAutomaticMaskGenerator across all tiles inside a torch.no_grad() context with pred_iou_thresh ≥ 0.85."},
+        {"@type": "HowToStep", "position": 3, "name": "Convert pixel masks to georeferenced polygons", "text": "Apply the raster affine transform via rasterio and shapely to map pixel contours to map coordinates, then export with geopandas."},
+        {"@type": "HowToStep", "position": 4, "name": "Import and validate in QGIS", "text": "Load the GeoJSON into QGIS, apply confidence-based symbology, run Topology Checker, and use snapping to align pre-labels with survey boundaries."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why do SAM masks drift from real-world boundaries after vectorization?",
+          "acceptedAnswer": {"@type": "Answer", "text": "The raster was likely in a geographic CRS (WGS84) during inference. Pixel-to-meter ratios are non-uniform in geographic projections, so SAM misinterprets object scale. Reproject to a local metric CRS before tiling and the drift disappears."}
+        },
+        {
+          "@type": "Question",
+          "name": "How do I stop duplicate polygons appearing at tile edges?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Maintain 15–20% tile overlap, then post-process with gpd.overlay() or unary_union to dissolve duplicates. Filter by the centroid falling inside each tile's interior bounds to keep exactly one copy per segment."}
+        },
+        {
+          "@type": "Question",
+          "name": "Which SAM checkpoint is best for aerial imagery?",
+          "acceptedAnswer": {"@type": "Answer", "text": "vit_h gives the highest mask quality but requires ~7 GB VRAM. For production throughput on a 16 GB GPU, vit_l is a practical compromise. SAM 2's Hiera backbone offers faster inference with similar quality and accepts the same tiling pipeline."}
+        },
+        {
+          "@type": "Question",
+          "name": "Can I filter pre-labels by polygon area before loading into QGIS?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes. After gpd.GeoDataFrame.from_features(), call gdf = gdf[gdf.geometry.area > MIN_AREA_M2]. Because the GeoDataFrame is already in a metric CRS, the area values are in square metres and the threshold is meaningful."}
+        }
+      ]
+    }
+  ]
+}
+</script>
 
-## Pipeline Architecture
+# Automating Batch Pre-Labeling with SAM and QGIS
 
-The automation workflow follows four deterministic stages:
+A headless Python pipeline runs Meta's Segment Anything Model (SAM) on georeferenced raster tiles, transforms binary segmentation masks back to map coordinates using each tile's affine transform, and exports spatially aligned GeoJSON that QGIS loads directly for human review. The pipeline eliminates manual digitizing as the rate-limiting step: a GPU pass over one hundred 1024×1024 tiles completes in minutes and produces polygon annotations that annotators correct rather than draw from scratch.
 
-1. **Raster Tiling & CRS Normalization:** Large orthomosaics or satellite scenes are split into overlapping tiles (typically 1024×1024 pixels) to match SAM’s optimal receptive field. All tiles are projected to a common metric CRS (e.g., EPSG:3857 or local UTM) to preserve area/length calculations during vectorization.
-2. **Batch SAM Inference:** Each tile passes through a pre-loaded SAM checkpoint. The `SamAutomaticMaskGenerator` runs with fixed IoU and stability thresholds to suppress fragmented or low-probability segments. Inference is batched across GPU memory to maximize throughput.
-3. **Georeferenced Polygon Conversion:** Pixel-space masks are transformed back to map coordinates using the raster’s affine transform. `shapely` and `geopandas` handle topology cleaning, hole filling, and attribute assignment before export.
-4. **QGIS Import & Review:** The output vector layer loads directly into QGIS with symbology pre-configured for rapid editing. Teams use snapping, topology checks, and attribute forms to finalize training-ready datasets.
+## Why Naïve SAM Integration Breaks Geospatial Pipelines
 
-## Production-Ready Python Implementation
+If you feed a GeoTIFF to SAM without reprojecting first, two things go wrong silently. When the source raster is in a geographic [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) such as `EPSG:4326`, one pixel does not represent a consistent ground distance across the image — SAM's receptive field spans different physical areas in the north versus south of the scene, causing fragmented or oversized masks at scale. Second, converting pixel-space contours back to geographic coordinates using a geographic CRS affine transform produces geometries that look correct in a GIS viewer but have distorted area and perimeter values, which later collapses [IoU threshold](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) calculations during model evaluation. Both failures are silent — the pipeline finishes, the GeoJSON loads, but the annotations do not match the ground truth.
 
-The following script demonstrates a complete batch processor. It assumes you have downloaded a SAM checkpoint (`sam_vit_h_4b8939.pth`) and installed the official `segment-anything` package. For geospatial I/O, refer to the [Rasterio Documentation](https://rasterio.readthedocs.io/en/stable/) for advanced tiling and CRS handling.
+<figure>
+<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SAM batch pre-labeling pipeline: raster tiles flow through SAM inference, mask vectorization, and QGIS review" style="width:100%;max-width:720px;display:block;">
+  <title>SAM Batch Pre-Labeling Pipeline</title>
+  <desc>Four pipeline stages shown left to right: Raster Tiling and CRS Normalization, then SAM Batch Inference, then Mask to Vector Conversion, then QGIS Review and Export.</desc>
+  <!-- Stage boxes -->
+  <rect x="10" y="60" width="150" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="85" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">Raster Tiling</text>
+  <text x="85" y="104" text-anchor="middle" font-size="11" fill="currentColor">CRS → metric</text>
+  <text x="85" y="120" text-anchor="middle" font-size="11" fill="currentColor">1024×1024 px</text>
+  <text x="85" y="136" text-anchor="middle" font-size="11" fill="currentColor">15–20% overlap</text>
+  <rect x="195" y="60" width="150" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="270" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">SAM Inference</text>
+  <text x="270" y="104" text-anchor="middle" font-size="11" fill="currentColor">vit_h / vit_l</text>
+  <text x="270" y="120" text-anchor="middle" font-size="11" fill="currentColor">IoU ≥ 0.85</text>
+  <text x="270" y="136" text-anchor="middle" font-size="11" fill="currentColor">stability ≥ 0.92</text>
+  <rect x="380" y="60" width="150" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="455" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">Mask → Vector</text>
+  <text x="455" y="104" text-anchor="middle" font-size="11" fill="currentColor">affine transform</text>
+  <text x="455" y="120" text-anchor="middle" font-size="11" fill="currentColor">topology clean</text>
+  <text x="455" y="136" text-anchor="middle" font-size="11" fill="currentColor">GeoJSON export</text>
+  <rect x="565" y="60" width="145" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="637" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">QGIS Review</text>
+  <text x="637" y="104" text-anchor="middle" font-size="11" fill="currentColor">confidence triage</text>
+  <text x="637" y="120" text-anchor="middle" font-size="11" fill="currentColor">topology check</text>
+  <text x="637" y="136" text-anchor="middle" font-size="11" fill="currentColor">COCO / YOLO out</text>
+  <!-- Arrows -->
+  <line x1="161" y1="110" x2="193" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="346" y1="110" x2="378" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="531" y1="110" x2="563" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Label row -->
+  <text x="85" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 1</text>
+  <text x="270" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 2</text>
+  <text x="455" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 3</text>
+  <text x="637" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 4</text>
+</svg>
+<figcaption>Four deterministic pipeline stages: tile and reproject, run SAM, convert masks to georeferenced polygons, then validate in QGIS.</figcaption>
+</figure>
+
+## Step-by-Step Implementation
+
+### Step 1 — Tile the Raster and Normalize the CRS
+
+Use `rasterio` and `rio-cogeo` to reproject to a local UTM zone and split into overlapping tiles. Reprojection must happen before tiling so every tile inherits a consistent metric CRS.
 
 ```python
+# requirements: rasterio==1.3.10, rio-cogeo==3.6.0, numpy==1.26.4
+import math
+import rasterio
+from rasterio.warp import calculate_default_transform, reproject, Resampling
+from rasterio.windows import Window
 import os
-import glob
+
+TARGET_CRS = "EPSG:32634"          # UTM zone 34N — adjust to your AOI
+TILE_SIZE = 1024                   # pixels
+OVERLAP = int(TILE_SIZE * 0.175)   # ~18% overlap
+
+
+def reproject_to_metric(src_path: str, dst_path: str) -> None:
+    """Reproject an arbitrary raster to a metric CRS before tiling."""
+    with rasterio.open(src_path) as src:
+        transform, width, height = calculate_default_transform(
+            src.crs, TARGET_CRS, src.width, src.height, *src.bounds
+        )
+        profile = src.profile.copy()
+        profile.update(crs=TARGET_CRS, transform=transform,
+                       width=width, height=height)
+        with rasterio.open(dst_path, "w", **profile) as dst:
+            for i in range(1, src.count + 1):
+                reproject(
+                    source=rasterio.band(src, i),
+                    destination=rasterio.band(dst, i),
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=transform,
+                    dst_crs=TARGET_CRS,
+                    resampling=Resampling.bilinear,
+                )
+
+
+def tile_raster(src_path: str, out_dir: str) -> list[str]:
+    """Slice a metric raster into overlapping tiles; return tile paths."""
+    os.makedirs(out_dir, exist_ok=True)
+    tile_paths: list[str] = []
+    step = TILE_SIZE - OVERLAP
+    with rasterio.open(src_path) as src:
+        cols = math.ceil((src.width - OVERLAP) / step)
+        rows = math.ceil((src.height - OVERLAP) / step)
+        for r in range(rows):
+            for c in range(cols):
+                col_off = c * step
+                row_off = r * step
+                w = min(TILE_SIZE, src.width - col_off)
+                h = min(TILE_SIZE, src.height - row_off)
+                window = Window(col_off, row_off, w, h)
+                transform = src.window_transform(window)
+                profile = src.profile.copy()
+                profile.update(width=w, height=h, transform=transform)
+                tile_path = os.path.join(out_dir, f"tile_r{r:04d}_c{c:04d}.tif")
+                with rasterio.open(tile_path, "w", **profile) as dst:
+                    dst.write(src.read(window=window))
+                tile_paths.append(tile_path)
+    return tile_paths
+```
+
+### Step 2 — Batch SAM Inference
+
+Pre-load the checkpoint once and iterate tiles in a `torch.no_grad()` context. Mixed-precision cuts VRAM usage by roughly 40% without affecting mask quality.
+
+```python
+# requirements: segment-anything==1.0, torch==2.3.0, opencv-python==4.9.0.80
 import torch
 import numpy as np
 import rasterio
-from rasterio.transform import Affine
-from shapely.geometry import shape, mapping
-from shapely.ops import transform as shapely_transform
-import geopandas as gpd
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
-import cv2
 
-# Configuration
-CHECKPOINT_PATH = "checkpoints/sam_vit_h_4b8939.pth"
-INPUT_DIR = "rasters/tiles/"
-OUTPUT_GEOJSON = "prelabels/sam_batch_output.geojson"
-IOU_THRESHOLD = 0.85
-AREA_FILTER = 500  # Minimum pixel area to keep
+CHECKPOINT = "checkpoints/sam_vit_h_4b8939.pth"
+MODEL_TYPE = "vit_h"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Initialize SAM
-sam = sam_model_registry["vit_h"](checkpoint=CHECKPOINT_PATH)
-sam.to(device="cuda" if torch.cuda.is_available() else "cpu")
+sam = sam_model_registry[MODEL_TYPE](checkpoint=CHECKPOINT)
+sam.to(device=DEVICE)
+
 mask_generator = SamAutomaticMaskGenerator(
     model=sam,
     points_per_side=32,
-    pred_iou_thresh=IOU_THRESHOLD,
+    pred_iou_thresh=0.85,
     stability_score_thresh=0.92,
     crop_n_layers=1,
-    min_mask_region_area=AREA_FILTER
+    min_mask_region_area=500,   # pixels; filters noise fragments
 )
 
-def pixel_to_geo(mask_binary, affine_transform):
-    """Convert a binary mask to georeferenced Shapely polygons."""
-    contours, _ = cv2.findContours(
-        mask_binary.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-    polys = []
-    for contour in contours:
-        if cv2.contourArea(contour) >= AREA_FILTER:
-            # Convert OpenCV contour (col, row) pixel coords to a Shapely Polygon
-            pixel_coords = contour.squeeze().tolist()
-            if len(pixel_coords) < 3:
-                continue
-            poly = shape({"type": "Polygon", "coordinates": [pixel_coords]})
-            # Apply raster affine transform: maps (col, row) pixel pairs to (x, y) map coords
-            def affine_fn(xs, ys):
-                geo_xs, geo_ys = [], []
-                for col, row in zip(xs, ys):
-                    x, y = affine_transform * (col, row)
-                    geo_xs.append(x)
-                    geo_ys.append(y)
-                return geo_xs, geo_ys
-            geo_poly = shapely_transform(affine_fn, poly)
-            polys.append(geo_poly)
-    return polys
 
-def process_batch():
-    all_features = []
-    tile_paths = sorted(glob.glob(os.path.join(INPUT_DIR, "*.tif")))
-    
-    for tile_path in tile_paths:
-        with rasterio.open(tile_path) as src:
-            img = src.read().transpose(1, 2, 0)
-            transform = src.transform
-            crs = src.crs
-            
-            # Run SAM inference
-            masks = mask_generator.generate(img)
-            
-            for m in masks:
-                geo_polys = pixel_to_geo(m["segmentation"], transform)
-                for poly in geo_polys:
-                    all_features.append({
-                        "geometry": mapping(poly),
-                        "properties": {
-                            "source_tile": os.path.basename(tile_path),
-                            "confidence": float(m["predicted_iou"]),
-                            "area_px": int(m["area"]),
-                            "crs": crs.to_string()
-                        }
-                    })
-    
-    # Export to GeoJSON
-    gdf = gpd.GeoDataFrame.from_features(all_features, crs=crs)
-    gdf.to_file(OUTPUT_GEOJSON, driver="GeoJSON")
-    print(f"Exported {len(gdf)} polygons to {OUTPUT_GEOJSON}")
-
-if __name__ == "__main__":
-    process_batch()
+def run_sam_on_tiles(tile_paths: list[str]) -> list[tuple[str, list[dict]]]:
+    """Return (tile_path, masks) pairs for every input tile."""
+    results: list[tuple[str, list[dict]]] = []
+    with torch.no_grad():
+        with torch.autocast(device_type=DEVICE, dtype=torch.float16):
+            for tile_path in tile_paths:
+                with rasterio.open(tile_path) as src:
+                    img = src.read().transpose(1, 2, 0)  # (H, W, C)
+                    # SAM expects uint8 RGB; handle multi-band imagery
+                    if img.shape[2] > 3:
+                        img = img[:, :, :3]
+                    img = img.astype(np.uint8)
+                masks = mask_generator.generate(img)
+                results.append((tile_path, masks))
+    return results
 ```
 
-## QGIS Integration & Validation Workflow
+### Step 3 — Convert Pixel Masks to Georeferenced Polygons
 
-Once the GeoJSON is generated, load it into QGIS via **Layer > Add Layer > Add Vector Layer**. Apply a categorical symbology based on the `confidence` field to visually separate high-certainty segments from edge cases. Enable **Snapping** (Settings > Snapping Options) and configure a tolerance of 5–10 map units to align pre-labels with existing basemaps or survey boundaries.
+Apply each tile's affine transform to map pixel contour coordinates to real-world map coordinates. Assign per-polygon [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) so annotators can triage masks by certainty in QGIS.
 
-For teams managing large annotation campaigns, integrating this pipeline into a broader [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) streamlines handoff between ML inference and human review. Use QGIS’s built-in **Topology Checker** to flag overlapping polygons, slivers, or unclosed rings before exporting to COCO or YOLO formats. Attribute forms can be configured to auto-populate `class_id` fields, reducing manual entry errors during final validation.
+```python
+# requirements: shapely==2.0.4, geopandas==0.14.4, opencv-python==4.9.0.80
+import cv2
+from shapely.geometry import Polygon, mapping
+from shapely.ops import transform as shapely_transform
+import geopandas as gpd
+from rasterio.transform import Affine
 
-## Scaling & Performance Optimization
+MIN_AREA_PX = 500
 
-Running SAM at scale requires careful resource management. The official [Segment Anything Repository](https://github.com/facebookresearch/segment-anything) recommends using `vit_b` or `vit_l` checkpoints for production environments where `vit_h` exceeds available VRAM. Teams starting fresh may also evaluate Meta's [SAM 2](https://github.com/facebookresearch/sam2), which offers faster inference and a Hiera backbone; the tiling-to-vector logic above applies unchanged, only the model-loading and mask-generation calls differ. To optimize throughput:
 
-- **Tile Overlap Management:** Maintain a 15–20% overlap between adjacent tiles to prevent edge-cut artifacts. Deduplicate intersecting polygons post-inference using `gpd.overlay()` with the `intersection` operator.
-- **Batched GPU Inference:** Wrap `mask_generator.generate()` in a `torch.no_grad()` context and enable mixed-precision (`torch.autocast(device_type="cuda", dtype=torch.float16)`) to reduce memory pressure by ~40%.
-- **CRS Consistency:** Always normalize input rasters to a projected CRS before inference. Geographic CRS (WGS84) distorts pixel-to-meter ratios, causing SAM to misinterpret object scale and generate fragmented masks.
-- **Post-Processing Filters:** Apply a minimum area threshold (`AREA_FILTER`) and a convexity check to remove noise. Use `shapely.simplify()` with a tolerance of 0.5–1.0 map units to reduce vertex count without compromising geometric accuracy.
+def mask_to_georef_polygons(
+    mask_binary: np.ndarray,
+    affine_tfm: Affine,
+    predicted_iou: float,
+    source_tile: str,
+) -> list[dict]:
+    """Convert one SAM binary mask to a list of GeoJSON-ready feature dicts."""
+    contours, _ = cv2.findContours(
+        mask_binary.astype(np.uint8),
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_SIMPLE,
+    )
+    features: list[dict] = []
+    for cnt in contours:
+        if cv2.contourArea(cnt) < MIN_AREA_PX:
+            continue
+        pts = cnt.squeeze()
+        if pts.ndim < 2 or len(pts) < 3:
+            continue
+        # Build pixel-space polygon, then apply raster affine transform
+        pixel_ring = [tuple(pt) for pt in pts]
+        pixel_poly = Polygon(pixel_ring)
+        if not pixel_poly.is_valid:
+            pixel_poly = pixel_poly.buffer(0)
 
-By standardizing these steps, spatial teams can transition from manual digitizing to automated, human-in-the-loop annotation pipelines. The result is faster dataset curation, consistent spatial topology, and direct compatibility with downstream computer vision training frameworks.
+        def _affine(xs, ys):
+            geo_xs, geo_ys = zip(*(affine_tfm * (col, row) for col, row in zip(xs, ys)))
+            return list(geo_xs), list(geo_ys)
+
+        geo_poly = shapely_transform(_affine, pixel_poly)
+        geo_poly = geo_poly.simplify(0.5, preserve_topology=True)
+        features.append({
+            "geometry": mapping(geo_poly),
+            "properties": {
+                "source_tile": source_tile,
+                "confidence": round(float(predicted_iou), 4),
+                "area_m2": round(geo_poly.area, 2),
+            },
+        })
+    return features
+
+
+def build_geodataframe(
+    sam_results: list[tuple[str, list[dict]]],
+    output_crs: str = TARGET_CRS,
+) -> gpd.GeoDataFrame:
+    """Aggregate all tile results into a single GeoDataFrame."""
+    all_features: list[dict] = []
+    for tile_path, masks in sam_results:
+        with rasterio.open(tile_path) as src:
+            tfm = src.transform
+        for m in masks:
+            all_features.extend(
+                mask_to_georef_polygons(
+                    m["segmentation"], tfm, m["predicted_iou"], tile_path
+                )
+            )
+    gdf = gpd.GeoDataFrame.from_features(all_features, crs=output_crs)
+    # Remove duplicates from overlapping tiles: keep the highest-confidence copy
+    gdf = gdf.sort_values("confidence", ascending=False)
+    gdf = gdf.drop_duplicates(subset=["geometry"])
+    return gdf.reset_index(drop=True)
+```
+
+### Step 4 — Export GeoJSON and Load into QGIS
+
+Write the GeoDataFrame to a GeoJSON file and configure QGIS for annotation review.
+
+```python
+OUTPUT_GEOJSON = "prelabels/sam_batch_output.geojson"
+
+def export_prelabels(gdf: gpd.GeoDataFrame) -> None:
+    gdf.to_file(OUTPUT_GEOJSON, driver="GeoJSON")
+    print(f"Exported {len(gdf)} pre-label polygons → {OUTPUT_GEOJSON}")
+    high_conf = (gdf["confidence"] >= 0.90).sum()
+    print(f"  High-confidence (≥0.90): {high_conf} ({100*high_conf/len(gdf):.1f}%)")
+```
+
+In QGIS: open **Layer > Add Layer > Add Vector Layer** and select the GeoJSON. Apply a **Graduated** renderer on the `confidence` field — for example green for ≥ 0.90, amber for 0.80–0.89, red for < 0.80. Enable **Snapping** (Settings > Snapping Options, tolerance 5–10 map units) so editors can snap pre-label edges to existing survey boundaries. The full review-and-export cycle integrates with the broader [QGIS plugin ecosystem for annotation teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/).
+
+## Key Parameters Reference
+
+| Parameter | Recommended value | Effect |
+|---|---|---|
+| `points_per_side` | 32 | Grid density for automatic prompt points; raise to 64 for dense urban scenes |
+| `pred_iou_thresh` | 0.85 | Minimum predicted IoU to keep a mask; lower increases recall, raises noise |
+| `stability_score_thresh` | 0.92 | Mask consistency across threshold perturbations; lower if SAM misses soft boundaries |
+| `min_mask_region_area` | 500 px | Pixel noise filter; scale with GSD (higher GSD → larger threshold) |
+| Tile overlap | 15–20% | Prevents edge-cut artifacts; overlap > 25% creates excessive duplicates |
+| `simplify` tolerance | 0.5 m | Vertex reduction; keep < 1 m to preserve parcel or building edges |
+| `MIN_AREA_M2` post-filter | 25–100 m² | Remove sub-parcel noise after metric CRS conversion |
+
+## Common Errors and Fixes
+
+**`TypeError: image must be uint8`**
+SAM requires three-channel uint8 RGB input. Multispectral rasters read via rasterio are often `uint16` and may have more than three bands. Fix: `img = img[:, :, :3].astype(np.uint8)`.
+
+**Masks visually correct but coordinates far off**
+Root cause: the raster's CRS was geographic (`EPSG:4326`) at inference time, so the affine transform maps pixel columns/rows to decimal-degree deltas, not metres. Fix: run `reproject_to_metric()` before tiling.
+
+**Topology Checker in QGIS flags hundreds of overlapping polygons**
+Root cause: tile overlap without deduplication. Fix: the `drop_duplicates(subset=["geometry"])` step above removes exact duplicates; for near-duplicates use `gpd.overlay(gdf, gdf, how="union")` and dissolve by `source_tile`.
+
+**CUDA out of memory with `vit_h`**
+Root cause: `vit_h` requires ~7 GB VRAM per batch. Fix: switch to `vit_l` (4 GB) or enable `torch.autocast` as shown in Step 2. Alternatively, process tiles sequentially without batching if VRAM is constrained.
+
+## Related
+
+- [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — parent page covering plugin selection, scripting hooks, and team review workflows
+- [Automating Pre-Labeling with Foundation Models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) — broader treatment of foundation-model-assisted labeling including Label Studio integration
+- [Human-in-the-Loop Validation Cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — how to route SAM pre-labels into review queues and track correction rates
+- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts underlying the reprojection steps above
+- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — how to use SAM's `predicted_iou` field to drive active learning queues
+
+This page is part of the [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) section within [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/).

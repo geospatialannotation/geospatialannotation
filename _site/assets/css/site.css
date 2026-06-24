@@ -106,6 +106,19 @@ a:hover, a:focus-visible {
 }
 a:focus-visible { outline: 2px solid var(--gold-400); outline-offset: 3px; border-radius: 3px; }
 
+/* Prose links inside article body must be distinguishable beyond colour alone.
+   We add a visible underline so they pass WCAG 1.4.1 link-in-text-block. */
+.article p a,
+.article li a,
+.article blockquote a,
+.article td a {
+  border-bottom-color: currentColor;
+  text-decoration-line: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
 img, svg { max-width: 100%; height: auto; }
 
 /* =========================================================================
@@ -480,6 +493,52 @@ img, svg { max-width: 100%; height: auto; }
 .section-card__more::after { content: "→"; transition: transform 160ms ease; }
 .section-card__more:hover::after { transform: translateX(3px); }
 
+/* Start Here grid */
+.start-here-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+@media (min-width: 640px) { .start-here-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .start-here-grid { grid-template-columns: repeat(3, 1fr); } }
+
+.start-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  transition: box-shadow 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+.start-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--sky-300);
+  transform: translateY(-2px);
+  color: var(--ink);
+}
+.start-card__tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.start-card strong {
+  font-size: 0.97rem;
+  line-height: 1.35;
+  color: var(--sky-800);
+}
+.start-card span:last-child {
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 /* =========================================================================
    Content pages
    ========================================================================= */
@@ -677,15 +736,17 @@ img, svg { max-width: 100%; height: auto; }
 .article h3:hover .anchor-symbol,
 .article h4:hover .anchor-symbol { opacity: 1; }
 
-/* Inline code */
+/* Inline code — blends with prose: no box, no background, body text colour */
 .inline-code, .article p code, .article li code, .article td code {
   font-family: var(--font-mono);
   font-size: 0.92em;
-  padding: 1px 6px;
-  border-radius: 5px;
-  background: var(--sky-50);
-  color: var(--sky-800);
+  background: none;
+  color: var(--ink);
   border: none;
+  padding: 0;
+  border-radius: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 /* Code blocks */
@@ -913,7 +974,8 @@ img, svg { max-width: 100%; height: auto; }
   color: var(--ink);
 }
 .related__card .title { font-weight: 600; color: var(--accent-strong); }
-.related__card .desc { font-size: 0.88rem; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+/* Use #527075 instead of --muted (#5e7886) to achieve 4.5:1 on --sky-50 background */
+.related__card .desc { font-size: 0.88rem; color: #527075; margin-top: 4px; line-height: 1.4; }
 
 /* Mermaid */
 pre.mermaid {

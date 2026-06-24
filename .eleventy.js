@@ -60,6 +60,19 @@ md.use(markdownItAnchor, {
     symbol: "<span aria-hidden=\"true\" class=\"anchor-symbol\">#</span>",
     placement: "before",
     ariaHidden: false,
+    renderAttrs: (slug, state) => {
+      // Extract plain-text heading so the link has a meaningful accessible name.
+      const tokens = state.tokens;
+      const idx = tokens.findIndex(t => t.type === "heading_open" && t.attrGet("id") === slug);
+      let headingText = slug;
+      if (idx !== -1 && tokens[idx + 1]) {
+        headingText = (tokens[idx + 1].children || [])
+          .filter(t => t.type === "text" || t.type === "code_inline")
+          .map(t => t.content)
+          .join("") || slug;
+      }
+      return { "aria-label": `Permalink to section "${headingText}"` };
+    },
   }),
   level: [2, 3, 4],
 });
@@ -74,7 +87,7 @@ const defaultTableClose = md.renderer.rules.table_close ||
   function (tokens, idx, options, env, self) { return self.renderToken(tokens, idx, options); };
 
 md.renderer.rules.table_open = function (tokens, idx, options, env, self) {
-  return '<div class="table-scroll">' + defaultTableOpen(tokens, idx, options, env, self);
+  return '<div class="table-scroll" tabindex="0">' + defaultTableOpen(tokens, idx, options, env, self);
 };
 md.renderer.rules.table_close = function (tokens, idx, options, env, self) {
   return defaultTableClose(tokens, idx, options, env, self) + "</div>";
@@ -114,7 +127,7 @@ function postProcessCodeBlocks(html) {
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre"><code class="code-block__code${langClass}">${code}</code></pre>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code${langClass}">${code}</code></pre>
 </div>`;
     }
   );
@@ -252,9 +265,11 @@ module.exports = function (eleventyConfig) {
   eleventyConfig.ignores.add("_site/**");
   eleventyConfig.ignores.add("README.md");
   eleventyConfig.ignores.add("CHECKLIST.md");
+  eleventyConfig.ignores.add("CLAUDE.md");
   eleventyConfig.ignores.add("site_description_and_requirements.md");
   eleventyConfig.ignores.add("package.json");
   eleventyConfig.ignores.add("package-lock.json");
+  eleventyConfig.ignores.add("_plan/**");
 
   // Global data: nav tree
   eleventyConfig.addGlobalData("siteTitle", SITE_TITLE);

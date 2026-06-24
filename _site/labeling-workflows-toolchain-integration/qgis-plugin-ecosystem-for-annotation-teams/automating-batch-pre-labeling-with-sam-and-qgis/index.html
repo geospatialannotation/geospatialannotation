@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Automating batch pre-labeling with SAM and QGIS · GeoAnnotation</title>
-  <meta name="description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Automating Batch Pre-Labeling with SAM and QGIS · GeoAnnotation</title>
+  <meta name="description" content="Run Meta&#39;s Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review.">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -33,8 +33,8 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="article">
-  <meta property="og:title" content="Automating batch pre-labeling with SAM and QGIS · GeoAnnotation">
-  <meta property="og:description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster">
+  <meta property="og:title" content="Automating Batch Pre-Labeling with SAM and QGIS · GeoAnnotation">
+  <meta property="og:description" content="Run Meta&#39;s Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review.">
   <meta property="og:url" content="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -45,8 +45,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Automating batch pre-labeling with SAM and QGIS · GeoAnnotation">
-  <meta name="twitter:description" content="Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster">
+  <meta name="twitter:title" content="Automating Batch Pre-Labeling with SAM and QGIS · GeoAnnotation">
+  <meta name="twitter:description" content="Run Meta&#39;s Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review.">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -54,8 +54,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css">
-  <script defer src="/assets/js/site.js"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
+  <script defer src="/assets/js/site.js?v=60200a44"></script>
 
   <script type="application/ld+json">
 {
@@ -96,7 +96,7 @@
     },{
       "@type": "ListItem",
       "position": 4,
-      "name": "Automating batch pre-labeling with SAM and QGIS",
+      "name": "Automating Batch Pre-Labeling with SAM and QGIS",
       "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/"
     }]
 }
@@ -107,8 +107,8 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/#article",
-  "headline": "Automating batch pre-labeling with SAM and QGIS",
-  "description": "Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster",
+  "headline": "Automating Batch Pre-Labeling with SAM and QGIS",
+  "description": "Run Meta&#39;s Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review.",
   "url": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -221,7 +221,7 @@
         
       
         
-          <li aria-current="page">Automating batch pre-labeling with SAM and QGIS</li>
+          <li aria-current="page">Automating Batch Pre-Labeling with SAM and QGIS</li>
         
       
     </ol>
@@ -271,7 +271,7 @@
             
             <ul>
               
-                <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="is-active">Automating batch pre-labeling with SAM and QGIS</a></li>
+                <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="is-active">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
               
             </ul>
             
@@ -281,18 +281,115 @@
     </aside>
 
     <article class="article">
-      <h1>Automating batch pre-labeling with SAM and QGIS</h1>
-<p>Automating batch pre-labeling with SAM and QGIS eliminates manual digitizing bottlenecks by running Meta’s Segment Anything Model on georeferenced raster tiles, converting binary masks to vector polygons, and exporting spatially aligned GeoJSON layers. This headless Python pipeline generates high-confidence initial annotations that spatial data scientists and GIS annotation teams can rapidly validate, merge, or correct inside QGIS. By decoupling inference from the desktop environment, teams achieve reproducible, scalable pre-labeling that plugs directly into modern <a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration</a> systems.</p>
-<h2 id="pipeline-architecture" tabindex="-1"><a class="header-anchor" href="#pipeline-architecture"><span aria-hidden="true" class="anchor-symbol">#</span></a> Pipeline Architecture</h2>
-<p>The automation workflow follows four deterministic stages:</p>
-<ol>
-<li><strong>Raster Tiling &amp; CRS Normalization:</strong> Large orthomosaics or satellite scenes are split into overlapping tiles (typically 1024×1024 pixels) to match SAM’s optimal receptive field. All tiles are projected to a common metric CRS (e.g., EPSG:3857 or local UTM) to preserve area/length calculations during vectorization.</li>
-<li><strong>Batch SAM Inference:</strong> Each tile passes through a pre-loaded SAM checkpoint. The <code class="inline-code">SamAutomaticMaskGenerator</code> runs with fixed IoU and stability thresholds to suppress fragmented or low-probability segments. Inference is batched across GPU memory to maximize throughput.</li>
-<li><strong>Georeferenced Polygon Conversion:</strong> Pixel-space masks are transformed back to map coordinates using the raster’s affine transform. <code class="inline-code">shapely</code> and <code class="inline-code">geopandas</code> handle topology cleaning, hole filling, and attribute assignment before export.</li>
-<li><strong>QGIS Import &amp; Review:</strong> The output vector layer loads directly into QGIS with symbology pre-configured for rapid editing. Teams use snapping, topology checks, and attribute forms to finalize training-ready datasets.</li>
-</ol>
-<h2 id="production-ready-python-implementation" tabindex="-1"><a class="header-anchor" href="#production-ready-python-implementation"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production-Ready Python Implementation</h2>
-<p>The following script demonstrates a complete batch processor. It assumes you have downloaded a SAM checkpoint (<code class="inline-code">sam_vit_h_4b8939.pth</code>) and installed the official <code class="inline-code">segment-anything</code> package. For geospatial I/O, refer to the <a href="https://rasterio.readthedocs.io/en/stable/">Rasterio Documentation</a> for advanced tiling and CRS handling.</p>
+      <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "Automating Batch Pre-Labeling with SAM and QGIS",
+      "description": "Run Meta's Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review.",
+      "datePublished": "2025-03-10",
+      "dateModified": "2026-06-24",
+      "author": {"@type": "Organization", "name": "Geospatial Annotation"},
+      "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"},
+        {"@type": "ListItem", "position": 4, "name": "Automating Batch Pre-Labeling with SAM and QGIS", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "Automating Batch Pre-Labeling with SAM and QGIS",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Tile rasters and normalize CRS", "text": "Split orthomosaics into 1024×1024 pixel tiles with 15–20% overlap, projected to a metric CRS such as EPSG:32634."},
+        {"@type": "HowToStep", "position": 2, "name": "Run batch SAM inference", "text": "Load a SAM checkpoint and run SamAutomaticMaskGenerator across all tiles inside a torch.no_grad() context with pred_iou_thresh ≥ 0.85."},
+        {"@type": "HowToStep", "position": 3, "name": "Convert pixel masks to georeferenced polygons", "text": "Apply the raster affine transform via rasterio and shapely to map pixel contours to map coordinates, then export with geopandas."},
+        {"@type": "HowToStep", "position": 4, "name": "Import and validate in QGIS", "text": "Load the GeoJSON into QGIS, apply confidence-based symbology, run Topology Checker, and use snapping to align pre-labels with survey boundaries."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why do SAM masks drift from real-world boundaries after vectorization?",
+          "acceptedAnswer": {"@type": "Answer", "text": "The raster was likely in a geographic CRS (WGS84) during inference. Pixel-to-meter ratios are non-uniform in geographic projections, so SAM misinterprets object scale. Reproject to a local metric CRS before tiling and the drift disappears."}
+        },
+        {
+          "@type": "Question",
+          "name": "How do I stop duplicate polygons appearing at tile edges?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Maintain 15–20% tile overlap, then post-process with gpd.overlay() or unary_union to dissolve duplicates. Filter by the centroid falling inside each tile's interior bounds to keep exactly one copy per segment."}
+        },
+        {
+          "@type": "Question",
+          "name": "Which SAM checkpoint is best for aerial imagery?",
+          "acceptedAnswer": {"@type": "Answer", "text": "vit_h gives the highest mask quality but requires ~7 GB VRAM. For production throughput on a 16 GB GPU, vit_l is a practical compromise. SAM 2's Hiera backbone offers faster inference with similar quality and accepts the same tiling pipeline."}
+        },
+        {
+          "@type": "Question",
+          "name": "Can I filter pre-labels by polygon area before loading into QGIS?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes. After gpd.GeoDataFrame.from_features(), call gdf = gdf[gdf.geometry.area > MIN_AREA_M2]. Because the GeoDataFrame is already in a metric CRS, the area values are in square metres and the threshold is meaningful."}
+        }
+      ]
+    }
+  ]
+}
+</script>
+<h1>Automating Batch Pre-Labeling with SAM and QGIS</h1>
+<p>A headless Python pipeline runs Meta’s Segment Anything Model (SAM) on georeferenced raster tiles, transforms binary segmentation masks back to map coordinates using each tile’s affine transform, and exports spatially aligned GeoJSON that QGIS loads directly for human review. The pipeline eliminates manual digitizing as the rate-limiting step: a GPU pass over one hundred 1024×1024 tiles completes in minutes and produces polygon annotations that annotators correct rather than draw from scratch.</p>
+<h2 id="why-nave-sam-integration-breaks-geospatial-pipelines" tabindex="-1"><a class="header-anchor" href="#why-nave-sam-integration-breaks-geospatial-pipelines" aria-label="Permalink to section &quot;Why Naïve SAM Integration Breaks Geospatial Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Naïve SAM Integration Breaks Geospatial Pipelines</h2>
+<p>If you feed a GeoTIFF to SAM without reprojecting first, two things go wrong silently. When the source raster is in a geographic <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> such as <code class="inline-code">EPSG:4326</code>, one pixel does not represent a consistent ground distance across the image — SAM’s receptive field spans different physical areas in the north versus south of the scene, causing fragmented or oversized masks at scale. Second, converting pixel-space contours back to geographic coordinates using a geographic CRS affine transform produces geometries that look correct in a GIS viewer but have distorted area and perimeter values, which later collapses <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">IoU threshold</a> calculations during model evaluation. Both failures are silent — the pipeline finishes, the GeoJSON loads, but the annotations do not match the ground truth.</p>
+<figure>
+<svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SAM batch pre-labeling pipeline: raster tiles flow through SAM inference, mask vectorization, and QGIS review" style="width:100%;max-width:720px;display:block;">
+  <title>SAM Batch Pre-Labeling Pipeline</title>
+  <desc>Four pipeline stages shown left to right: Raster Tiling and CRS Normalization, then SAM Batch Inference, then Mask to Vector Conversion, then QGIS Review and Export.</desc>
+  <!-- Stage boxes -->
+  <rect x="10" y="60" width="150" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="85" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">Raster Tiling</text>
+  <text x="85" y="104" text-anchor="middle" font-size="11" fill="currentColor">CRS → metric</text>
+  <text x="85" y="120" text-anchor="middle" font-size="11" fill="currentColor">1024×1024 px</text>
+  <text x="85" y="136" text-anchor="middle" font-size="11" fill="currentColor">15–20% overlap</text>
+  <rect x="195" y="60" width="150" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="270" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">SAM Inference</text>
+  <text x="270" y="104" text-anchor="middle" font-size="11" fill="currentColor">vit_h / vit_l</text>
+  <text x="270" y="120" text-anchor="middle" font-size="11" fill="currentColor">IoU ≥ 0.85</text>
+  <text x="270" y="136" text-anchor="middle" font-size="11" fill="currentColor">stability ≥ 0.92</text>
+  <rect x="380" y="60" width="150" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="455" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">Mask → Vector</text>
+  <text x="455" y="104" text-anchor="middle" font-size="11" fill="currentColor">affine transform</text>
+  <text x="455" y="120" text-anchor="middle" font-size="11" fill="currentColor">topology clean</text>
+  <text x="455" y="136" text-anchor="middle" font-size="11" fill="currentColor">GeoJSON export</text>
+  <rect x="565" y="60" width="145" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="637" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="currentColor">QGIS Review</text>
+  <text x="637" y="104" text-anchor="middle" font-size="11" fill="currentColor">confidence triage</text>
+  <text x="637" y="120" text-anchor="middle" font-size="11" fill="currentColor">topology check</text>
+  <text x="637" y="136" text-anchor="middle" font-size="11" fill="currentColor">COCO / YOLO out</text>
+  <!-- Arrows -->
+  <line x1="161" y1="110" x2="193" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="346" y1="110" x2="378" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="531" y1="110" x2="563" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 Z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Label row -->
+  <text x="85" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 1</text>
+  <text x="270" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 2</text>
+  <text x="455" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 3</text>
+  <text x="637" y="185" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 4</text>
+</svg>
+<figcaption>Four deterministic pipeline stages: tile and reproject, run SAM, convert masks to georeferenced polygons, then validate in QGIS.</figcaption>
+</figure>
+<h2 id="step-by-step-implementation" tabindex="-1"><a class="header-anchor" href="#step-by-step-implementation" aria-label="Permalink to section &quot;Step-by-Step Implementation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step Implementation</h2>
+<h3 id="step-1-tile-the-raster-and-normalize-the-crs" tabindex="-1"><a class="header-anchor" href="#step-1-tile-the-raster-and-normalize-the-crs" aria-label="Permalink to section &quot;Step 1 — Tile the Raster and Normalize the CRS&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Tile the Raster and Normalize the CRS</h3>
+<p>Use <code class="inline-code">rasterio</code> and <code class="inline-code">rio-cogeo</code> to reproject to a local UTM zone and split into overlapping tiles. Reprojection must happen before tiling so every tile inherits a consistent metric CRS.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -303,109 +400,290 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> os
-<span class="token keyword">import</span> glob
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token comment"># requirements: rasterio==1.3.10, rio-cogeo==3.6.0, numpy==1.26.4</span>
+<span class="token keyword">import</span> math
+<span class="token keyword">import</span> rasterio
+<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>warp <span class="token keyword">import</span> calculate_default_transform<span class="token punctuation">,</span> reproject<span class="token punctuation">,</span> Resampling
+<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>windows <span class="token keyword">import</span> Window
+<span class="token keyword">import</span> os
+
+TARGET_CRS <span class="token operator">=</span> <span class="token string">"EPSG:32634"</span>          <span class="token comment"># UTM zone 34N — adjust to your AOI</span>
+TILE_SIZE <span class="token operator">=</span> <span class="token number">1024</span>                   <span class="token comment"># pixels</span>
+OVERLAP <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>TILE_SIZE <span class="token operator">*</span> <span class="token number">0.175</span><span class="token punctuation">)</span>   <span class="token comment"># ~18% overlap</span>
+
+
+<span class="token keyword">def</span> <span class="token function">reproject_to_metric</span><span class="token punctuation">(</span>src_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> dst_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Reproject an arbitrary raster to a metric CRS before tiling."""</span>
+    <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>src_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+        transform<span class="token punctuation">,</span> width<span class="token punctuation">,</span> height <span class="token operator">=</span> calculate_default_transform<span class="token punctuation">(</span>
+            src<span class="token punctuation">.</span>crs<span class="token punctuation">,</span> TARGET_CRS<span class="token punctuation">,</span> src<span class="token punctuation">.</span>width<span class="token punctuation">,</span> src<span class="token punctuation">.</span>height<span class="token punctuation">,</span> <span class="token operator">*</span>src<span class="token punctuation">.</span>bounds
+        <span class="token punctuation">)</span>
+        profile <span class="token operator">=</span> src<span class="token punctuation">.</span>profile<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        profile<span class="token punctuation">.</span>update<span class="token punctuation">(</span>crs<span class="token operator">=</span>TARGET_CRS<span class="token punctuation">,</span> transform<span class="token operator">=</span>transform<span class="token punctuation">,</span>
+                       width<span class="token operator">=</span>width<span class="token punctuation">,</span> height<span class="token operator">=</span>height<span class="token punctuation">)</span>
+        <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>dst_path<span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">,</span> <span class="token operator">**</span>profile<span class="token punctuation">)</span> <span class="token keyword">as</span> dst<span class="token punctuation">:</span>
+            <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> src<span class="token punctuation">.</span>count <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+                reproject<span class="token punctuation">(</span>
+                    source<span class="token operator">=</span>rasterio<span class="token punctuation">.</span>band<span class="token punctuation">(</span>src<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    destination<span class="token operator">=</span>rasterio<span class="token punctuation">.</span>band<span class="token punctuation">(</span>dst<span class="token punctuation">,</span> i<span class="token punctuation">)</span><span class="token punctuation">,</span>
+                    src_transform<span class="token operator">=</span>src<span class="token punctuation">.</span>transform<span class="token punctuation">,</span>
+                    src_crs<span class="token operator">=</span>src<span class="token punctuation">.</span>crs<span class="token punctuation">,</span>
+                    dst_transform<span class="token operator">=</span>transform<span class="token punctuation">,</span>
+                    dst_crs<span class="token operator">=</span>TARGET_CRS<span class="token punctuation">,</span>
+                    resampling<span class="token operator">=</span>Resampling<span class="token punctuation">.</span>bilinear<span class="token punctuation">,</span>
+                <span class="token punctuation">)</span>
+
+
+<span class="token keyword">def</span> <span class="token function">tile_raster</span><span class="token punctuation">(</span>src_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> out_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Slice a metric raster into overlapping tiles; return tile paths."""</span>
+    os<span class="token punctuation">.</span>makedirs<span class="token punctuation">(</span>out_dir<span class="token punctuation">,</span> exist_ok<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+    tile_paths<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    step <span class="token operator">=</span> TILE_SIZE <span class="token operator">-</span> OVERLAP
+    <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>src_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+        cols <span class="token operator">=</span> math<span class="token punctuation">.</span>ceil<span class="token punctuation">(</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>width <span class="token operator">-</span> OVERLAP<span class="token punctuation">)</span> <span class="token operator">/</span> step<span class="token punctuation">)</span>
+        rows <span class="token operator">=</span> math<span class="token punctuation">.</span>ceil<span class="token punctuation">(</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>height <span class="token operator">-</span> OVERLAP<span class="token punctuation">)</span> <span class="token operator">/</span> step<span class="token punctuation">)</span>
+        <span class="token keyword">for</span> r <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>rows<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">for</span> c <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span>cols<span class="token punctuation">)</span><span class="token punctuation">:</span>
+                col_off <span class="token operator">=</span> c <span class="token operator">*</span> step
+                row_off <span class="token operator">=</span> r <span class="token operator">*</span> step
+                w <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>TILE_SIZE<span class="token punctuation">,</span> src<span class="token punctuation">.</span>width <span class="token operator">-</span> col_off<span class="token punctuation">)</span>
+                h <span class="token operator">=</span> <span class="token builtin">min</span><span class="token punctuation">(</span>TILE_SIZE<span class="token punctuation">,</span> src<span class="token punctuation">.</span>height <span class="token operator">-</span> row_off<span class="token punctuation">)</span>
+                window <span class="token operator">=</span> Window<span class="token punctuation">(</span>col_off<span class="token punctuation">,</span> row_off<span class="token punctuation">,</span> w<span class="token punctuation">,</span> h<span class="token punctuation">)</span>
+                transform <span class="token operator">=</span> src<span class="token punctuation">.</span>window_transform<span class="token punctuation">(</span>window<span class="token punctuation">)</span>
+                profile <span class="token operator">=</span> src<span class="token punctuation">.</span>profile<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+                profile<span class="token punctuation">.</span>update<span class="token punctuation">(</span>width<span class="token operator">=</span>w<span class="token punctuation">,</span> height<span class="token operator">=</span>h<span class="token punctuation">,</span> transform<span class="token operator">=</span>transform<span class="token punctuation">)</span>
+                tile_path <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>join<span class="token punctuation">(</span>out_dir<span class="token punctuation">,</span> <span class="token string-interpolation"><span class="token string">f"tile_r</span><span class="token interpolation"><span class="token punctuation">{</span>r<span class="token punctuation">:</span><span class="token format-spec">04d</span><span class="token punctuation">}</span></span><span class="token string">_c</span><span class="token interpolation"><span class="token punctuation">{</span>c<span class="token punctuation">:</span><span class="token format-spec">04d</span><span class="token punctuation">}</span></span><span class="token string">.tif"</span></span><span class="token punctuation">)</span>
+                <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">,</span> <span class="token operator">**</span>profile<span class="token punctuation">)</span> <span class="token keyword">as</span> dst<span class="token punctuation">:</span>
+                    dst<span class="token punctuation">.</span>write<span class="token punctuation">(</span>src<span class="token punctuation">.</span>read<span class="token punctuation">(</span>window<span class="token operator">=</span>window<span class="token punctuation">)</span><span class="token punctuation">)</span>
+                tile_paths<span class="token punctuation">.</span>append<span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> tile_paths
+</code></pre>
+</div>
+<h3 id="step-2-batch-sam-inference" tabindex="-1"><a class="header-anchor" href="#step-2-batch-sam-inference" aria-label="Permalink to section &quot;Step 2 — Batch SAM Inference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Batch SAM Inference</h3>
+<p>Pre-load the checkpoint once and iterate tiles in a <code class="inline-code">torch.no_grad()</code> context. Mixed-precision cuts VRAM usage by roughly 40% without affecting mask quality.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token comment"># requirements: segment-anything==1.0, torch==2.3.0, opencv-python==4.9.0.80</span>
 <span class="token keyword">import</span> torch
 <span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
 <span class="token keyword">import</span> rasterio
-<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>transform <span class="token keyword">import</span> Affine
-<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> shape<span class="token punctuation">,</span> mapping
-<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>ops <span class="token keyword">import</span> transform <span class="token keyword">as</span> shapely_transform
-<span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
 <span class="token keyword">from</span> segment_anything <span class="token keyword">import</span> sam_model_registry<span class="token punctuation">,</span> SamAutomaticMaskGenerator
-<span class="token keyword">import</span> cv2
 
-<span class="token comment"># Configuration</span>
-CHECKPOINT_PATH <span class="token operator">=</span> <span class="token string">"checkpoints/sam_vit_h_4b8939.pth"</span>
-INPUT_DIR <span class="token operator">=</span> <span class="token string">"rasters/tiles/"</span>
-OUTPUT_GEOJSON <span class="token operator">=</span> <span class="token string">"prelabels/sam_batch_output.geojson"</span>
-IOU_THRESHOLD <span class="token operator">=</span> <span class="token number">0.85</span>
-AREA_FILTER <span class="token operator">=</span> <span class="token number">500</span>  <span class="token comment"># Minimum pixel area to keep</span>
+CHECKPOINT <span class="token operator">=</span> <span class="token string">"checkpoints/sam_vit_h_4b8939.pth"</span>
+MODEL_TYPE <span class="token operator">=</span> <span class="token string">"vit_h"</span>
+DEVICE <span class="token operator">=</span> <span class="token string">"cuda"</span> <span class="token keyword">if</span> torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>is_available<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">else</span> <span class="token string">"cpu"</span>
 
-<span class="token comment"># Initialize SAM</span>
-sam <span class="token operator">=</span> sam_model_registry<span class="token punctuation">[</span><span class="token string">"vit_h"</span><span class="token punctuation">]</span><span class="token punctuation">(</span>checkpoint<span class="token operator">=</span>CHECKPOINT_PATH<span class="token punctuation">)</span>
-sam<span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token operator">=</span><span class="token string">"cuda"</span> <span class="token keyword">if</span> torch<span class="token punctuation">.</span>cuda<span class="token punctuation">.</span>is_available<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">else</span> <span class="token string">"cpu"</span><span class="token punctuation">)</span>
+sam <span class="token operator">=</span> sam_model_registry<span class="token punctuation">[</span>MODEL_TYPE<span class="token punctuation">]</span><span class="token punctuation">(</span>checkpoint<span class="token operator">=</span>CHECKPOINT<span class="token punctuation">)</span>
+sam<span class="token punctuation">.</span>to<span class="token punctuation">(</span>device<span class="token operator">=</span>DEVICE<span class="token punctuation">)</span>
+
 mask_generator <span class="token operator">=</span> SamAutomaticMaskGenerator<span class="token punctuation">(</span>
     model<span class="token operator">=</span>sam<span class="token punctuation">,</span>
     points_per_side<span class="token operator">=</span><span class="token number">32</span><span class="token punctuation">,</span>
-    pred_iou_thresh<span class="token operator">=</span>IOU_THRESHOLD<span class="token punctuation">,</span>
+    pred_iou_thresh<span class="token operator">=</span><span class="token number">0.85</span><span class="token punctuation">,</span>
     stability_score_thresh<span class="token operator">=</span><span class="token number">0.92</span><span class="token punctuation">,</span>
     crop_n_layers<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span>
-    min_mask_region_area<span class="token operator">=</span>AREA_FILTER
+    min_mask_region_area<span class="token operator">=</span><span class="token number">500</span><span class="token punctuation">,</span>   <span class="token comment"># pixels; filters noise fragments</span>
 <span class="token punctuation">)</span>
 
-<span class="token keyword">def</span> <span class="token function">pixel_to_geo</span><span class="token punctuation">(</span>mask_binary<span class="token punctuation">,</span> affine_transform<span class="token punctuation">)</span><span class="token punctuation">:</span>
-    <span class="token triple-quoted-string string">"""Convert a binary mask to georeferenced Shapely polygons."""</span>
-    contours<span class="token punctuation">,</span> _ <span class="token operator">=</span> cv2<span class="token punctuation">.</span>findContours<span class="token punctuation">(</span>
-        mask_binary<span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span><span class="token punctuation">,</span> cv2<span class="token punctuation">.</span>RETR_EXTERNAL<span class="token punctuation">,</span> cv2<span class="token punctuation">.</span>CHAIN_APPROX_SIMPLE
-    <span class="token punctuation">)</span>
-    polys <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
-    <span class="token keyword">for</span> contour <span class="token keyword">in</span> contours<span class="token punctuation">:</span>
-        <span class="token keyword">if</span> cv2<span class="token punctuation">.</span>contourArea<span class="token punctuation">(</span>contour<span class="token punctuation">)</span> <span class="token operator">>=</span> AREA_FILTER<span class="token punctuation">:</span>
-            <span class="token comment"># Convert OpenCV contour (col, row) pixel coords to a Shapely Polygon</span>
-            pixel_coords <span class="token operator">=</span> contour<span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span>
-            <span class="token keyword">if</span> <span class="token builtin">len</span><span class="token punctuation">(</span>pixel_coords<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">:</span>
-                <span class="token keyword">continue</span>
-            poly <span class="token operator">=</span> shape<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"Polygon"</span><span class="token punctuation">,</span> <span class="token string">"coordinates"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span>pixel_coords<span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">)</span>
-            <span class="token comment"># Apply raster affine transform: maps (col, row) pixel pairs to (x, y) map coords</span>
-            <span class="token keyword">def</span> <span class="token function">affine_fn</span><span class="token punctuation">(</span>xs<span class="token punctuation">,</span> ys<span class="token punctuation">)</span><span class="token punctuation">:</span>
-                geo_xs<span class="token punctuation">,</span> geo_ys <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
-                <span class="token keyword">for</span> col<span class="token punctuation">,</span> row <span class="token keyword">in</span> <span class="token builtin">zip</span><span class="token punctuation">(</span>xs<span class="token punctuation">,</span> ys<span class="token punctuation">)</span><span class="token punctuation">:</span>
-                    x<span class="token punctuation">,</span> y <span class="token operator">=</span> affine_transform <span class="token operator">*</span> <span class="token punctuation">(</span>col<span class="token punctuation">,</span> row<span class="token punctuation">)</span>
-                    geo_xs<span class="token punctuation">.</span>append<span class="token punctuation">(</span>x<span class="token punctuation">)</span>
-                    geo_ys<span class="token punctuation">.</span>append<span class="token punctuation">(</span>y<span class="token punctuation">)</span>
-                <span class="token keyword">return</span> geo_xs<span class="token punctuation">,</span> geo_ys
-            geo_poly <span class="token operator">=</span> shapely_transform<span class="token punctuation">(</span>affine_fn<span class="token punctuation">,</span> poly<span class="token punctuation">)</span>
-            polys<span class="token punctuation">.</span>append<span class="token punctuation">(</span>geo_poly<span class="token punctuation">)</span>
-    <span class="token keyword">return</span> polys
 
-<span class="token keyword">def</span> <span class="token function">process_batch</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
-    all_features <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
-    tile_paths <span class="token operator">=</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>glob<span class="token punctuation">.</span>glob<span class="token punctuation">(</span>os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>join<span class="token punctuation">(</span>INPUT_DIR<span class="token punctuation">,</span> <span class="token string">"*.tif"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-    
-    <span class="token keyword">for</span> tile_path <span class="token keyword">in</span> tile_paths<span class="token punctuation">:</span>
-        <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
-            img <span class="token operator">=</span> src<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>transpose<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>
-            transform <span class="token operator">=</span> src<span class="token punctuation">.</span>transform
-            crs <span class="token operator">=</span> src<span class="token punctuation">.</span>crs
-            
-            <span class="token comment"># Run SAM inference</span>
-            masks <span class="token operator">=</span> mask_generator<span class="token punctuation">.</span>generate<span class="token punctuation">(</span>img<span class="token punctuation">)</span>
-            
-            <span class="token keyword">for</span> m <span class="token keyword">in</span> masks<span class="token punctuation">:</span>
-                geo_polys <span class="token operator">=</span> pixel_to_geo<span class="token punctuation">(</span>m<span class="token punctuation">[</span><span class="token string">"segmentation"</span><span class="token punctuation">]</span><span class="token punctuation">,</span> transform<span class="token punctuation">)</span>
-                <span class="token keyword">for</span> poly <span class="token keyword">in</span> geo_polys<span class="token punctuation">:</span>
-                    all_features<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span>
-                        <span class="token string">"geometry"</span><span class="token punctuation">:</span> mapping<span class="token punctuation">(</span>poly<span class="token punctuation">)</span><span class="token punctuation">,</span>
-                        <span class="token string">"properties"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
-                            <span class="token string">"source_tile"</span><span class="token punctuation">:</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>basename<span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span><span class="token punctuation">,</span>
-                            <span class="token string">"confidence"</span><span class="token punctuation">:</span> <span class="token builtin">float</span><span class="token punctuation">(</span>m<span class="token punctuation">[</span><span class="token string">"predicted_iou"</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-                            <span class="token string">"area_px"</span><span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">(</span>m<span class="token punctuation">[</span><span class="token string">"area"</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
-                            <span class="token string">"crs"</span><span class="token punctuation">:</span> crs<span class="token punctuation">.</span>to_string<span class="token punctuation">(</span><span class="token punctuation">)</span>
-                        <span class="token punctuation">}</span>
-                    <span class="token punctuation">}</span><span class="token punctuation">)</span>
-    
-    <span class="token comment"># Export to GeoJSON</span>
-    gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">.</span>from_features<span class="token punctuation">(</span>all_features<span class="token punctuation">,</span> crs<span class="token operator">=</span>crs<span class="token punctuation">)</span>
-    gdf<span class="token punctuation">.</span>to_file<span class="token punctuation">(</span>OUTPUT_GEOJSON<span class="token punctuation">,</span> driver<span class="token operator">=</span><span class="token string">"GeoJSON"</span><span class="token punctuation">)</span>
-    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Exported </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> polygons to </span><span class="token interpolation"><span class="token punctuation">{</span>OUTPUT_GEOJSON<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
-
-<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
-    process_batch<span class="token punctuation">(</span><span class="token punctuation">)</span>
+<span class="token keyword">def</span> <span class="token function">run_sam_on_tiles</span><span class="token punctuation">(</span>tile_paths<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">tuple</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">dict</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Return (tile_path, masks) pairs for every input tile."""</span>
+    results<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">tuple</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">dict</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">with</span> torch<span class="token punctuation">.</span>no_grad<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">with</span> torch<span class="token punctuation">.</span>autocast<span class="token punctuation">(</span>device_type<span class="token operator">=</span>DEVICE<span class="token punctuation">,</span> dtype<span class="token operator">=</span>torch<span class="token punctuation">.</span>float16<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            <span class="token keyword">for</span> tile_path <span class="token keyword">in</span> tile_paths<span class="token punctuation">:</span>
+                <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+                    img <span class="token operator">=</span> src<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>transpose<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span>  <span class="token comment"># (H, W, C)</span>
+                    <span class="token comment"># SAM expects uint8 RGB; handle multi-band imagery</span>
+                    <span class="token keyword">if</span> img<span class="token punctuation">.</span>shape<span class="token punctuation">[</span><span class="token number">2</span><span class="token punctuation">]</span> <span class="token operator">></span> <span class="token number">3</span><span class="token punctuation">:</span>
+                        img <span class="token operator">=</span> img<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token punctuation">,</span> <span class="token punctuation">:</span><span class="token punctuation">,</span> <span class="token punctuation">:</span><span class="token number">3</span><span class="token punctuation">]</span>
+                    img <span class="token operator">=</span> img<span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span>
+                masks <span class="token operator">=</span> mask_generator<span class="token punctuation">.</span>generate<span class="token punctuation">(</span>img<span class="token punctuation">)</span>
+                results<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">,</span> masks<span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> results
 </code></pre>
 </div>
-<h2 id="qgis-integration-validation-workflow" tabindex="-1"><a class="header-anchor" href="#qgis-integration-validation-workflow"><span aria-hidden="true" class="anchor-symbol">#</span></a> QGIS Integration &amp; Validation Workflow</h2>
-<p>Once the GeoJSON is generated, load it into QGIS via <strong>Layer &gt; Add Layer &gt; Add Vector Layer</strong>. Apply a categorical symbology based on the <code class="inline-code">confidence</code> field to visually separate high-certainty segments from edge cases. Enable <strong>Snapping</strong> (Settings &gt; Snapping Options) and configure a tolerance of 5–10 map units to align pre-labels with existing basemaps or survey boundaries.</p>
-<p>For teams managing large annotation campaigns, integrating this pipeline into a broader <a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a> streamlines handoff between ML inference and human review. Use QGIS’s built-in <strong>Topology Checker</strong> to flag overlapping polygons, slivers, or unclosed rings before exporting to COCO or YOLO formats. Attribute forms can be configured to auto-populate <code class="inline-code">class_id</code> fields, reducing manual entry errors during final validation.</p>
-<h2 id="scaling-performance-optimization" tabindex="-1"><a class="header-anchor" href="#scaling-performance-optimization"><span aria-hidden="true" class="anchor-symbol">#</span></a> Scaling &amp; Performance Optimization</h2>
-<p>Running SAM at scale requires careful resource management. The official <a href="https://github.com/facebookresearch/segment-anything">Segment Anything Repository</a> recommends using <code class="inline-code">vit_b</code> or <code class="inline-code">vit_l</code> checkpoints for production environments where <code class="inline-code">vit_h</code> exceeds available VRAM. To optimize throughput:</p>
+<h3 id="step-3-convert-pixel-masks-to-georeferenced-polygons" tabindex="-1"><a class="header-anchor" href="#step-3-convert-pixel-masks-to-georeferenced-polygons" aria-label="Permalink to section &quot;Step 3 — Convert Pixel Masks to Georeferenced Polygons&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Convert Pixel Masks to Georeferenced Polygons</h3>
+<p>Apply each tile’s affine transform to map pixel contour coordinates to real-world map coordinates. Assign per-polygon <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> so annotators can triage masks by certainty in QGIS.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token comment"># requirements: shapely==2.0.4, geopandas==0.14.4, opencv-python==4.9.0.80</span>
+<span class="token keyword">import</span> cv2
+<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> Polygon<span class="token punctuation">,</span> mapping
+<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>ops <span class="token keyword">import</span> transform <span class="token keyword">as</span> shapely_transform
+<span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>transform <span class="token keyword">import</span> Affine
+
+MIN_AREA_PX <span class="token operator">=</span> <span class="token number">500</span>
+
+
+<span class="token keyword">def</span> <span class="token function">mask_to_georef_polygons</span><span class="token punctuation">(</span>
+    mask_binary<span class="token punctuation">:</span> np<span class="token punctuation">.</span>ndarray<span class="token punctuation">,</span>
+    affine_tfm<span class="token punctuation">:</span> Affine<span class="token punctuation">,</span>
+    predicted_iou<span class="token punctuation">:</span> <span class="token builtin">float</span><span class="token punctuation">,</span>
+    source_tile<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">dict</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Convert one SAM binary mask to a list of GeoJSON-ready feature dicts."""</span>
+    contours<span class="token punctuation">,</span> _ <span class="token operator">=</span> cv2<span class="token punctuation">.</span>findContours<span class="token punctuation">(</span>
+        mask_binary<span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        cv2<span class="token punctuation">.</span>RETR_EXTERNAL<span class="token punctuation">,</span>
+        cv2<span class="token punctuation">.</span>CHAIN_APPROX_SIMPLE<span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+    features<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">dict</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> cnt <span class="token keyword">in</span> contours<span class="token punctuation">:</span>
+        <span class="token keyword">if</span> cv2<span class="token punctuation">.</span>contourArea<span class="token punctuation">(</span>cnt<span class="token punctuation">)</span> <span class="token operator">&lt;</span> MIN_AREA_PX<span class="token punctuation">:</span>
+            <span class="token keyword">continue</span>
+        pts <span class="token operator">=</span> cnt<span class="token punctuation">.</span>squeeze<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> pts<span class="token punctuation">.</span>ndim <span class="token operator">&lt;</span> <span class="token number">2</span> <span class="token keyword">or</span> <span class="token builtin">len</span><span class="token punctuation">(</span>pts<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">3</span><span class="token punctuation">:</span>
+            <span class="token keyword">continue</span>
+        <span class="token comment"># Build pixel-space polygon, then apply raster affine transform</span>
+        pixel_ring <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token builtin">tuple</span><span class="token punctuation">(</span>pt<span class="token punctuation">)</span> <span class="token keyword">for</span> pt <span class="token keyword">in</span> pts<span class="token punctuation">]</span>
+        pixel_poly <span class="token operator">=</span> Polygon<span class="token punctuation">(</span>pixel_ring<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> pixel_poly<span class="token punctuation">.</span>is_valid<span class="token punctuation">:</span>
+            pixel_poly <span class="token operator">=</span> pixel_poly<span class="token punctuation">.</span><span class="token builtin">buffer</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
+
+        <span class="token keyword">def</span> <span class="token function">_affine</span><span class="token punctuation">(</span>xs<span class="token punctuation">,</span> ys<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            geo_xs<span class="token punctuation">,</span> geo_ys <span class="token operator">=</span> <span class="token builtin">zip</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token punctuation">(</span>affine_tfm <span class="token operator">*</span> <span class="token punctuation">(</span>col<span class="token punctuation">,</span> row<span class="token punctuation">)</span> <span class="token keyword">for</span> col<span class="token punctuation">,</span> row <span class="token keyword">in</span> <span class="token builtin">zip</span><span class="token punctuation">(</span>xs<span class="token punctuation">,</span> ys<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token keyword">return</span> <span class="token builtin">list</span><span class="token punctuation">(</span>geo_xs<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token builtin">list</span><span class="token punctuation">(</span>geo_ys<span class="token punctuation">)</span>
+
+        geo_poly <span class="token operator">=</span> shapely_transform<span class="token punctuation">(</span>_affine<span class="token punctuation">,</span> pixel_poly<span class="token punctuation">)</span>
+        geo_poly <span class="token operator">=</span> geo_poly<span class="token punctuation">.</span>simplify<span class="token punctuation">(</span><span class="token number">0.5</span><span class="token punctuation">,</span> preserve_topology<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+        features<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token punctuation">{</span>
+            <span class="token string">"geometry"</span><span class="token punctuation">:</span> mapping<span class="token punctuation">(</span>geo_poly<span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"properties"</span><span class="token punctuation">:</span> <span class="token punctuation">{</span>
+                <span class="token string">"source_tile"</span><span class="token punctuation">:</span> source_tile<span class="token punctuation">,</span>
+                <span class="token string">"confidence"</span><span class="token punctuation">:</span> <span class="token builtin">round</span><span class="token punctuation">(</span><span class="token builtin">float</span><span class="token punctuation">(</span>predicted_iou<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+                <span class="token string">"area_m2"</span><span class="token punctuation">:</span> <span class="token builtin">round</span><span class="token punctuation">(</span>geo_poly<span class="token punctuation">.</span>area<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token punctuation">}</span><span class="token punctuation">,</span>
+        <span class="token punctuation">}</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> features
+
+
+<span class="token keyword">def</span> <span class="token function">build_geodataframe</span><span class="token punctuation">(</span>
+    sam_results<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">tuple</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">dict</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+    output_crs<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> TARGET_CRS<span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Aggregate all tile results into a single GeoDataFrame."""</span>
+    all_features<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">dict</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> tile_path<span class="token punctuation">,</span> masks <span class="token keyword">in</span> sam_results<span class="token punctuation">:</span>
+        <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>tile_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+            tfm <span class="token operator">=</span> src<span class="token punctuation">.</span>transform
+        <span class="token keyword">for</span> m <span class="token keyword">in</span> masks<span class="token punctuation">:</span>
+            all_features<span class="token punctuation">.</span>extend<span class="token punctuation">(</span>
+                mask_to_georef_polygons<span class="token punctuation">(</span>
+                    m<span class="token punctuation">[</span><span class="token string">"segmentation"</span><span class="token punctuation">]</span><span class="token punctuation">,</span> tfm<span class="token punctuation">,</span> m<span class="token punctuation">[</span><span class="token string">"predicted_iou"</span><span class="token punctuation">]</span><span class="token punctuation">,</span> tile_path
+                <span class="token punctuation">)</span>
+            <span class="token punctuation">)</span>
+    gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">.</span>from_features<span class="token punctuation">(</span>all_features<span class="token punctuation">,</span> crs<span class="token operator">=</span>output_crs<span class="token punctuation">)</span>
+    <span class="token comment"># Remove duplicates from overlapping tiles: keep the highest-confidence copy</span>
+    gdf <span class="token operator">=</span> gdf<span class="token punctuation">.</span>sort_values<span class="token punctuation">(</span><span class="token string">"confidence"</span><span class="token punctuation">,</span> ascending<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+    gdf <span class="token operator">=</span> gdf<span class="token punctuation">.</span>drop_duplicates<span class="token punctuation">(</span>subset<span class="token operator">=</span><span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> gdf<span class="token punctuation">.</span>reset_index<span class="token punctuation">(</span>drop<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<h3 id="step-4-export-geojson-and-load-into-qgis" tabindex="-1"><a class="header-anchor" href="#step-4-export-geojson-and-load-into-qgis" aria-label="Permalink to section &quot;Step 4 — Export GeoJSON and Load into QGIS&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Export GeoJSON and Load into QGIS</h3>
+<p>Write the GeoDataFrame to a GeoJSON file and configure QGIS for annotation review.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python">OUTPUT_GEOJSON <span class="token operator">=</span> <span class="token string">"prelabels/sam_batch_output.geojson"</span>
+
+<span class="token keyword">def</span> <span class="token function">export_prelabels</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    gdf<span class="token punctuation">.</span>to_file<span class="token punctuation">(</span>OUTPUT_GEOJSON<span class="token punctuation">,</span> driver<span class="token operator">=</span><span class="token string">"GeoJSON"</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Exported </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> pre-label polygons → </span><span class="token interpolation"><span class="token punctuation">{</span>OUTPUT_GEOJSON<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+    high_conf <span class="token operator">=</span> <span class="token punctuation">(</span>gdf<span class="token punctuation">[</span><span class="token string">"confidence"</span><span class="token punctuation">]</span> <span class="token operator">>=</span> <span class="token number">0.90</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token builtin">sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"  High-confidence (≥0.90): </span><span class="token interpolation"><span class="token punctuation">{</span>high_conf<span class="token punctuation">}</span></span><span class="token string"> (</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token number">100</span><span class="token operator">*</span>high_conf<span class="token operator">/</span><span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">:</span><span class="token format-spec">.1f</span><span class="token punctuation">}</span></span><span class="token string">%)"</span></span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<p>In QGIS: open <strong>Layer &gt; Add Layer &gt; Add Vector Layer</strong> and select the GeoJSON. Apply a <strong>Graduated</strong> renderer on the <code class="inline-code">confidence</code> field — for example green for ≥ 0.90, amber for 0.80–0.89, red for &lt; 0.80. Enable <strong>Snapping</strong> (Settings &gt; Snapping Options, tolerance 5–10 map units) so editors can snap pre-label edges to existing survey boundaries. The full review-and-export cycle integrates with the broader <a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS plugin ecosystem for annotation teams</a>.</p>
+<h2 id="key-parameters-reference" tabindex="-1"><a class="header-anchor" href="#key-parameters-reference" aria-label="Permalink to section &quot;Key Parameters Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Key Parameters Reference</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Recommended value</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="inline-code">points_per_side</code></td>
+<td>32</td>
+<td>Grid density for automatic prompt points; raise to 64 for dense urban scenes</td>
+</tr>
+<tr>
+<td><code class="inline-code">pred_iou_thresh</code></td>
+<td>0.85</td>
+<td>Minimum predicted IoU to keep a mask; lower increases recall, raises noise</td>
+</tr>
+<tr>
+<td><code class="inline-code">stability_score_thresh</code></td>
+<td>0.92</td>
+<td>Mask consistency across threshold perturbations; lower if SAM misses soft boundaries</td>
+</tr>
+<tr>
+<td><code class="inline-code">min_mask_region_area</code></td>
+<td>500 px</td>
+<td>Pixel noise filter; scale with GSD (higher GSD → larger threshold)</td>
+</tr>
+<tr>
+<td>Tile overlap</td>
+<td>15–20%</td>
+<td>Prevents edge-cut artifacts; overlap &gt; 25% creates excessive duplicates</td>
+</tr>
+<tr>
+<td><code class="inline-code">simplify</code> tolerance</td>
+<td>0.5 m</td>
+<td>Vertex reduction; keep &lt; 1 m to preserve parcel or building edges</td>
+</tr>
+<tr>
+<td><code class="inline-code">MIN_AREA_M2</code> post-filter</td>
+<td>25–100 m²</td>
+<td>Remove sub-parcel noise after metric CRS conversion</td>
+</tr>
+</tbody>
+</table>
+</div><h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common Errors and Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors and Fixes</h2>
+<p><strong><code class="inline-code">TypeError: image must be uint8</code></strong>
+SAM requires three-channel uint8 RGB input. Multispectral rasters read via rasterio are often <code class="inline-code">uint16</code> and may have more than three bands. Fix: <code class="inline-code">img = img[:, :, :3].astype(np.uint8)</code>.</p>
+<p><strong>Masks visually correct but coordinates far off</strong>
+Root cause: the raster’s CRS was geographic (<code class="inline-code">EPSG:4326</code>) at inference time, so the affine transform maps pixel columns/rows to decimal-degree deltas, not metres. Fix: run <code class="inline-code">reproject_to_metric()</code> before tiling.</p>
+<p><strong>Topology Checker in QGIS flags hundreds of overlapping polygons</strong>
+Root cause: tile overlap without deduplication. Fix: the <code class="inline-code">drop_duplicates(subset=[&quot;geometry&quot;])</code> step above removes exact duplicates; for near-duplicates use <code class="inline-code">gpd.overlay(gdf, gdf, how=&quot;union&quot;)</code> and dissolve by <code class="inline-code">source_tile</code>.</p>
+<p><strong>CUDA out of memory with <code class="inline-code">vit_h</code></strong>
+Root cause: <code class="inline-code">vit_h</code> requires ~7 GB VRAM per batch. Fix: switch to <code class="inline-code">vit_l</code> (4 GB) or enable <code class="inline-code">torch.autocast</code> as shown in Step 2. Alternatively, process tiles sequentially without batching if VRAM is constrained.</p>
+<h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
 <ul>
-<li><strong>Tile Overlap Management:</strong> Maintain a 15–20% overlap between adjacent tiles to prevent edge-cut artifacts. Deduplicate intersecting polygons post-inference using <code class="inline-code">gpd.overlay()</code> with the <code class="inline-code">intersection</code> operator.</li>
-<li><strong>Batched GPU Inference:</strong> Wrap <code class="inline-code">mask_generator.generate()</code> in a <code class="inline-code">torch.no_grad()</code> context and enable mixed-precision (<code class="inline-code">torch.autocast(device_type=&quot;cuda&quot;, dtype=torch.float16)</code>) to reduce memory pressure by ~40%.</li>
-<li><strong>CRS Consistency:</strong> Always normalize input rasters to a projected CRS before inference. Geographic CRS (WGS84) distorts pixel-to-meter ratios, causing SAM to misinterpret object scale and generate fragmented masks.</li>
-<li><strong>Post-Processing Filters:</strong> Apply a minimum area threshold (<code class="inline-code">AREA_FILTER</code>) and a convexity check to remove noise. Use <code class="inline-code">shapely.simplify()</code> with a tolerance of 0.5–1.0 map units to reduce vertex count without compromising geometric accuracy.</li>
+<li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a> — parent page covering plugin selection, scripting hooks, and team review workflows</li>
+<li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a> — broader treatment of foundation-model-assisted labeling including Label Studio integration</li>
+<li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles</a> — how to route SAM pre-labels into review queues and track correction rates</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — foundational CRS concepts underlying the reprojection steps above</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a> — how to use SAM’s <code class="inline-code">predicted_iou</code> field to drive active learning queues</li>
 </ul>
-<p>By standardizing these steps, spatial teams can transition from manual digitizing to automated, human-in-the-loop annotation pipelines. The result is faster dataset curation, consistent spatial topology, and direct compatibility with downstream computer vision training frameworks.</p>
+<p>This page is part of the <a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a> section within <a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration</a>.</p>
 
 
       
@@ -471,7 +749,7 @@ mask_generator <span class="token operator">=</span> SamAutomaticMaskGenerator<s
         
           <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
         
-          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a></li>
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows for Geospatial ML</a></li>
         
       </ul>
     </div>

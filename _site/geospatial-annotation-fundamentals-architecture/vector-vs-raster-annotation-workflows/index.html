@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Vector vs Raster Annotation Workflows · GeoAnnotation</title>
-  <meta name="description" content="Selecting between vector and raster annotation formats is one of the earliest architectural decisions in any geospatial machine learning pipeline. The choice">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>Vector vs Raster Annotation Workflows for Geospatial ML</title>
+  <meta name="description" content="A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers.">
   <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
   <meta name="googlebot" content="index, follow">
@@ -33,8 +33,8 @@
 
   <!-- Open Graph -->
   <meta property="og:type" content="article">
-  <meta property="og:title" content="Vector vs Raster Annotation Workflows · GeoAnnotation">
-  <meta property="og:description" content="Selecting between vector and raster annotation formats is one of the earliest architectural decisions in any geospatial machine learning pipeline. The choice">
+  <meta property="og:title" content="Vector vs Raster Annotation Workflows for Geospatial ML">
+  <meta property="og:description" content="A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers.">
   <meta property="og:url" content="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">
   <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
   <meta property="og:locale" content="en_US">
@@ -45,8 +45,8 @@
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Vector vs Raster Annotation Workflows · GeoAnnotation">
-  <meta name="twitter:description" content="Selecting between vector and raster annotation formats is one of the earliest architectural decisions in any geospatial machine learning pipeline. The choice">
+  <meta name="twitter:title" content="Vector vs Raster Annotation Workflows for Geospatial ML">
+  <meta name="twitter:description" content="A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers.">
   <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
   <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
 
@@ -54,8 +54,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css">
-  <script defer src="/assets/js/site.js"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
+  <script defer src="/assets/js/site.js?v=60200a44"></script>
 
   <script type="application/ld+json">
 {
@@ -91,7 +91,7 @@
     },{
       "@type": "ListItem",
       "position": 3,
-      "name": "Vector vs Raster Annotation Workflows",
+      "name": "Vector vs Raster Annotation Workflows for Geospatial ML",
       "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"
     }]
 }
@@ -102,8 +102,8 @@
   "@context": "https://schema.org",
   "@type": "TechArticle",
   "@id": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/#article",
-  "headline": "Vector vs Raster Annotation Workflows",
-  "description": "Selecting between vector and raster annotation formats is one of the earliest architectural decisions in any geospatial machine learning pipeline. The choice",
+  "headline": "Vector vs Raster Annotation Workflows for Geospatial ML",
+  "description": "A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers.",
   "url": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/",
   "mainEntityOfPage": {
     "@type": "WebPage",
@@ -212,7 +212,7 @@
         
       
         
-          <li aria-current="page">Vector vs Raster Annotation Workflows</li>
+          <li aria-current="page">Vector vs Raster Annotation Workflows for Geospatial ML</li>
         
       
     </ol>
@@ -234,7 +234,7 @@
             
             <ul>
               
-                <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/" class="">Calculating IoU thresholds for geospatial object detection</a></li>
+                <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/" class="">Calculating IoU Thresholds for Geospatial Object Detection</a></li>
               
             </ul>
             
@@ -252,7 +252,7 @@
           </li>
         
           <li>
-            <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/" class="is-active">Vector vs Raster Annotation Workflows</a>
+            <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/" class="is-active">Vector vs Raster Annotation Workflows for Geospatial ML</a>
             
             <ul>
               
@@ -266,28 +266,144 @@
     </aside>
 
     <article class="article">
-      <h1>Vector vs Raster Annotation Workflows</h1>
-<p>Selecting between vector and raster annotation formats is one of the earliest architectural decisions in any geospatial machine learning pipeline. The choice dictates storage overhead, preprocessing complexity, model architecture compatibility, and inference latency. For spatial data scientists and ML engineers, understanding <strong>Vector vs Raster Annotation Workflows</strong> is not merely a data formatting exercise—it is a foundational step in building scalable, production-ready training datasets. This guide breaks down the operational differences, provides tested Python automation patterns, and outlines troubleshooting strategies for high-throughput annotation pipelines. Teams establishing baseline practices should first review the broader architectural considerations in <a href="/geospatial-annotation-fundamentals-architecture/">Geospatial Annotation Fundamentals &amp; Architecture</a> before committing to a specific labeling paradigm.</p>
-<h2 id="prerequisites-pipeline-readiness" tabindex="-1"><a class="header-anchor" href="#prerequisites-pipeline-readiness"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Pipeline Readiness</h2>
-<p>Before initiating either workflow, annotation teams must align on data standards, tooling, and schema definitions. Misaligned prerequisites are the primary cause of downstream pipeline failures, silent training crashes, and degraded model convergence.</p>
-<ol>
-<li><strong>Source Imagery &amp; Metadata</strong>: High-resolution aerial/satellite imagery (GeoTIFF, Cloud Optimized GeoTIFF) with embedded geospatial metadata. Verify bit depth, band order, compression settings, and tile boundaries. Inconsistent tiling schemes cause boundary artifacts during rasterization and spatial joins.</li>
-<li><strong>Label Taxonomy Definition</strong>: Establish a controlled vocabulary with hierarchical class relationships, mutually exclusive categories, and clear boundary rules. A poorly scoped taxonomy leads to inconsistent labeling across annotators and introduces noise that degrades gradient descent stability. Refer to <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a> for structured approaches to class hierarchy design and edge-case documentation.</li>
-<li><strong>Coordinate Reference System (CRS) Alignment</strong>: All annotation outputs must share the exact CRS of the source imagery. Mixing projected (e.g., UTM) and geographic (e.g., WGS84) systems during export introduces sub-pixel misalignment, distorts area calculations, and breaks spatial indexing. Consult <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> for automated CRS validation routines and datum transformation safeguards.</li>
-<li><strong>Toolchain Stack</strong>:</li>
-</ol>
+      <div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">json</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-json"><span class="token punctuation">[</span>
+  <span class="token punctuation">{</span>
+    <span class="token property">"@context"</span><span class="token operator">:</span> <span class="token string">"https://schema.org"</span><span class="token punctuation">,</span>
+    <span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Article"</span><span class="token punctuation">,</span>
+    <span class="token property">"headline"</span><span class="token operator">:</span> <span class="token string">"Vector vs Raster Annotation Workflows for Geospatial ML"</span><span class="token punctuation">,</span>
+    <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">"A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers."</span><span class="token punctuation">,</span>
+    <span class="token property">"datePublished"</span><span class="token operator">:</span> <span class="token string">"2025-11-10"</span><span class="token punctuation">,</span>
+    <span class="token property">"dateModified"</span><span class="token operator">:</span> <span class="token string">"2026-06-24"</span><span class="token punctuation">,</span>
+    <span class="token property">"author"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Organization"</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Geospatial Annotation"</span><span class="token punctuation">}</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token punctuation">{</span>
+    <span class="token property">"@context"</span><span class="token operator">:</span> <span class="token string">"https://schema.org"</span><span class="token punctuation">,</span>
+    <span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"BreadcrumbList"</span><span class="token punctuation">,</span>
+    <span class="token property">"itemListElement"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"ListItem"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Home"</span><span class="token punctuation">,</span> <span class="token property">"item"</span><span class="token operator">:</span> <span class="token string">"https://geospatialannotation.com/"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"ListItem"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Geospatial Annotation Fundamentals &amp; Architecture"</span><span class="token punctuation">,</span> <span class="token property">"item"</span><span class="token operator">:</span> <span class="token string">"https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"ListItem"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Vector vs Raster Annotation Workflows"</span><span class="token punctuation">,</span> <span class="token property">"item"</span><span class="token operator">:</span> <span class="token string">"https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"</span><span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token punctuation">{</span>
+    <span class="token property">"@context"</span><span class="token operator">:</span> <span class="token string">"https://schema.org"</span><span class="token punctuation">,</span>
+    <span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"HowTo"</span><span class="token punctuation">,</span>
+    <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"How to Choose and Implement Vector or Raster Annotation Workflows"</span><span class="token punctuation">,</span>
+    <span class="token property">"step"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"HowToStep"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Align prerequisites and toolchain"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"HowToStep"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Validate source imagery CRS and tiling scheme"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"HowToStep"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Implement vector delineation and topology enforcement"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"HowToStep"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Rasterize annotations using exact affine transform"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"HowToStep"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">5</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Validate masks against source extent"</span><span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"HowToStep"</span><span class="token punctuation">,</span> <span class="token property">"position"</span><span class="token operator">:</span> <span class="token number">6</span><span class="token punctuation">,</span> <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Hook validation into CI gates"</span><span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+  <span class="token punctuation">}</span><span class="token punctuation">,</span>
+  <span class="token punctuation">{</span>
+    <span class="token property">"@context"</span><span class="token operator">:</span> <span class="token string">"https://schema.org"</span><span class="token punctuation">,</span>
+    <span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"FAQPage"</span><span class="token punctuation">,</span>
+    <span class="token property">"mainEntity"</span><span class="token operator">:</span> <span class="token punctuation">[</span>
+      <span class="token punctuation">{</span>
+        <span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Question"</span><span class="token punctuation">,</span>
+        <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Should I store annotations as vector or raster for deep learning?"</span><span class="token punctuation">,</span>
+        <span class="token property">"acceptedAnswer"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Answer"</span><span class="token punctuation">,</span> <span class="token property">"text"</span><span class="token operator">:</span> <span class="token string">"Store as vector for maximum editability and disk efficiency; rasterize at the data-loader stage (lazy rasterization) to give deep learning frameworks pixel-aligned masks without duplicating storage."</span><span class="token punctuation">}</span>
+      <span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span>
+        <span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Question"</span><span class="token punctuation">,</span>
+        <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"What causes boundary artifacts in rasterized annotation masks?"</span><span class="token punctuation">,</span>
+        <span class="token property">"acceptedAnswer"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Answer"</span><span class="token punctuation">,</span> <span class="token property">"text"</span><span class="token operator">:</span> <span class="token string">"Mismatched affine transforms between the source imagery and the rasterization call, or using bilinear/cubic interpolation instead of nearest-neighbour. Always rasterize with the exact transform copied from the source GeoTIFF."</span><span class="token punctuation">}</span>
+      <span class="token punctuation">}</span><span class="token punctuation">,</span>
+      <span class="token punctuation">{</span>
+        <span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Question"</span><span class="token punctuation">,</span>
+        <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"How do I validate that a GeoJSON annotation file is topology-safe?"</span><span class="token punctuation">,</span>
+        <span class="token property">"acceptedAnswer"</span><span class="token operator">:</span> <span class="token punctuation">{</span><span class="token property">"@type"</span><span class="token operator">:</span> <span class="token string">"Answer"</span><span class="token punctuation">,</span> <span class="token property">"text"</span><span class="token operator">:</span> <span class="token string">"Use shapely.is_valid on every geometry; repair self-intersections with make_valid() or buffer(0). Run these checks as a pre-commit hook or CI step before the annotations are merged into the dataset."</span><span class="token punctuation">}</span>
+      <span class="token punctuation">}</span>
+    <span class="token punctuation">]</span>
+  <span class="token punctuation">}</span>
+<span class="token punctuation">]</span>
+</code></pre>
+</div>
+<h1>Vector vs Raster Annotation Workflows for Geospatial ML</h1>
+<p>The choice between vector and raster annotation formats is an architectural decision that propagates through every stage of a geospatial ML pipeline: storage costs, preprocessing complexity, model architecture compatibility, and inference latency all depend on it. A poorly chosen format discovered mid-project means weeks of reprocessing. The failure scenario is concrete: a segmentation team annotates 50,000 tiles in raw PNG masks at full resolution, only to learn their object-detection model expects polygon-level instance IDs — every annotation must be re-exported, CRS realigned, and rasterized from scratch.</p>
+<p>This page gives you the step-by-step implementation for both workflows, a decision matrix, and the spatial-specific gotchas that cause silent pipeline failures. For the foundational concepts that underpin both approaches, see the <a href="/geospatial-annotation-fundamentals-architecture/">Geospatial Annotation Fundamentals &amp; Architecture</a> pillar.</p>
+<hr>
+<h2 id="prerequisites-toolchain-alignment" tabindex="-1"><a class="header-anchor" href="#prerequisites-toolchain-alignment" aria-label="Permalink to section &quot;Prerequisites &amp; Toolchain Alignment&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Toolchain Alignment</h2>
+<p>Before choosing a format, confirm the following are locked in. Misaligned prerequisites are the primary source of downstream crashes and degraded model convergence.</p>
+<p><strong>Python packages (pin these versions):</strong></p>
 <ul>
-<li>Vector: QGIS, Label Studio, CVAT, or custom web-based polygon editors</li>
-<li>Raster: Labelbox, Supervisely, or custom <code class="inline-code">numpy</code>/<code class="inline-code">rasterio</code>-based mask generators</li>
-<li>Automation: Python 3.9+, <code class="inline-code">geopandas</code>, <code class="inline-code">shapely</code>, <code class="inline-code">rasterio</code>, <code class="inline-code">numpy</code>, <code class="inline-code">pyproj</code>, <code class="inline-code">fiona</code></li>
+<li><code class="inline-code">geopandas&gt;=0.14.0</code> — spatial dataframes, CRS management, GeoJSON I/O</li>
+<li><code class="inline-code">shapely&gt;=2.0.0</code> — geometry validation, <code class="inline-code">make_valid</code>, topology operations</li>
+<li><code class="inline-code">rasterio&gt;=1.3.0</code> — raster I/O, affine transforms, <code class="inline-code">rasterize</code></li>
+<li><code class="inline-code">pyproj&gt;=3.6.0</code> — CRS authority lookups, datum transformations</li>
+<li><code class="inline-code">fiona&gt;=1.9.0</code> — low-level vector I/O, schema inspection</li>
+<li><code class="inline-code">numpy&gt;=1.26.0</code> — mask array operations, dtype enforcement</li>
 </ul>
-<h2 id="vector-annotation-pipeline" tabindex="-1"><a class="header-anchor" href="#vector-annotation-pipeline"><span aria-hidden="true" class="anchor-symbol">#</span></a> Vector Annotation Pipeline</h2>
-<p>Vector workflows produce discrete geometric primitives (points, lines, polygons) with attached attribute tables. This format is ideal for object detection, instance segmentation, and feature extraction tasks where boundary precision, topological relationships, and attribute querying matter.</p>
-<h3 id="1-boundary-delineation-topology-enforcement" tabindex="-1"><a class="header-anchor" href="#1-boundary-delineation-topology-enforcement"><span aria-hidden="true" class="anchor-symbol">#</span></a> 1. Boundary Delineation &amp; Topology Enforcement</h3>
-<p>Annotators trace features using polygon or polyline tools. Topology rules—no overlaps, closed rings, minimum vertex spacing, and snap-to-grid alignment—must be enforced at the UI level or via post-processing scripts. Invalid geometries, such as self-intersections, duplicate vertices, or unclosed rings, break spatial indexing and cause silent failures during training data generation. Implement automated validation gates using the <a href="https://shapely.readthedocs.io/en/stable/manual.html#shapely.validation.make_valid">Shapely geometry validation routines</a> to repair or flag malformed features before export.</p>
-<h3 id="2-attribute-schema-serialization" tabindex="-1"><a class="header-anchor" href="#2-attribute-schema-serialization"><span aria-hidden="true" class="anchor-symbol">#</span></a> 2. Attribute Schema &amp; Serialization</h3>
-<p>Each geometry requires a structured attribute table mapping class IDs, annotator metadata, and confidence scores. When exporting, GeoJSON remains the industry standard for ML pipelines due to its human-readable structure, native support in modern frameworks, and straightforward property mapping. For production-grade serialization, teams should follow <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/">How to structure GeoJSON for ML training datasets</a> to ensure consistent property naming, numeric typing, and explicit CRS declaration. Avoid embedding large binary blobs or unstructured JSON strings within feature properties, as these increase parsing latency during data loading.</p>
-<h3 id="3-python-automation-pattern-vector-validation-batch-export" tabindex="-1"><a class="header-anchor" href="#3-python-automation-pattern-vector-validation-batch-export"><span aria-hidden="true" class="anchor-symbol">#</span></a> 3. Python Automation Pattern: Vector Validation &amp; Batch Export</h3>
+<p><strong>System dependencies:</strong> GDAL 3.6+ and PROJ 9.2+ must be installed and on <code class="inline-code">PATH</code>. Mismatches between the GDAL C library version and the <code class="inline-code">rasterio</code>/<code class="inline-code">fiona</code> wheels cause cryptic import errors.</p>
+<p><strong>Spatial knowledge prerequisites:</strong></p>
+<ol>
+<li><strong>Source imagery metadata:</strong> Verify GeoTIFF bit depth, band order, compression (LZW vs DEFLATE), and tile boundaries before annotation begins. Inconsistent tiling schemes produce boundary artifacts during rasterization and break spatial joins between adjacent tiles.</li>
+<li><strong><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Label taxonomy</a>:</strong> Establish a controlled class vocabulary with mutually exclusive categories and explicit boundary rules before any annotation starts. A taxonomy revised mid-project requires back-annotating all existing labels.</li>
+<li><strong><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate reference system</a> (CRS) contract:</strong> All annotation outputs must share the exact CRS as the source imagery. Sub-pixel misalignment from mixing <code class="inline-code">EPSG:4326</code> geographic coordinates with a projected CRS such as <code class="inline-code">EPSG:32618</code> (UTM zone 18N) distorts IoU calculations and breaks spatial indexing.</li>
+</ol>
+<hr>
+<h2 id="pipeline-architecture" tabindex="-1"><a class="header-anchor" href="#pipeline-architecture" aria-label="Permalink to section &quot;Pipeline Architecture&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Pipeline Architecture</h2>
+<p>The diagram below shows how vector annotations and raster masks fit into the same pipeline — the recommended hybrid stores vector annotations on disk and rasterizes lazily at the data-loader stage.</p>
+<svg viewBox="0 0 780 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vector and raster annotation pipeline architecture" style="width:100%;max-width:780px;height:auto;display:block;margin:1.5rem auto;">
+  <title>Vector and raster annotation pipeline architecture</title>
+  <desc>Flowchart showing source imagery ingested into the annotation tool, producing vector annotations (GeoJSON/GeoPackage) that are validated and stored in version control. At training time, a data loader rasterizes vectors to pixel masks on the fly, feeding both object detection and segmentation model heads.</desc>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
+    </marker>
+  </defs>
+  <!-- Source imagery box -->
+  <rect x="10" y="130" width="140" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="80" y="154" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Source Imagery</text>
+  <text x="80" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoTIFF / COG</text>
+  <!-- Annotation tool -->
+  <rect x="195" y="130" width="140" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="265" y="154" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Annotation Tool</text>
+  <text x="265" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">QGIS / Label Studio</text>
+  <!-- Vector store -->
+  <rect x="385" y="60" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="460" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Vector Annotations</text>
+  <text x="460" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoJSON / GeoPackage</text>
+  <!-- Validation -->
+  <rect x="385" y="200" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="460" y="224" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Validation Gate</text>
+  <text x="460" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">topology + CRS + schema</text>
+  <!-- Data loader -->
+  <rect x="580" y="130" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="655" y="154" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Data Loader</text>
+  <text x="655" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">lazy rasterize → mask</text>
+  <!-- Model heads -->
+  <rect x="580" y="38" width="150" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+  <text x="655" y="58" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Object Detection</text>
+  <text x="655" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">bounding box / polygon</text>
+  <rect x="580" y="242" width="150" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+  <text x="655" y="262" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Segmentation</text>
+  <text x="655" y="278" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">pixel mask → CNN/ViT</text>
+  <!-- Arrows -->
+  <line x1="150" y1="158" x2="193" y2="158" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="335" y1="148" x2="383" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="335" y1="168" x2="383" y2="218" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="535" y1="88" x2="578" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="535" y1="228" x2="578" y2="168" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="730" y1="148" x2="730" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="730" y1="186" x2="730" y2="242" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+</svg>
+<hr>
+<h2 id="step-1-ingest-source-imagery-and-verify-the-affine-transform" tabindex="-1"><a class="header-anchor" href="#step-1-ingest-source-imagery-and-verify-the-affine-transform" aria-label="Permalink to section &quot;Step 1 — Ingest Source Imagery and Verify the Affine Transform&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Ingest Source Imagery and Verify the Affine Transform</h2>
+<p>Before any annotation begins, extract and record the affine transform, shape, and CRS from every source tile. Store these in a sidecar JSON so that downstream rasterization can always reconstruct the exact pixel grid.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -298,44 +414,110 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> rasterio
+<span class="token keyword">import</span> json
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">def</span> <span class="token function">extract_tile_metadata</span><span class="token punctuation">(</span>tif_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">dict</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Return the spatial metadata needed to pin annotation CRS and rasterize correctly."""</span>
+    <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>tif_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">{</span>
+            <span class="token string">"path"</span><span class="token punctuation">:</span> tif_path<span class="token punctuation">,</span>
+            <span class="token string">"crs_wkt"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_wkt<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"epsg"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+            <span class="token string">"transform"</span><span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">(</span>src<span class="token punctuation">.</span>transform<span class="token punctuation">)</span><span class="token punctuation">,</span>   <span class="token comment"># 6-element affine tuple</span>
+            <span class="token string">"width"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>width<span class="token punctuation">,</span>
+            <span class="token string">"height"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>height<span class="token punctuation">,</span>
+            <span class="token string">"dtype"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>dtypes<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+            <span class="token string">"count"</span><span class="token punctuation">:</span> src<span class="token punctuation">.</span>count<span class="token punctuation">,</span>
+        <span class="token punctuation">}</span>
+
+<span class="token comment"># Usage</span>
+meta <span class="token operator">=</span> extract_tile_metadata<span class="token punctuation">(</span><span class="token string">"/data/tiles/tile_0042.tif"</span><span class="token punctuation">)</span>
+Path<span class="token punctuation">(</span><span class="token string">"/data/tiles/tile_0042_meta.json"</span><span class="token punctuation">)</span><span class="token punctuation">.</span>write_text<span class="token punctuation">(</span>json<span class="token punctuation">.</span>dumps<span class="token punctuation">(</span>meta<span class="token punctuation">,</span> indent<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<p>Fail fast if <code class="inline-code">epsg</code> is <code class="inline-code">None</code> — that means the CRS is not registered in the PROJ authority and will silently break downstream transforms.</p>
+<hr>
+<h2 id="step-2-vector-annotation-boundary-delineation-and-topology-enforcement" tabindex="-1"><a class="header-anchor" href="#step-2-vector-annotation-boundary-delineation-and-topology-enforcement" aria-label="Permalink to section &quot;Step 2 — Vector Annotation: Boundary Delineation and Topology Enforcement&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Vector Annotation: Boundary Delineation and Topology Enforcement</h2>
+<p>Vector workflows produce discrete geometric primitives (points, lines, polygons) with attached attribute tables. They are ideal for object detection, instance segmentation, and feature extraction tasks where boundary precision, topological relationships, and attribute querying matter.</p>
+<p>Annotators trace features in QGIS or a web-based polygon editor. Topology rules — no overlaps, closed rings, minimum vertex spacing, snap-to-grid alignment — must be enforced at the UI level or via post-processing. Invalid geometries (self-intersections, duplicate vertices, unclosed rings) break spatial indexing and cause silent failures during training data generation.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
 <span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> make_valid
 <span class="token keyword">import</span> logging
-<span class="token keyword">import</span> json
 
-logging<span class="token punctuation">.</span>basicConfig<span class="token punctuation">(</span>level<span class="token operator">=</span>logging<span class="token punctuation">.</span>INFO<span class="token punctuation">)</span>
+logging<span class="token punctuation">.</span>basicConfig<span class="token punctuation">(</span>level<span class="token operator">=</span>logging<span class="token punctuation">.</span>INFO<span class="token punctuation">,</span> <span class="token builtin">format</span><span class="token operator">=</span><span class="token string">"%(levelname)s %(message)s"</span><span class="token punctuation">)</span>
 
-<span class="token keyword">def</span> <span class="token function">validate_and_export_vector</span><span class="token punctuation">(</span>input_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> output_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> target_crs<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> <span class="token string">"EPSG:32618"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+<span class="token keyword">def</span> <span class="token function">validate_vector_annotations</span><span class="token punctuation">(</span>
+    input_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    output_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    target_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">32618</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""
+    Load, reproject, repair, and export a vector annotation file.
+
+    Args:
+        input_path:   Path to the raw GeoJSON or GeoPackage from the annotation tool.
+        output_path:  Destination GeoJSON path for validated output.
+        target_epsg:  EPSG code matching the source imagery CRS (default UTM 18N).
+    Returns:
+        Validated GeoDataFrame ready for rasterization or ML export.
+    """</span>
     gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>input_path<span class="token punctuation">)</span>
-    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Loaded </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> features. CRS: </span><span class="token interpolation"><span class="token punctuation">{</span>gdf<span class="token punctuation">.</span>crs<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
-    
-    <span class="token comment"># Enforce CRS alignment</span>
-    <span class="token keyword">if</span> gdf<span class="token punctuation">.</span>crs <span class="token operator">!=</span> target_crs<span class="token punctuation">:</span>
+    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string">"Loaded %d features. Source CRS: %s"</span><span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">,</span> gdf<span class="token punctuation">.</span>crs<span class="token punctuation">)</span>
+
+    <span class="token comment"># --- CRS enforcement ---</span>
+    target_crs <span class="token operator">=</span> <span class="token string-interpolation"><span class="token string">f"EPSG:</span><span class="token interpolation"><span class="token punctuation">{</span>target_epsg<span class="token punctuation">}</span></span><span class="token string">"</span></span>
+    <span class="token keyword">if</span> gdf<span class="token punctuation">.</span>crs <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"Input file has no CRS. Declare it explicitly before export."</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> gdf<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> target_epsg<span class="token punctuation">:</span>
+        logging<span class="token punctuation">.</span>warning<span class="token punctuation">(</span><span class="token string">"Reprojecting from %s to %s"</span><span class="token punctuation">,</span> gdf<span class="token punctuation">.</span>crs<span class="token punctuation">,</span> target_crs<span class="token punctuation">)</span>
         gdf <span class="token operator">=</span> gdf<span class="token punctuation">.</span>to_crs<span class="token punctuation">(</span>target_crs<span class="token punctuation">)</span>
-        
-    <span class="token comment"># Repair invalid geometries</span>
+
+    <span class="token comment"># --- Topology repair ---</span>
     invalid_mask <span class="token operator">=</span> <span class="token operator">~</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_valid
-    <span class="token keyword">if</span> invalid_mask<span class="token punctuation">.</span><span class="token builtin">any</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
-        logging<span class="token punctuation">.</span>warning<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Repairing </span><span class="token interpolation"><span class="token punctuation">{</span>invalid_mask<span class="token punctuation">.</span><span class="token builtin">sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> invalid geometries."</span></span><span class="token punctuation">)</span>
-        gdf<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>invalid_mask<span class="token punctuation">,</span> <span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> gdf<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>invalid_mask<span class="token punctuation">,</span> <span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>make_valid<span class="token punctuation">)</span>
-        
-    <span class="token comment"># Drop null or empty geometries post-repair</span>
-    gdf <span class="token operator">=</span> gdf<span class="token punctuation">[</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>notna<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token operator">~</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_empty<span class="token punctuation">]</span>
-    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Exporting </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> validated features to </span><span class="token interpolation"><span class="token punctuation">{</span>output_path<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
-    
-    <span class="token comment"># Export with strict JSON typing</span>
+    n_invalid <span class="token operator">=</span> <span class="token builtin">int</span><span class="token punctuation">(</span>invalid_mask<span class="token punctuation">.</span><span class="token builtin">sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> n_invalid<span class="token punctuation">:</span>
+        logging<span class="token punctuation">.</span>warning<span class="token punctuation">(</span><span class="token string">"Repairing %d invalid geometries via make_valid()."</span><span class="token punctuation">,</span> n_invalid<span class="token punctuation">)</span>
+        gdf<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>invalid_mask<span class="token punctuation">,</span> <span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>
+            gdf<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>invalid_mask<span class="token punctuation">,</span> <span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>make_valid<span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+
+    <span class="token comment"># --- Drop nulls and empty rings post-repair ---</span>
+    before <span class="token operator">=</span> <span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span>
+    gdf <span class="token operator">=</span> gdf<span class="token punctuation">[</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>notna<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token operator">~</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_empty<span class="token punctuation">]</span><span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string">"Dropped %d null/empty geometries."</span><span class="token punctuation">,</span> before <span class="token operator">-</span> <span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">)</span>
+
+    <span class="token comment"># --- Required attribute schema ---</span>
+    <span class="token keyword">for</span> col <span class="token keyword">in</span> <span class="token punctuation">(</span><span class="token string">"class_id"</span><span class="token punctuation">,</span> <span class="token string">"class_name"</span><span class="token punctuation">,</span> <span class="token string">"annotator_id"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> col <span class="token keyword">not</span> <span class="token keyword">in</span> gdf<span class="token punctuation">.</span>columns<span class="token punctuation">:</span>
+            <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Missing required column: </span><span class="token interpolation"><span class="token punctuation">{</span>col<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
     gdf<span class="token punctuation">.</span>to_file<span class="token punctuation">(</span>output_path<span class="token punctuation">,</span> driver<span class="token operator">=</span><span class="token string">"GeoJSON"</span><span class="token punctuation">)</span>
+    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string">"Exported %d valid features → %s"</span><span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">,</span> output_path<span class="token punctuation">)</span>
     <span class="token keyword">return</span> gdf
 </code></pre>
 </div>
-<p>This routine guarantees that exported features are topologically valid, correctly projected, and ready for ingestion by frameworks like PyTorch Geometric or Detectron2. For formal specification compliance, cross-reference the <a href="https://datatracker.ietf.org/doc/html/rfc7946">GeoJSON specification (IETF RFC 7946)</a>.</p>
-<h2 id="raster-annotation-pipeline" tabindex="-1"><a class="header-anchor" href="#raster-annotation-pipeline"><span aria-hidden="true" class="anchor-symbol">#</span></a> Raster Annotation Pipeline</h2>
-<p>Raster workflows convert labeled regions into pixel-aligned masks, where each pixel value corresponds to a specific class. This format is optimal for semantic segmentation, change detection, and dense prediction models that operate directly on gridded data.</p>
-<h3 id="1-pixel-level-mask-generation" tabindex="-1"><a class="header-anchor" href="#1-pixel-level-mask-generation"><span aria-hidden="true" class="anchor-symbol">#</span></a> 1. Pixel-Level Mask Generation</h3>
-<p>Rasterization requires precise alignment between the source imagery grid and the annotation mask. Misaligned rasters cause boundary artifacts, shift IoU metrics, and introduce false positives during training. Always rasterize using the exact affine transform, dimensions, and CRS of the source tile. Use nearest-neighbor resampling to preserve hard class boundaries; bilinear or cubic interpolation will blur edges and corrupt ground truth.</p>
-<h3 id="2-class-encoding-compression" tabindex="-1"><a class="header-anchor" href="#2-class-encoding-compression"><span aria-hidden="true" class="anchor-symbol">#</span></a> 2. Class Encoding &amp; Compression</h3>
-<p>Single-band 8-bit masks are standard, with <code class="inline-code">0</code> reserved for background and <code class="inline-code">1–254</code> for active classes. Avoid floating-point masks to prevent storage bloat and framework incompatibility. Use lossless compression (LZW or DEFLATE) to preserve exact class boundaries without introducing interpolation artifacts. For multi-class problems, maintain a strict lookup table (LUT) mapping integer values to semantic labels, and version-control the LUT alongside the dataset.</p>
-<h3 id="3-python-automation-pattern-rasterization-validation" tabindex="-1"><a class="header-anchor" href="#3-python-automation-pattern-rasterization-validation"><span aria-hidden="true" class="anchor-symbol">#</span></a> 3. Python Automation Pattern: Rasterization &amp; Validation</h3>
+<p>For production-grade attribute schema and property naming conventions, follow the <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/">GeoJSON structuring guide for ML training datasets</a>, which covers numeric typing, explicit CRS declarations, and embedding <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> per feature.</p>
+<hr>
+<h2 id="step-3-raster-annotation-pixel-level-mask-generation" tabindex="-1"><a class="header-anchor" href="#step-3-raster-annotation-pixel-level-mask-generation" aria-label="Permalink to section &quot;Step 3 — Raster Annotation: Pixel-Level Mask Generation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Raster Annotation: Pixel-Level Mask Generation</h2>
+<p>Raster workflows convert labeled regions into pixel-aligned masks where each pixel value encodes a class ID. This format is consumed directly by CNN and Vision Transformer architectures for semantic segmentation and change detection.</p>
+<p><strong>Encoding rules:</strong></p>
+<ul>
+<li>Single-band <code class="inline-code">uint8</code>, values <code class="inline-code">0</code> (background) through <code class="inline-code">254</code> (active classes); <code class="inline-code">255</code> is reserved for “unlabeled / ignore”.</li>
+<li>Nearest-neighbour fill — never bilinear or cubic, which blur class boundaries.</li>
+<li>Lossless compression: <code class="inline-code">compress=&quot;lzw&quot;</code> or <code class="inline-code">compress=&quot;deflate&quot;</code> in <code class="inline-code">rasterio.open</code>.</li>
+</ul>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -346,133 +528,415 @@ logging<span class="token punctuation">.</span>basicConfig<span class="token pun
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre"><code class="code-block__code language-python"><span class="token keyword">import</span> rasterio
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> rasterio
 <span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>features <span class="token keyword">import</span> rasterize
+<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>transform <span class="token keyword">import</span> Affine
 <span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
 <span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
 <span class="token keyword">import</span> logging
+<span class="token keyword">import</span> json
 
-<span class="token keyword">def</span> <span class="token function">generate_raster_mask</span><span class="token punctuation">(</span>vector_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> template_tif<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> output_mask<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> class_mapping<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+<span class="token keyword">def</span> <span class="token function">generate_raster_mask</span><span class="token punctuation">(</span>
+    vector_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    template_tif<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    output_mask<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    class_mapping<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> np<span class="token punctuation">.</span>ndarray<span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""
+    Rasterize validated vector annotations against a source imagery tile.
+
+    Args:
+        vector_path:   Path to validated GeoJSON.
+        template_tif:  Source GeoTIFF whose grid pins the output mask.
+        output_mask:   Output GeoTIFF mask path.
+        class_mapping: Dict mapping class_name strings to uint8 IDs.
+    Returns:
+        The rasterized mask array (H, W) for downstream assertion.
+    """</span>
     <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>template_tif<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
-        transform <span class="token operator">=</span> src<span class="token punctuation">.</span>transform
-        out_shape <span class="token operator">=</span> src<span class="token punctuation">.</span>shape
+        transform<span class="token punctuation">:</span> Affine <span class="token operator">=</span> src<span class="token punctuation">.</span>transform
+        out_shape<span class="token punctuation">:</span> <span class="token builtin">tuple</span><span class="token punctuation">[</span><span class="token builtin">int</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>src<span class="token punctuation">.</span>height<span class="token punctuation">,</span> src<span class="token punctuation">.</span>width<span class="token punctuation">)</span>
         crs <span class="token operator">=</span> src<span class="token punctuation">.</span>crs
-        logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Template shape: </span><span class="token interpolation"><span class="token punctuation">{</span>out_shape<span class="token punctuation">}</span></span><span class="token string">, CRS: </span><span class="token interpolation"><span class="token punctuation">{</span>crs<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
-        
+        logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string">"Template: shape=%s  CRS=%s"</span><span class="token punctuation">,</span> out_shape<span class="token punctuation">,</span> crs<span class="token punctuation">)</span>
+
     gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>vector_path<span class="token punctuation">)</span>
-    <span class="token keyword">if</span> gdf<span class="token punctuation">.</span>crs <span class="token operator">!=</span> crs<span class="token punctuation">:</span>
+    <span class="token keyword">if</span> gdf<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        logging<span class="token punctuation">.</span>warning<span class="token punctuation">(</span><span class="token string">"Reprojecting annotations to match tile CRS."</span><span class="token punctuation">)</span>
         gdf <span class="token operator">=</span> gdf<span class="token punctuation">.</span>to_crs<span class="token punctuation">(</span>crs<span class="token punctuation">)</span>
-        
-    <span class="token comment"># Map string classes to integer IDs</span>
-    gdf<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span> <span class="token operator">=</span> gdf<span class="token punctuation">[</span><span class="token string">"class_name"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">map</span><span class="token punctuation">(</span>class_mapping<span class="token punctuation">)</span><span class="token punctuation">.</span>fillna<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span>
-    
-    <span class="token comment"># Prepare shapes for rasterization</span>
-    shapes <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>geom<span class="token punctuation">,</span> val<span class="token punctuation">)</span> <span class="token keyword">for</span> geom<span class="token punctuation">,</span> val <span class="token keyword">in</span> <span class="token builtin">zip</span><span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">,</span> gdf<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
-    mask <span class="token operator">=</span> rasterize<span class="token punctuation">(</span>shapes<span class="token punctuation">,</span> out_shape<span class="token operator">=</span>out_shape<span class="token punctuation">,</span> transform<span class="token operator">=</span>transform<span class="token punctuation">,</span> fill<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span>
-    
+
+    gdf<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>
+        gdf<span class="token punctuation">[</span><span class="token string">"class_name"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">map</span><span class="token punctuation">(</span>class_mapping<span class="token punctuation">)</span><span class="token punctuation">.</span>fillna<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span>
+    <span class="token punctuation">)</span>
+
+    <span class="token comment"># Sort descending by class_id so higher-priority classes overwrite lower ones</span>
+    gdf <span class="token operator">=</span> gdf<span class="token punctuation">.</span>sort_values<span class="token punctuation">(</span><span class="token string">"class_id"</span><span class="token punctuation">,</span> ascending<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
+    shapes <span class="token operator">=</span> <span class="token punctuation">(</span>
+        <span class="token punctuation">(</span>geom<span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">(</span>val<span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">for</span> geom<span class="token punctuation">,</span> val <span class="token keyword">in</span> <span class="token builtin">zip</span><span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">,</span> gdf<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> geom <span class="token keyword">is</span> <span class="token keyword">not</span> <span class="token boolean">None</span> <span class="token keyword">and</span> <span class="token keyword">not</span> geom<span class="token punctuation">.</span>is_empty
+    <span class="token punctuation">)</span>
+
+    mask <span class="token operator">=</span> rasterize<span class="token punctuation">(</span>
+        shapes<span class="token punctuation">,</span>
+        out_shape<span class="token operator">=</span>out_shape<span class="token punctuation">,</span>
+        transform<span class="token operator">=</span>transform<span class="token punctuation">,</span>
+        fill<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span>
+        dtype<span class="token operator">=</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">,</span>
+        merge_alg<span class="token operator">=</span>rasterio<span class="token punctuation">.</span>enums<span class="token punctuation">.</span>MergeAlg<span class="token punctuation">.</span>replace<span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+
     <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>
-        output_mask<span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">,</span> driver<span class="token operator">=</span><span class="token string">"GTiff"</span><span class="token punctuation">,</span> height<span class="token operator">=</span>out_shape<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> width<span class="token operator">=</span>out_shape<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
-        count<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">,</span> crs<span class="token operator">=</span>crs<span class="token punctuation">,</span> transform<span class="token operator">=</span>transform<span class="token punctuation">,</span> compress<span class="token operator">=</span><span class="token string">"lzw"</span>
+        output_mask<span class="token punctuation">,</span> <span class="token string">"w"</span><span class="token punctuation">,</span>
+        driver<span class="token operator">=</span><span class="token string">"GTiff"</span><span class="token punctuation">,</span>
+        height<span class="token operator">=</span>out_shape<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        width<span class="token operator">=</span>out_shape<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        count<span class="token operator">=</span><span class="token number">1</span><span class="token punctuation">,</span>
+        dtype<span class="token operator">=</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">,</span>
+        crs<span class="token operator">=</span>crs<span class="token punctuation">,</span>
+        transform<span class="token operator">=</span>transform<span class="token punctuation">,</span>
+        compress<span class="token operator">=</span><span class="token string">"lzw"</span><span class="token punctuation">,</span>
     <span class="token punctuation">)</span> <span class="token keyword">as</span> dst<span class="token punctuation">:</span>
         dst<span class="token punctuation">.</span>write<span class="token punctuation">(</span>mask<span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span>
-        
-    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Mask written to </span><span class="token interpolation"><span class="token punctuation">{</span>output_mask<span class="token punctuation">}</span></span><span class="token string">. Unique classes: </span><span class="token interpolation"><span class="token punctuation">{</span>np<span class="token punctuation">.</span>unique<span class="token punctuation">(</span>mask<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+
+    logging<span class="token punctuation">.</span>info<span class="token punctuation">(</span><span class="token string">"Mask → %s  unique classes: %s"</span><span class="token punctuation">,</span> output_mask<span class="token punctuation">,</span> np<span class="token punctuation">.</span>unique<span class="token punctuation">(</span>mask<span class="token punctuation">)</span><span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> mask
 </code></pre>
 </div>
-<p>This pattern ensures pixel-perfect alignment and efficient storage. Always validate mask integrity by checking unique values and spatial coverage against the source extent. The <a href="https://rasterio.readthedocs.io/en/stable/">rasterio documentation</a> provides comprehensive guidance on handling affine transformations, windowed reads, and memory-mapped I/O for large-scale tiling.</p>
-<h2 id="workflow-comparison-decision-matrix" tabindex="-1"><a class="header-anchor" href="#workflow-comparison-decision-matrix"><span aria-hidden="true" class="anchor-symbol">#</span></a> Workflow Comparison &amp; Decision Matrix</h2>
-<p>Choosing the right format depends on model architecture, deployment constraints, and annotation throughput requirements.</p>
-<div class="table-scroll"><table>
+<p>Always version-control the <code class="inline-code">class_mapping</code> dictionary alongside the dataset — a renamed class breaks existing masks silently. Use <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA-256 hashing of the lookup table</a> to detect mapping drift across dataset versions.</p>
+<hr>
+<h2 id="step-4-lazy-rasterization-in-the-pytorch-data-loader" tabindex="-1"><a class="header-anchor" href="#step-4-lazy-rasterization-in-the-pytorch-data-loader" aria-label="Permalink to section &quot;Step 4 — Lazy Rasterization in the PyTorch Data Loader&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Lazy Rasterization in the PyTorch Data Loader</h2>
+<p>The recommended hybrid stores annotations as vector on disk and rasterizes at load time. This avoids storing large mask files while still feeding CNNs the pixel arrays they need.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> torch
+<span class="token keyword">from</span> torch<span class="token punctuation">.</span>utils<span class="token punctuation">.</span>data <span class="token keyword">import</span> Dataset
+<span class="token keyword">import</span> rasterio
+<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>features <span class="token keyword">import</span> rasterize
+<span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">class</span> <span class="token class-name">GeoAnnotationDataset</span><span class="token punctuation">(</span>Dataset<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Lazy-rasterize vector annotations to uint8 masks per tile."""</span>
+
+    <span class="token keyword">def</span> <span class="token function">__init__</span><span class="token punctuation">(</span>
+        self<span class="token punctuation">,</span>
+        tile_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+        annotation_dir<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+        class_mapping<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        transform<span class="token operator">=</span><span class="token boolean">None</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span><span class="token punctuation">:</span>
+        self<span class="token punctuation">.</span>tiles <span class="token operator">=</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>Path<span class="token punctuation">(</span>tile_dir<span class="token punctuation">)</span><span class="token punctuation">.</span>glob<span class="token punctuation">(</span><span class="token string">"*.tif"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>annotation_dir <span class="token operator">=</span> Path<span class="token punctuation">(</span>annotation_dir<span class="token punctuation">)</span>
+        self<span class="token punctuation">.</span>class_mapping <span class="token operator">=</span> class_mapping
+        self<span class="token punctuation">.</span>transform <span class="token operator">=</span> transform
+
+    <span class="token keyword">def</span> <span class="token function">__len__</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">int</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token builtin">len</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>tiles<span class="token punctuation">)</span>
+
+    <span class="token keyword">def</span> <span class="token function">__getitem__</span><span class="token punctuation">(</span>self<span class="token punctuation">,</span> idx<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">dict</span><span class="token punctuation">:</span>
+        tif_path <span class="token operator">=</span> self<span class="token punctuation">.</span>tiles<span class="token punctuation">[</span>idx<span class="token punctuation">]</span>
+        geojson_path <span class="token operator">=</span> self<span class="token punctuation">.</span>annotation_dir <span class="token operator">/</span> tif_path<span class="token punctuation">.</span>with_suffix<span class="token punctuation">(</span><span class="token string">".geojson"</span><span class="token punctuation">)</span><span class="token punctuation">.</span>name
+
+        <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>tif_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+            image <span class="token operator">=</span> src<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>float32<span class="token punctuation">)</span>   <span class="token comment"># (C, H, W)</span>
+            t<span class="token punctuation">,</span> shape<span class="token punctuation">,</span> crs <span class="token operator">=</span> src<span class="token punctuation">.</span>transform<span class="token punctuation">,</span> src<span class="token punctuation">.</span>shape<span class="token punctuation">,</span> src<span class="token punctuation">.</span>crs
+
+        gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>geojson_path<span class="token punctuation">)</span>
+        <span class="token keyword">if</span> gdf<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+            gdf <span class="token operator">=</span> gdf<span class="token punctuation">.</span>to_crs<span class="token punctuation">(</span>crs<span class="token punctuation">)</span>
+
+        gdf<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span> <span class="token operator">=</span> gdf<span class="token punctuation">[</span><span class="token string">"class_name"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">map</span><span class="token punctuation">(</span>self<span class="token punctuation">.</span>class_mapping<span class="token punctuation">)</span><span class="token punctuation">.</span>fillna<span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span>
+        shapes <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>g<span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">(</span>v<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token keyword">for</span> g<span class="token punctuation">,</span> v <span class="token keyword">in</span> <span class="token builtin">zip</span><span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">,</span> gdf<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token keyword">if</span> g <span class="token keyword">and</span> <span class="token keyword">not</span> g<span class="token punctuation">.</span>is_empty<span class="token punctuation">)</span>
+        mask <span class="token operator">=</span> rasterize<span class="token punctuation">(</span>shapes<span class="token punctuation">,</span> out_shape<span class="token operator">=</span>shape<span class="token punctuation">,</span> transform<span class="token operator">=</span>t<span class="token punctuation">,</span> fill<span class="token operator">=</span><span class="token number">0</span><span class="token punctuation">,</span> dtype<span class="token operator">=</span>np<span class="token punctuation">.</span>uint8<span class="token punctuation">)</span>
+
+        sample <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">"image"</span><span class="token punctuation">:</span> torch<span class="token punctuation">.</span>from_numpy<span class="token punctuation">(</span>image<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"mask"</span><span class="token punctuation">:</span> torch<span class="token punctuation">.</span>from_numpy<span class="token punctuation">(</span>mask<span class="token punctuation">.</span>astype<span class="token punctuation">(</span>np<span class="token punctuation">.</span>int64<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">}</span>
+        <span class="token keyword">if</span> self<span class="token punctuation">.</span>transform<span class="token punctuation">:</span>
+            sample <span class="token operator">=</span> self<span class="token punctuation">.</span>transform<span class="token punctuation">(</span>sample<span class="token punctuation">)</span>
+        <span class="token keyword">return</span> sample
+</code></pre>
+</div>
+<hr>
+<h2 id="spatial-parameters-configuration-reference" tabindex="-1"><a class="header-anchor" href="#spatial-parameters-configuration-reference" aria-label="Permalink to section &quot;Spatial Parameters &amp; Configuration Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial Parameters &amp; Configuration Reference</h2>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Parameter</th>
+<th>Type</th>
+<th>Valid Range / Values</th>
+<th>Spatial Implication</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code class="inline-code">target_epsg</code></td>
+<td><code class="inline-code">int</code></td>
+<td>Any PROJ-registered EPSG (e.g. <code class="inline-code">32618</code>)</td>
+<td>Must match source tile; mixing with <code class="inline-code">EPSG:4326</code> shifts annotations sub-pixel</td>
+</tr>
+<tr>
+<td>Mask dtype</td>
+<td><code class="inline-code">numpy.dtype</code></td>
+<td><code class="inline-code">uint8</code> (0–255)</td>
+<td><code class="inline-code">uint16</code> wastes storage; float masks corrupt class boundaries</td>
+</tr>
+<tr>
+<td>Rasterize fill</td>
+<td><code class="inline-code">int</code></td>
+<td><code class="inline-code">0</code></td>
+<td>Background class; <code class="inline-code">255</code> is the standard “ignore” sentinel</td>
+</tr>
+<tr>
+<td>Compression</td>
+<td><code class="inline-code">str</code></td>
+<td><code class="inline-code">&quot;lzw&quot;</code> or <code class="inline-code">&quot;deflate&quot;</code></td>
+<td>Lossless only; JPEG introduces interpolation artifacts</td>
+</tr>
+<tr>
+<td>Min vertex spacing</td>
+<td><code class="inline-code">float</code> (metres)</td>
+<td>≥ 0.5 × GSD</td>
+<td>Below GSD produces sub-pixel slivers invisible in training</td>
+</tr>
+<tr>
+<td>Confidence threshold</td>
+<td><code class="inline-code">float</code></td>
+<td>0.0–1.0</td>
+<td>Labels below 0.6 should be flagged for human review before training</td>
+</tr>
+<tr>
+<td>Tile overlap</td>
+<td><code class="inline-code">int</code> (pixels)</td>
+<td>32–256 px</td>
+<td>Required for seamless predictions; must match inference stride</td>
+</tr>
+</tbody>
+</table>
+</div><hr>
+<h2 id="edge-cases-spatial-gotchas" tabindex="-1"><a class="header-anchor" href="#edge-cases-spatial-gotchas" aria-label="Permalink to section &quot;Edge Cases &amp; Spatial Gotchas&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases &amp; Spatial Gotchas</h2>
+<p><strong>Silent CRS mismatch between annotation and tile.</strong> <code class="inline-code">geopandas</code> will happily join two GeoDataFrames with different CRS without raising an error unless <code class="inline-code">check_crs=True</code> is set. The spatial join produces plausible-looking results offset by hundreds of metres. Always assert <code class="inline-code">gdf.crs.to_epsg() == tile_epsg</code> before rasterization.</p>
+<p><strong>Self-intersecting polygons from undo/redo in annotation tools.</strong> QGIS’s undo stack occasionally produces bowtie polygons. <code class="inline-code">shapely.is_valid</code> returns <code class="inline-code">False</code>; <code class="inline-code">make_valid()</code> splits them into a <code class="inline-code">MultiPolygon</code>. Your rasterization loop must handle <code class="inline-code">MultiPolygon</code> geometry types or the extra parts are silently dropped.</p>
+<p><strong>Tile boundary clipping corrupts polygons.</strong> Features that span tile edges are clipped to the tile extent during export. The clipped edge becomes a straight line at the tile boundary, introducing artificial edges into training data. Use <code class="inline-code">gdf.clip(tile_bbox)</code> and flag boundary-touching features for potential exclusion from loss computation.</p>
+<p><strong>Band order differs between tool and model.</strong> <code class="inline-code">rasterio</code> reads tiles as <code class="inline-code">(C, H, W)</code> in band-file order, which may be <code class="inline-code">BGR</code> for imagery exported from certain platforms. Models pre-trained on RGB ImageNet weights expect <code class="inline-code">(R, G, B)</code>. Assert band order by reading the <code class="inline-code">ColorInterp</code> metadata and reorder with <code class="inline-code">np.flip(image, axis=0)</code> if needed.</p>
+<p><strong>IoU collapse from unprojected coordinates.</strong> Computing <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">IoU thresholds</a> on geometries still in <code class="inline-code">EPSG:4326</code> produces degree-based areas rather than metric areas. A polygon over a mid-latitude tile will have its area underestimated by ~25–40%. Always reproject to a local metric CRS before any area or IoU calculation.</p>
+<p><strong>Rasterization order determines class priority.</strong> When two polygons overlap, the last one written wins in <code class="inline-code">rasterize</code>. Sort your GeoDataFrame by <code class="inline-code">class_id</code> descending (or by annotation priority) so that high-priority classes overwrite low-priority background.</p>
+<hr>
+<h2 id="integration-automation-hooks" tabindex="-1"><a class="header-anchor" href="#integration-automation-hooks" aria-label="Permalink to section &quot;Integration &amp; Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Integration &amp; Automation Hooks</h2>
+<h3 id="label-studio-export-hook" tabindex="-1"><a class="header-anchor" href="#label-studio-export-hook" aria-label="Permalink to section &quot;Label Studio export hook&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Label Studio export hook</h3>
+<p>After annotation sessions, a webhook or post-export script should immediately run topology validation before committing:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token comment"># label_studio_export_hook.py</span>
+<span class="token keyword">import</span> subprocess<span class="token punctuation">,</span> sys<span class="token punctuation">,</span> json<span class="token punctuation">,</span> pathlib
+
+<span class="token keyword">def</span> <span class="token function">on_export_complete</span><span class="token punctuation">(</span>export_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> target_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">32618</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Called by Label Studio export webhook — validates before committing to dataset."""</span>
+    result <span class="token operator">=</span> subprocess<span class="token punctuation">.</span>run<span class="token punctuation">(</span>
+        <span class="token punctuation">[</span><span class="token string">"python"</span><span class="token punctuation">,</span> <span class="token string">"validate_annotations.py"</span><span class="token punctuation">,</span> export_path<span class="token punctuation">,</span> <span class="token builtin">str</span><span class="token punctuation">(</span>target_epsg<span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        capture_output<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> text<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+    <span class="token keyword">if</span> result<span class="token punctuation">.</span>returncode <span class="token operator">!=</span> <span class="token number">0</span><span class="token punctuation">:</span>
+        <span class="token keyword">raise</span> RuntimeError<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Annotation validation failed:\n</span><span class="token interpolation"><span class="token punctuation">{</span>result<span class="token punctuation">.</span>stderr<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Validation passed: </span><span class="token interpolation"><span class="token punctuation">{</span>export_path<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<p>For deeper <a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Label Studio integration</a> patterns — including project configuration, ML backend wiring, and export format mapping — see the dedicated integration guide.</p>
+<h3 id="dvc-pipeline-stage" tabindex="-1"><a class="header-anchor" href="#dvc-pipeline-stage" aria-label="Permalink to section &quot;DVC pipeline stage&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> DVC pipeline stage</h3>
+<p>Register vector validation and rasterization as explicit DVC pipeline stages so dataset provenance is tracked end-to-end:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">yaml</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-yaml"><span class="token comment"># dvc.yaml</span>
+<span class="token key atrule">stages</span><span class="token punctuation">:</span>
+  <span class="token key atrule">validate_vectors</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cmd</span><span class="token punctuation">:</span> python validate_annotations.py data/raw_annotations data/validated_annotations
+    <span class="token key atrule">deps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> data/raw_annotations
+      <span class="token punctuation">-</span> validate_annotations.py
+    <span class="token key atrule">outs</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> data/validated_annotations
+
+  <span class="token key atrule">rasterize_masks</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cmd</span><span class="token punctuation">:</span> python rasterize_pipeline.py data/validated_annotations data/tiles data/masks
+    <span class="token key atrule">deps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> data/validated_annotations
+      <span class="token punctuation">-</span> data/tiles
+      <span class="token punctuation">-</span> rasterize_pipeline.py
+    <span class="token key atrule">outs</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> data/masks
+</code></pre>
+</div>
+<p>This makes every transformation reproducible and enables <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">rollback strategies</a> when a corrupted batch is detected downstream.</p>
+<hr>
+<h2 id="validation-testing" tabindex="-1"><a class="header-anchor" href="#validation-testing" aria-label="Permalink to section &quot;Validation &amp; Testing&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Validation &amp; Testing</h2>
+<p>Run these checks on every export before annotations enter version control:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">import</span> rasterio
+<span class="token keyword">import</span> numpy <span class="token keyword">as</span> np
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">def</span> <span class="token function">assert_annotation_integrity</span><span class="token punctuation">(</span>
+    geojson_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    mask_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    template_tif<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    class_mapping<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">int</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Raise AssertionError on any integrity violation."""</span>
+
+    <span class="token comment"># 1. All vector geometries valid</span>
+    gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>geojson_path<span class="token punctuation">)</span>
+    <span class="token keyword">assert</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_valid<span class="token punctuation">.</span><span class="token builtin">all</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"Invalid geometries detected — run make_valid()"</span>
+
+    <span class="token comment"># 2. CRS roundtrip: vector CRS matches tile CRS</span>
+    <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>template_tif<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
+        tile_epsg <span class="token operator">=</span> src<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span>
+        tile_transform <span class="token operator">=</span> src<span class="token punctuation">.</span>transform
+        tile_shape <span class="token operator">=</span> src<span class="token punctuation">.</span>shape
+    <span class="token keyword">assert</span> gdf<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> tile_epsg<span class="token punctuation">,</span> <span class="token punctuation">(</span>
+        <span class="token string-interpolation"><span class="token string">f"CRS mismatch: annotations=</span><span class="token interpolation"><span class="token punctuation">{</span>gdf<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> tile=</span><span class="token interpolation"><span class="token punctuation">{</span>tile_epsg<span class="token punctuation">}</span></span><span class="token string">"</span></span>
+    <span class="token punctuation">)</span>
+
+    <span class="token comment"># 3. Mask shape matches tile shape</span>
+    <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>mask_path<span class="token punctuation">)</span> <span class="token keyword">as</span> msrc<span class="token punctuation">:</span>
+        mask <span class="token operator">=</span> msrc<span class="token punctuation">.</span>read<span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span>
+        <span class="token keyword">assert</span> msrc<span class="token punctuation">.</span>crs<span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> tile_epsg<span class="token punctuation">,</span> <span class="token string">"Mask CRS mismatch"</span>
+        <span class="token keyword">assert</span> msrc<span class="token punctuation">.</span>transform <span class="token operator">==</span> tile_transform<span class="token punctuation">,</span> <span class="token string">"Mask affine transform mismatch"</span>
+    <span class="token keyword">assert</span> mask<span class="token punctuation">.</span>shape <span class="token operator">==</span> tile_shape<span class="token punctuation">,</span> <span class="token string-interpolation"><span class="token string">f"Mask shape </span><span class="token interpolation"><span class="token punctuation">{</span>mask<span class="token punctuation">.</span>shape<span class="token punctuation">}</span></span><span class="token string"> ≠ tile shape </span><span class="token interpolation"><span class="token punctuation">{</span>tile_shape<span class="token punctuation">}</span></span><span class="token string">"</span></span>
+
+    <span class="token comment"># 4. Mask contains only known class IDs</span>
+    valid_ids <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">255</span><span class="token punctuation">}</span> <span class="token operator">|</span> <span class="token builtin">set</span><span class="token punctuation">(</span>class_mapping<span class="token punctuation">.</span>values<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    observed_ids <span class="token operator">=</span> <span class="token builtin">set</span><span class="token punctuation">(</span>np<span class="token punctuation">.</span>unique<span class="token punctuation">(</span>mask<span class="token punctuation">)</span><span class="token punctuation">.</span>tolist<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    unknown <span class="token operator">=</span> observed_ids <span class="token operator">-</span> valid_ids
+    <span class="token keyword">assert</span> <span class="token keyword">not</span> unknown<span class="token punctuation">,</span> <span class="token string-interpolation"><span class="token string">f"Mask contains unknown class IDs: </span><span class="token interpolation"><span class="token punctuation">{</span>unknown<span class="token punctuation">}</span></span><span class="token string">"</span></span>
+
+    <span class="token comment"># 5. Non-empty annotation coverage</span>
+    coverage <span class="token operator">=</span> <span class="token builtin">float</span><span class="token punctuation">(</span><span class="token punctuation">(</span>mask <span class="token operator">></span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token builtin">sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">/</span> mask<span class="token punctuation">.</span>size
+    <span class="token keyword">assert</span> coverage <span class="token operator">></span> <span class="token number">0.001</span><span class="token punctuation">,</span> <span class="token string-interpolation"><span class="token string">f"Mask is nearly empty (coverage=</span><span class="token interpolation"><span class="token punctuation">{</span>coverage<span class="token punctuation">:</span><span class="token format-spec">.4f</span><span class="token punctuation">}</span></span><span class="token string">)"</span></span>
+
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"All integrity checks passed. Coverage: </span><span class="token interpolation"><span class="token punctuation">{</span>coverage<span class="token punctuation">:</span><span class="token format-spec">.2%</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<p>Wire this as a pytest fixture or a pre-commit hook:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">bash</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-bash"><span class="token comment"># .pre-commit-config.yaml</span>
+- repo: <span class="token builtin class-name">local</span>
+  hooks:
+    - id: annotation-integrity
+      name: Annotation integrity check
+      entry: python scripts/assert_annotation_integrity.py
+      language: python
+      files: <span class="token punctuation">\</span>.geojson$
+</code></pre>
+</div>
+<hr>
+<h2 id="decision-matrix-format-trade-offs" tabindex="-1"><a class="header-anchor" href="#decision-matrix-format-trade-offs" aria-label="Permalink to section &quot;Decision Matrix: Format Trade-offs&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Decision Matrix: Format Trade-offs</h2>
+<div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
 <th>Criterion</th>
-<th>Vector Workflow</th>
-<th>Raster Workflow</th>
+<th>Vector</th>
+<th>Raster</th>
+<th>Hybrid (recommended)</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><strong>Storage Overhead</strong></td>
-<td>Low (KB–MB per tile)</td>
-<td>High (MB–GB per tile)</td>
+<td>Storage per tile</td>
+<td>Low (KB–MB)</td>
+<td>High (MB–GB)</td>
+<td>Low (vector on disk)</td>
 </tr>
 <tr>
-<td><strong>Preprocessing</strong></td>
-<td>Requires rasterization before training</td>
-<td>Directly consumable by CNNs/Transformers</td>
+<td>Deep learning compatibility</td>
+<td>Needs rasterization</td>
+<td>Direct CNN input</td>
+<td>Lazy rasterize at load</td>
 </tr>
 <tr>
-<td><strong>Model Compatibility</strong></td>
-<td>Object detection, instance segmentation</td>
-<td>Semantic segmentation, dense prediction</td>
-</tr>
-<tr>
-<td><strong>Boundary Precision</strong></td>
-<td>Sub-pixel, topology-aware</td>
+<td>Boundary precision</td>
+<td>Sub-pixel</td>
 <td>Pixel-grid constrained</td>
+<td>Sub-pixel (stored)</td>
 </tr>
 <tr>
-<td><strong>Editability</strong></td>
-<td>High (individual feature manipulation)</td>
-<td>Low (requires mask regeneration)</td>
+<td>Editability</td>
+<td>High (per-feature)</td>
+<td>Low (full regeneration)</td>
+<td>High</td>
 </tr>
 <tr>
-<td><strong>Inference Latency</strong></td>
-<td>Lower post-processing overhead</td>
-<td>Faster forward pass, heavier I/O</td>
+<td>Multi-class support</td>
+<td>Attribute table</td>
+<td>Integer LUT</td>
+<td>Both</td>
+</tr>
+<tr>
+<td>Preprocessing at training</td>
+<td>~15 ms/tile lazy</td>
+<td>None</td>
+<td>~15 ms/tile lazy</td>
+</tr>
+<tr>
+<td>Versioning &amp; rollback</td>
+<td>GeoJSON diffs via DVC</td>
+<td>Binary diff (poor)</td>
+<td>GeoJSON diffs via DVC</td>
 </tr>
 </tbody>
 </table>
-</div><p>Teams should default to vector for annotation flexibility, then rasterize at the data loader stage. This hybrid approach preserves editability while satisfying framework requirements. Implement lazy rasterization in PyTorch <code class="inline-code">Dataset</code> classes to convert vectors to masks on-the-fly, reducing disk I/O and enabling dynamic augmentation.</p>
-<h2 id="automation-quality-assurance-patterns" tabindex="-1"><a class="header-anchor" href="#automation-quality-assurance-patterns"><span aria-hidden="true" class="anchor-symbol">#</span></a> Automation &amp; Quality Assurance Patterns</h2>
-<p>High-throughput pipelines fail without automated validation gates. Implement the following checks before committing annotations to version control:</p>
-<ol>
-<li><strong>Topology Validation</strong>: Run <code class="inline-code">shapely.is_valid</code> across all geometries. Flag self-intersections, sliver polygons, and unclosed rings. Automate repair using <code class="inline-code">buffer(0)</code> or <code class="inline-code">make_valid()</code> with fallback logging.</li>
-<li><strong>CRS &amp; Extent Verification</strong>: Ensure annotation bounds match the source imagery within a 1-pixel tolerance. Use <code class="inline-code">pyproj</code> to validate datum consistency and reject annotations with mismatched EPSG codes.</li>
-<li><strong>Class Distribution Auditing</strong>: Monitor label skew. Imbalanced class distributions degrade model generalization and require targeted sampling strategies or focal loss adjustments during training.</li>
-<li><strong>Confidence Thresholding</strong>: When integrating human-in-the-loop review, attach confidence scores to each annotation. Filter low-confidence labels before training to reduce noise and improve convergence stability.</li>
-</ol>
-<p>Implement continuous integration checks that run vector validation and raster alignment tests on every pull request. Automate schema enforcement using JSON Schema validators for attribute tables and <code class="inline-code">numpy</code> dtype assertions for mask arrays.</p>
-<h2 id="troubleshooting-high-throughput-pipelines" tabindex="-1"><a class="header-anchor" href="#troubleshooting-high-throughput-pipelines"><span aria-hidden="true" class="anchor-symbol">#</span></a> Troubleshooting High-Throughput Pipelines</h2>
-<div class="table-scroll"><table>
-<thead>
-<tr>
-<th>Symptom</th>
-<th>Root Cause</th>
-<th>Resolution</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>Silent training crashes</strong></td>
-<td>Invalid geometries or mismatched CRS</td>
-<td>Run topology validation and enforce CRS alignment pre-export</td>
-</tr>
-<tr>
-<td><strong>Boundary artifacts in masks</strong></td>
-<td>Rasterization misalignment or interpolation</td>
-<td>Use nearest-neighbor resampling and exact affine transforms</td>
-</tr>
-<tr>
-<td><strong>Excessive storage growth</strong></td>
-<td>Uncompressed masks or duplicate annotations</td>
-<td>Apply LZW compression and implement deduplication hashing</td>
-</tr>
-<tr>
-<td><strong>Slow data loading</strong></td>
-<td>Large GeoJSON files or fragmented tiles</td>
-<td>Convert to Parquet/Feather for vectors, use chunked COGs for rasters</td>
-</tr>
-<tr>
-<td><strong>Class leakage in validation</strong></td>
-<td>Spatial autocorrelation in train/val split</td>
-<td>Implement spatial blocking or tile-based stratification</td>
-</tr>
-</tbody>
-</table>
-</div><p>Debugging geospatial pipelines requires isolating the failure domain: geometry, rasterization, or data loading. Use <code class="inline-code">fiona</code> to inspect raw vector attributes, <code class="inline-code">rasterio</code> to verify affine matrices, and <code class="inline-code">matplotlib</code> to overlay masks on source tiles for visual inspection. Log every transformation step to enable reproducible debugging and audit trails.</p>
-<h2 id="conclusion" tabindex="-1"><a class="header-anchor" href="#conclusion"><span aria-hidden="true" class="anchor-symbol">#</span></a> Conclusion</h2>
-<p>The decision between vector and raster annotation formats shapes every downstream step in a geospatial ML pipeline. Vector workflows excel in precision, editability, and storage efficiency, while raster workflows align directly with modern deep learning architectures and dense prediction tasks. By standardizing prerequisites, enforcing topology and CRS validation, and implementing automated Python routines, teams can eliminate bottlenecks and scale annotation throughput without sacrificing quality. Mastering <strong>Vector vs Raster Annotation Workflows</strong> ensures that training datasets remain robust, reproducible, and ready for production deployment.</p>
+</div><p>The hybrid approach — vector annotation stored in version control, lazy rasterization at the data-loader stage — preserves full editability while satisfying model input requirements without duplicate storage.</p>
+<hr>
+<h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
+<ul>
+<li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/">How to Structure GeoJSON for ML Training Datasets</a> — attribute schema, property typing, and CRS declaration conventions</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — CRS contract, datum transforms, and automated validation routines</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">Calculating IoU Thresholds for Geospatial Object Detection</a> — metric-CRS IoU, GSD-based threshold selection</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a> — class hierarchy design before annotation begins</li>
+<li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a> — recovering from bad rasterization batches</li>
+</ul>
+<p>This workflow is one component of the broader <a href="/geospatial-annotation-fundamentals-architecture/">Geospatial Annotation Fundamentals &amp; Architecture</a> section, which covers CRS contracts, label taxonomies, confidence scoring, and the full annotation stack for spatial ML pipelines.</p>
 
 
       
@@ -482,7 +946,7 @@ logging<span class="token punctuation">.</span>basicConfig<span class="token pun
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/">
               <div class="title">How to Structure GeoJSON for ML Training Datasets</div>
-              <div class="desc">To structure GeoJSON for ML training datasets, wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates, and store model targets in a flat properties dictionary with consistent, snakecase keys. Each Feature must contain exactly one geometry object and a properties object that map</div>
+              <div class="desc">Wrap all annotated features in a single FeatureCollection, enforce EPSG:4326 (WGS84) coordinates throughout, and store model targets in a flat properties dictionary with consistent snakecase keys. Each Feature must contain exactly one geometry object and a properties object that maps directly to your label schema — cla</div>
             </a>
           
         </div>
@@ -496,17 +960,17 @@ logging<span class="token punctuation">.</span>basicConfig<span class="token pun
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">
               <div class="title">Confidence Scoring for Geospatial Labels</div>
-              <div class="desc">Confidence scoring for geospatial labels transforms raw annotation outputs into quantifiable training signals that directly influence model convergence, active learning prioritization, and quality assurance routing. In spatial machine learning pipelines, not all labeled polygons, bounding boxes, or raster masks carry e</div>
+              <div class="desc">Confidence scoring transforms raw annotation outputs into quantifiable training signals that directly control model convergence, active learning prioritization, and QA routing. In spatial machine learning pipelines, not all labeled polygons, bounding boxes, or raster masks carry equal reliability: annotator fatigue, am</div>
             </a>
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">
               <div class="title">Coordinate Reference Systems in Annotation Pipelines</div>
-              <div class="desc">Coordinate Reference Systems in Annotation Pipelines form the mathematical backbone of any production-grade geospatial machine learning workflow. When annotation teams label aerial imagery, LiDAR point clouds, or satellite mosaics, the underlying spatial reference dictates how geometries align, how evaluation metrics a</div>
+              <div class="desc">A single unhandled projection mismatch can collapse IoU scores across an entire annotation batch. When ground-truth polygons in EPSG:4326 are compared against model predictions reprojected to a local UTM zone, the resulting coordinate offset can exceed the object&#39;s own footprint — rendering evaluation metrics meaningle</div>
             </a>
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">
               <div class="title">Defining ROI Label Taxonomies for Aerial Imagery</div>
-              <div class="desc">Defining ROI Label Taxonomies for Aerial Imagery is a foundational step in building reproducible, high-fidelity geospatial machine learning pipelines. Without a structured ontology, annotation teams produce inconsistent labels, model training suffers from class imbalance, and downstream inference pipelines break under </div>
+              <div class="desc">Without a structured ontology, annotation teams produce inconsistent labels, model training suffers from class imbalance, and downstream inference pipelines break under schema drift. A concrete failure mode: a six-class land-cover taxonomy that allows annotators to choose between vegetation and groundcover based on vis</div>
             </a>
           
         </div>
@@ -572,7 +1036,7 @@ logging<span class="token punctuation">.</span>basicConfig<span class="token pun
         
           <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
         
-          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows</a></li>
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows for Geospatial ML</a></li>
         
       </ul>
     </div>

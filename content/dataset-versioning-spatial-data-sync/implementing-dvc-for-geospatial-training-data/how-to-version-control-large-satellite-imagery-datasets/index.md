@@ -1,103 +1,309 @@
+---
+title: "How to Version Control Large Satellite Imagery Datasets"
+description: "Step-by-step guide to versioning multi-gigabyte satellite imagery with DVC and Cloud-Optimized GeoTIFF: decouple binary rasters from Git, configure S3/GCS remotes, and maintain full dataset lineage for reproducible ML training."
+slug: "how-to-version-control-large-satellite-imagery-datasets"
+type: "long_tail"
+breadcrumb: "How to Version Control Large Satellite Imagery Datasets"
+datePublished: "2025-03-12"
+dateModified: "2026-06-24"
+---
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "How to Version Control Large Satellite Imagery Datasets",
+      "description": "Step-by-step guide to versioning multi-gigabyte satellite imagery with DVC and Cloud-Optimized GeoTIFF: decouple binary rasters from Git, configure S3/GCS remotes, and maintain full dataset lineage for reproducible ML training.",
+      "datePublished": "2025-03-12",
+      "dateModified": "2026-06-24",
+      "author": {"@type": "Organization", "name": "Geospatial Annotation"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Implementing DVC for Geospatial Training Data", "item": "/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/"},
+        {"@type": "ListItem", "position": 4, "name": "How to Version Control Large Satellite Imagery Datasets", "item": "/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "How to Version Control Large Satellite Imagery Datasets",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Convert imagery to Cloud-Optimized GeoTIFF", "text": "Use gdal_translate with COG driver, DEFLATE compression, and TILED=YES to enable chunked HTTP range reads."},
+        {"@type": "HowToStep", "position": 2, "name": "Initialize DVC alongside Git", "text": "Run dvc init, then configure a remote S3 or GCS bucket as the DVC backend."},
+        {"@type": "HowToStep", "position": 3, "name": "Track the imagery directory with DVC", "text": "Run dvc add data/satellite_imagery/ to generate a .dvc pointer file with SHA-256 checksums."},
+        {"@type": "HowToStep", "position": 4, "name": "Push binaries to cloud storage", "text": "Run dvc push to transfer rasters to the remote backend, then commit the .dvc pointer file to Git."},
+        {"@type": "HowToStep", "position": 5, "name": "Tag the dataset release", "text": "Use git tag v1.0-imagery alongside dvc push to create an immutable, reproducible training snapshot."},
+        {"@type": "HowToStep", "position": 6, "name": "Validate COG structure before tracking", "text": "Use rasterio to assert internal tiling and overview presence before committing .dvc pointers."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Why does git add fail on large GeoTIFF files?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Git stores a full copy of every version of every tracked file. A 2 GB GeoTIFF committed twice doubles repository size permanently. Use DVC to store only a SHA-256 pointer in Git while the binary lives in cloud object storage."}
+        },
+        {
+          "@type": "Question",
+          "name": "What CRS should satellite imagery be stored in for ML training?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Store raw imagery in its native acquisition CRS (often EPSG:4326 or a UTM zone). Reproject to a consistent projected CRS such as EPSG:32633 only during preprocessing, and track that reprojection as a DVC pipeline stage so the transform is reproducible."}
+        },
+        {
+          "@type": "Question",
+          "name": "Can DVC handle partial tile updates without re-uploading the full scene?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Yes. DVC operates at the file level, so adding a changed tile to a dvc add directory re-hashes only that file. Zarr datasets offer sub-file chunk granularity, where only modified chunks are re-uploaded, making them preferable for frequently updated time-series imagery."}
+        },
+        {
+          "@type": "Question",
+          "name": "How do I pull a specific dataset version for a past experiment?",
+          "acceptedAnswer": {"@type": "Answer", "text": "Check out the Git tag or commit that contains the .dvc pointer files for that snapshot, then run dvc pull. DVC resolves the SHA-256 hashes and fetches exactly those binary versions from the remote cache."}
+        }
+      ]
+    }
+  ]
+}
+</script>
+
 # How to Version Control Large Satellite Imagery Datasets
 
-To learn **how to version control large satellite imagery datasets**, decouple metadata from binary assets. Use Git for code, configuration, and lightweight annotation exports, while leveraging Data Version Control (DVC) to track multi-gigabyte raster files. Store imagery in cloud object storage, convert raw tiles to Cloud-Optimized GeoTIFF (COG) or Zarr for chunked I/O, and commit `.dvc` pointer files to your repository. This architecture preserves full dataset lineage, enables reproducible ML training snapshots, and prevents Git repository bloat.
+To version control large satellite imagery datasets, decouple binary rasters from your Git repository. Store code, configuration, and lightweight annotation exports in Git, and use [Data Version Control (DVC)](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) to track multi-gigabyte raster files via cryptographic pointers. Convert raw scenes to Cloud-Optimized GeoTIFF (COG) or Zarr format before tracking so that remote storage supports HTTP range requests and chunked access. This keeps the repository lean, preserves full dataset lineage, and enables any team member or CI runner to reproduce a training snapshot exactly.
 
-## Why Standard Git Fails for Geospatial Data
-Satellite imagery routinely exceeds hundreds of gigabytes per scene. Git was engineered for text-based source control, not binary raster data. Committing raw `.tif` or `.jp2` files triggers full copies on every change, exhausts local disk space, and breaks CI/CD runners. While Git LFS exists, it struggles with geospatial metadata, lacks native chunked access, and incurs high egress costs when pulling historical commits. 
+---
 
-DVC solves this by storing only cryptographic hashes and storage paths in Git, while the actual imagery lives in a scalable remote backend. This approach is foundational to modern [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) workflows, where reproducibility, storage efficiency, and team collaboration are non-negotiable.
+<!-- Inline SVG: architecture diagram showing Git + DVC + Cloud Storage layers -->
+<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram: Git tracks pointer files, DVC orchestrates transfers, cloud storage holds binary rasters" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Git + DVC + Cloud Storage versioning architecture for satellite imagery</title>
+  <desc>Three horizontal layers: Git repository holding .dvc pointer files and code at the top; DVC orchestration layer in the middle managing push, pull and checksums; Cloud object storage holding COG and Zarr rasters at the bottom. Arrows show bidirectional data flow between layers.</desc>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Git layer -->
+  <rect x="20" y="20" width="680" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="36" y="46" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">Git Repository</text>
+  <text x="36" y="64" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">training_scripts/   dvc.yaml   data/imagery.dvc   annotations/*.geojson   .gitignore</text>
+  <!-- DVC layer -->
+  <rect x="20" y="108" width="680" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="36" y="134" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">DVC Orchestration Layer</text>
+  <text x="36" y="152" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">SHA-256 checksums   dvc push / dvc pull   dvc repro (pipeline stages)   multipart transfer</text>
+  <!-- Cloud storage layer -->
+  <rect x="20" y="196" width="680" height="48" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="36" y="220" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">Cloud Object Storage</text>
+  <text x="36" y="236" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">s3://bucket/geodata/   scene_v1_cog.tif   scene_v2_cog.tif   timeseries.zarr/</text>
+  <!-- Arrows -->
+  <line x1="360" y1="84" x2="360" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="360" y1="108" x2="360" y2="84" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="4 2"/>
+  <line x1="360" y1="172" x2="360" y2="196" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="360" y1="196" x2="360" y2="172" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="4 2"/>
+  <text x="370" y="100" font-size="10" fill="currentColor" font-family="inherit" opacity="0.65">commit / checkout</text>
+  <text x="370" y="188" font-size="10" fill="currentColor" font-family="inherit" opacity="0.65">push / pull</text>
+</svg>
 
-## Production Architecture: Git + DVC + Cloud Storage
-A scalable setup separates concerns into three distinct layers:
+## Why Standard Git Breaks on Satellite Imagery
 
-1. **Git Layer:** Tracks Python training scripts, `dvc.yaml` pipelines, annotation exports (COCO/GeoJSON), and lightweight `.dvc` pointer files.
-2. **DVC Layer:** Manages dataset snapshots, computes SHA-256 checksums, and orchestrates `pull`/`push` operations. It also tracks preprocessing dependencies so `dvc repro` rebuilds pipelines deterministically.
-3. **Storage Layer:** Hosts the actual imagery in S3, GCS, or Azure Blob. COG format enables HTTP range requests for tile-level access without downloading full files, while Zarr supports cloud-native chunked arrays ideal for PyTorch/TensorFlow dataloaders. Refer to the [GDAL COG driver documentation](https://gdal.org/drivers/raster/cog.html) for optimal compression and tiling flags.
+Satellite scenes routinely exceed hundreds of gigabytes per acquisition. Git stores a full binary copy of every version of every committed file. Committing raw `.tif` or `.jp2` files causes repository size to compound linearly with dataset evolution, exhausts local disk space on developer machines, and makes CI/CD runners fail with out-of-memory errors during clone.
+
+Git LFS partially mitigates file size but introduces different problems for spatial workloads: it lacks native support for [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) metadata as a versioned entity, has no concept of chunked raster access, and can generate significant egress costs when pulling historical commits. DVC solves this by committing only a `.dvc` pointer file — a small YAML containing the file's SHA-256 hash and storage path — while the binary lives in a scalable remote backend.
 
 ## Step-by-Step Implementation
-Follow this sequence to initialize version control for a new satellite imagery directory:
 
-1. **Initialize DVC in your repository:**
- ```bash
-   dvc init
-   ```
-2. **Convert raw imagery to COG** (ensures cloud-native streaming):
- ```bash
-   gdal_translate -of COG -co COMPRESS=DEFLATE -co TILED=YES -co COPY_SRC_OVERVIEWS=YES input.tif output_cog.tif
-   ```
-3. **Track the dataset directory:**
- ```bash
-   dvc add data/satellite_imagery/
-   ```
-4. **Configure remote storage** (replace with your cloud provider):
- ```bash
-   dvc remote add -d myremote s3://your-bucket/geodata
-   ```
- See the official [DVC Remote Storage guide](https://dvc.org/doc/user-guide/data-management/remote-storage) for authentication and provider-specific configurations.
-5. **Push binaries to the cloud:**
- ```bash
-   dvc push
-   ```
-6. **Commit pointer files to Git:**
- ```bash
-   git add data/satellite_imagery.dvc .gitignore
-   git commit -m "Track v1 satellite imagery"
-   ```
+### Step 1: Convert Raw Imagery to Cloud-Optimized GeoTIFF
 
-## Automated Validation & Tracking Script
-The following Python script validates COG structure, tracks a directory with DVC, and commits the resulting pointers. It assumes a Linux/macOS environment with `dvc` and `rasterio` installed.
+Before tracking with DVC, convert each scene to COG format. COG files interleave tile overviews and data internally, so cloud storage can serve HTTP range requests against individual tiles without fetching the full file. The GDAL COG driver handles this:
+
+```bash
+gdal_translate \
+  -of COG \
+  -co COMPRESS=DEFLATE \
+  -co TILED=YES \
+  -co BLOCKXSIZE=512 \
+  -co BLOCKYSIZE=512 \
+  -co COPY_SRC_OVERVIEWS=YES \
+  input_raw.tif \
+  output_cog.tif
+```
+
+For time-series stacks or hyperspectral cubes, Zarr is preferable. Zarr stores data as chunked arrays in separate files, so only modified chunks are re-uploaded when a tile changes:
+
+```bash
+pip install "zarr==2.18.0" "rioxarray==0.15.5"
+```
 
 ```python
+import rioxarray
+
+ds = rioxarray.open_rasterio("output_cog.tif", chunks={"x": 512, "y": 512})
+ds.to_zarr("timeseries.zarr", mode="w")
+```
+
+### Step 2: Initialize DVC in Your Repository
+
+DVC must sit alongside an existing Git repository. Run these commands from the repository root:
+
+```bash
+pip install "dvc[s3]==3.51.2"   # swap [s3] for [gcs] or [azure] as needed
+
+git init
+dvc init
+
+# Commit the DVC configuration files Git needs to track
+git add .dvc/config .dvcignore
+git commit -m "Initialize DVC"
+```
+
+### Step 3: Configure Remote Storage
+
+Point DVC at a cloud bucket. Use the `--local` flag to keep credentials out of the shared `.dvc/config` file:
+
+```bash
+# Shared config (safe to commit)
+dvc remote add -d geospatial-remote s3://your-bucket/dvc-data
+dvc remote modify geospatial-remote region us-east-1
+
+# Per-machine credentials (never committed)
+dvc remote modify --local geospatial-remote access_key_id YOUR_KEY
+dvc remote modify --local geospatial-remote secret_access_key YOUR_SECRET
+
+git add .dvc/config
+git commit -m "Add S3 DVC remote"
+```
+
+### Step 4: Track the Imagery Directory
+
+```bash
+dvc add data/satellite_imagery/
+
+# DVC writes data/satellite_imagery.dvc (pointer) and updates .gitignore
+git add data/satellite_imagery.dvc .gitignore
+git commit -m "Track satellite imagery v1 with DVC"
+```
+
+The generated `.dvc` pointer file looks like this:
+
+```yaml
+outs:
+- md5: d41d8cd98f00b204e9800998ecf8427e.dir
+  size: 4831838208
+  nfiles: 47
+  path: data/satellite_imagery
+```
+
+### Step 5: Push Binaries and Tag the Release
+
+```bash
+dvc push                            # transfer rasters to the S3 remote
+git tag v1.0-imagery                # immutable snapshot for training run 1
+git push origin main --tags
+```
+
+Any teammate or CI runner can now reproduce the exact dataset with:
+
+```bash
+git checkout v1.0-imagery
+dvc pull
+```
+
+### Step 6: Validate COG Structure Before Committing
+
+Run this validation script before calling `dvc add`. It uses `rasterio` to assert internal tiling and overview presence — the two properties required for cloud-native chunked reads:
+
+```python
+from __future__ import annotations
+
 import subprocess
 import sys
 from pathlib import Path
-import rasterio
+
+import rasterio  # rasterio==1.3.10
+
 
 def validate_cog(path: Path) -> bool:
-    """Verify file is a valid COG with internal tiling and overviews."""
+    """Return True only if the file is a valid COG with tiling and overviews."""
     try:
         with rasterio.open(path) as src:
-            is_tiled = src.profile.get("tiled", False)
-            has_overviews = len(src.overviews(1)) > 0
+            is_tiled: bool = bool(src.profile.get("tiled", False))
+            has_overviews: bool = len(src.overviews(1)) > 0
+            if not is_tiled:
+                print(f"  FAIL {path.name}: not internally tiled", file=sys.stderr)
+            if not has_overviews:
+                print(f"  FAIL {path.name}: no overviews", file=sys.stderr)
             return is_tiled and has_overviews
-    except Exception as e:
-        print(f"❌ Validation failed for {path}: {e}", file=sys.stderr)
+    except Exception as exc:
+        print(f"  ERROR {path}: {exc}", file=sys.stderr)
         return False
 
-def track_with_dvc(data_dir: Path) -> None:
-    """Add directory to DVC and commit pointer to Git."""
+
+def track_directory(data_dir: Path) -> None:
+    """Validate all GeoTIFFs, then add the directory to DVC and commit."""
     if not data_dir.exists():
         raise FileNotFoundError(f"Directory not found: {data_dir}")
-        
+
+    tif_files = list(data_dir.glob("**/*.tif"))
+    if not tif_files:
+        raise RuntimeError(f"No .tif files found in {data_dir}")
+
+    invalid = [f for f in tif_files if not validate_cog(f)]
+    if invalid:
+        print(f"{len(invalid)} file(s) failed COG validation — aborting.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"All {len(tif_files)} file(s) passed COG validation.")
     subprocess.run(["dvc", "add", str(data_dir)], check=True)
-    subprocess.run(["git", "add", f"{data_dir}.dvc", ".gitignore"], check=True)
-    subprocess.run(["git", "commit", "-m", f"Track {data_dir.name}"], check=True)
-    print(f"✅ Successfully tracked and committed {data_dir}")
+    subprocess.run(
+        ["git", "add", f"{data_dir}.dvc", ".gitignore"], check=True
+    )
+    subprocess.run(
+        ["git", "commit", "-m", f"Track {data_dir.name} with DVC"], check=True
+    )
+    print(f"Tracked and committed: {data_dir}")
+
 
 if __name__ == "__main__":
-    imagery_dir = Path("data/satellite_v1")
-    
-    # Validate all TIFFs before tracking
-    valid_count = 0
-    for tif_file in imagery_dir.glob("*.tif"):
-        if validate_cog(tif_file):
-            valid_count += 1
-        else:
-            print(f"⚠️  {tif_file.name} failed COG validation. Skipping.")
-            
-    if valid_count == 0:
-        print("No valid COGs found. Aborting DVC tracking.")
-        sys.exit(1)
-        
-    track_with_dvc(imagery_dir)
+    track_directory(Path("data/satellite_imagery"))
 ```
 
-## Best Practices for ML & Annotation Workflows
-When building automated annotation pipelines, you’ll typically generate versioned splits (train/val/test) alongside spatial metadata. Locking dataset states before model training prevents data leakage and ensures experiment reproducibility. For a complete breakdown of pipeline orchestration, see [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/).
+## Spatial Parameters and Format Flags Reference
 
-- **Store annotations in Git:** COCO JSON, GeoJSON, and label CSVs are lightweight text files. Commit them directly to Git to maintain strict version parity with `.dvc` pointers.
-- **Use `dvc.yaml` for preprocessing:** Define tiling, normalization, and augmentation steps as DVC stages. This guarantees that any team member can run `dvc repro` and generate identical training tensors.
-- **Tag releases, not commits:** Use `git tag v1.0-imagery` alongside `dvc push` to create immutable snapshots. CI/CD runners can then pull exact dataset versions without scanning commit history.
-- **Monitor storage costs:** Enable lifecycle policies on your cloud bucket to archive older `.dvc` versions to cold storage after 90 days. DVC’s hash-based deduplication ensures you never pay twice for identical tiles.
+| Parameter | Recommended value | Effect |
+|---|---|---|
+| `COMPRESS` (COG) | `DEFLATE` or `LZW` | Lossless; `DEFLATE` better for float bands |
+| `BLOCKXSIZE` / `BLOCKYSIZE` | `512` | Matches typical S3 part size for range reads |
+| `COPY_SRC_OVERVIEWS` | `YES` | Embeds multi-resolution pyramid; required for COG |
+| Zarr chunk shape | `(1, 512, 512)` | Band × Y × X; aligns with GPU tile loaders |
+| DVC cache type | `symlink` (Linux) | Avoids duplicate disk usage on cache hit |
+| Remote transfer concurrency | `jobs=8` (via `dvc remote modify`) | Saturates typical gigabit egress |
+| `EPSG:4326` | Raw storage CRS | Store native; reproject in a DVC pipeline stage |
 
-This workflow scales cleanly from single-GPU experiments to distributed training clusters, keeping your repository lean while preserving full geospatial lineage.
+The first time imagery in [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) is ingested, record the source CRS explicitly in a `dataset_metadata.json` sidecar committed to Git. This prevents silent CRS drift when future contributors add scenes from different acquisition providers.
+
+## Common Errors and Fixes
+
+**`dvc push` hangs or times out on large files**
+: Root cause: default single-threaded upload. Fix: `dvc remote modify geospatial-remote jobs 8` to enable parallel multipart transfer.
+
+**`rasterio.errors.NotGeoreferencedWarning` during COG validation**
+: Root cause: the input file lacks a geotransform — the file has no embedded CRS. Fix: run `gdal_edit.py -a_srs EPSG:4326 input.tif` to embed the projection before conversion.
+
+**`.dvc` pointer file shows `md5: null`**
+: Root cause: `dvc add` was run before `dvc init` completed or the `.dvc/` directory is missing. Fix: confirm `git status` shows `.dvc/config` tracked, delete the broken `.dvc` file, and re-run `dvc add`.
+
+**`git commit` includes gigabyte-scale files instead of pointer**
+: Root cause: `.gitignore` was not updated by `dvc add` (possible permissions issue). Fix: manually verify that the imagery directory path appears in `.gitignore`, then re-stage and commit.
+
+---
+
+This workflow is one component of the broader [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) pipeline, which covers multi-stage `dvc.yaml` orchestration, preprocessing locks, and experiment reproduction at scale.
+
+**Related**
+
+- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — parent cluster: DVC pipeline stages, remote auth, and `dvc repro` patterns
+- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep CRS, geotransform, and acquisition timestamp in sync with binary snapshots
+- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — extend content-addressable hashing to GeoJSON and COCO annotation exports
+- [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) — pillar overview covering the full versioning architecture
