@@ -11,7 +11,7 @@ breadcrumb:
   - label: "Implementing DVC for Geospatial Training Data"
     url: "/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/"
 datePublished: "2025-03-10"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -23,7 +23,7 @@ dateModified: "2026-06-24"
       "headline": "Implementing DVC for Geospatial Training Data",
       "description": "Step-by-step guide to configuring DVC for satellite imagery, LiDAR, and vector annotation datasets — covering remote storage setup, pipeline orchestration, rollback, and CI/CD integration for spatial ML workflows.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": { "@type": "Organization", "name": "Geospatial Annotation" },
       "publisher": { "@type": "Organization", "name": "Geospatial Annotation" }
     },
@@ -65,6 +65,16 @@ dateModified: "2026-06-24"
           "@type": "Question",
           "name": "Can DVC track GeoJSON annotation files with floating-point coordinate drift?",
           "acceptedAnswer": { "@type": "Answer", "text": "DVC tracks raw file hashes, not coordinate semantics. Pair DVC with SHA-256 manifests generated from the annotation coordinates to detect precision-level drift that changes model behavior without altering the hash." }
+        },
+        {
+          "@type": "Question",
+          "name": "What causes datum shift masquerading as model degradation?",
+          "acceptedAnswer": { "@type": "Answer", "text": "When raw scenes mix EPSG:4326 (WGS84) and EPSG:4269 (NAD83) without an explicit datum transformation grid, gdalwarp applies a zero-shift fallback that introduces up to 3-metre errors in North America. Always specify +towgs84 parameters or install PROJ datum grids before running CRS normalization stages." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I handle cache size explosion from frequent raster modifications?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Every dvc add on a modified GeoTIFF creates a new cache object. Run dvc gc -w --all-commits weekly and configure cloud lifecycle policies to transition objects older than 90 days to infrequent-access storage tiers." }
         }
       ]
     }
@@ -80,9 +90,9 @@ DVC (Data Version Control) bridges this gap by decoupling binary asset tracking 
 
 ---
 
-## Prerequisites and Toolchain Alignment
+## Prerequisites & Toolchain Alignment
 
-Before configuring DVC for spatial workloads, verify every component in the following table. Mismatched GDAL and rasterio versions are a common source of silent CRS handling differences between local and CI environments.
+Before configuring DVC for spatial workloads, verify every component below. Mismatched GDAL and rasterio versions are a common source of silent [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) handling differences between local and CI environments.
 
 | Component | Minimum version | Notes |
 |---|---|---|
@@ -94,7 +104,7 @@ Before configuring DVC for spatial workloads, verify every component in the foll
 | shapely | 2.0 | GEOS 3.11+ required for robust overlay operations |
 | GDAL (system) | 3.6 | Install via `conda-forge` or OS package manager; avoid PyPI GDAL |
 
-Additional requirements: a Git repository initialized with `.gitignore` entries for `.dvc/cache/`, virtual environments, and GDAL/OGR scratch directories; cloud object storage (AWS S3, GCP GCS, or Azure Blob) with programmatic IAM credentials; and familiarity with [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) before configuring CRS normalization stages.
+Additional requirements: a Git repository initialized with `.gitignore` entries for `.dvc/cache/`, virtual environments, and GDAL/OGR scratch directories; cloud object storage (AWS S3, GCP GCS, or Azure Blob) with programmatic IAM credentials.
 
 ---
 
@@ -102,61 +112,63 @@ Additional requirements: a Git repository initialized with `.gitignore` entries 
 
 The diagram below shows how data flows through a DVC-managed geospatial pipeline. Each box corresponds to a `dvc.yaml` stage; arrows represent the dependency relationships DVC uses to decide which stages need re-execution.
 
-<svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC geospatial pipeline diagram showing stages from raw imagery through CRS normalization, chip generation, label export, and validation to training-ready outputs" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC geospatial pipeline diagram showing stages from raw imagery through CRS normalization, chip generation, label export, and validation to training-ready outputs" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
   <title>DVC Geospatial Pipeline</title>
-  <desc>Data flow diagram for a DVC-managed geospatial training data pipeline: Raw Imagery and Reference Vectors feed into CRS Normalization, which feeds Chip Generator and Label Exporter. Chip Generator and Label Exporter feed into Validation Gate, which produces Training-Ready Chips and Masks.</desc>
+  <desc>Data flow diagram for a DVC-managed geospatial training data pipeline: Raw Imagery and Reference Vectors feed into CRS Normalization, which feeds Chip Generator and Label Exporter. Both feed into the Validation Gate, which produces Training-Ready Chips and Masks.</desc>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
+    <marker id="dvc-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
-  <!-- Raw Imagery -->
-  <rect x="20" y="20" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="95" y="42" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Raw Imagery</text>
-  <text x="95" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">GeoTIFF / COG / VRT</text>
-  <!-- Reference Vectors -->
-  <rect x="20" y="100" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="95" y="122" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Reference Vectors</text>
-  <text x="95" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">GeoJSON / Shapefile</text>
-  <!-- CRS Normalization -->
-  <rect x="230" y="55" width="160" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
-  <text x="310" y="77" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="bold">CRS Normalization</text>
-  <text x="310" y="95" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">gdalwarp / rasterio.reproject</text>
-  <!-- Chip Generator -->
-  <rect x="460" y="20" width="155" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="537" y="42" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Chip Generator</text>
-  <text x="537" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">512×512 / 1024×1024 patches</text>
-  <!-- Label Exporter -->
-  <rect x="460" y="100" width="155" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="537" y="122" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Label Exporter</text>
-  <text x="537" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">segmentation masks / COCO</text>
-  <!-- Validation Gate -->
-  <rect x="230" y="195" width="160" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
-  <text x="310" y="217" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="bold">Validation Gate</text>
-  <text x="310" y="235" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">CRS · SHA manifest · geometry</text>
-  <!-- Training-Ready Outputs -->
-  <rect x="230" y="280" width="160" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
-  <text x="310" y="299" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Training-Ready</text>
-  <text x="310" y="315" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">chips + masks · dvc push</text>
-  <!-- Arrows: Raw → CRS Norm -->
-  <line x1="170" y1="46" x2="228" y2="72" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Arrows: Ref Vectors → CRS Norm -->
-  <line x1="170" y1="126" x2="228" y2="98" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- CRS Norm → Chip Generator -->
-  <line x1="390" y1="72" x2="458" y2="48" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- CRS Norm → Label Exporter -->
-  <line x1="390" y1="90" x2="458" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Chip Generator → Validation -->
-  <line x1="537" y1="72" x2="390" y2="210" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Label Exporter → Validation -->
-  <line x1="537" y1="152" x2="390" y2="210" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Validation → Training-Ready -->
-  <line x1="310" y1="247" x2="310" y2="278" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
+  <!-- Raw Imagery box: top-left -->
+  <rect x="20" y="30" width="155" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="97" y="52" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Raw Imagery</text>
+  <text x="97" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">GeoTIFF / COG / VRT</text>
+  <!-- Reference Vectors box: mid-left -->
+  <rect x="20" y="120" width="155" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="97" y="142" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Reference Vectors</text>
+  <text x="97" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">GeoJSON / Shapefile</text>
+  <!-- CRS Normalization box: centre -->
+  <rect x="220" y="75" width="165" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
+  <text x="302" y="97" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="700">CRS Normalization</text>
+  <text x="302" y="116" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">gdalwarp / rasterio.reproject</text>
+  <!-- Chip Generator box: right-top -->
+  <rect x="460" y="30" width="160" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="540" y="52" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Chip Generator</text>
+  <text x="540" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">512×512 / 1024×1024 patches</text>
+  <!-- Label Exporter box: right-mid -->
+  <rect x="460" y="120" width="160" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="540" y="142" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Label Exporter</text>
+  <text x="540" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">segmentation masks / COCO</text>
+  <!-- Validation Gate box: centre-lower -->
+  <rect x="220" y="210" width="165" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
+  <text x="302" y="232" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="700">Validation Gate</text>
+  <text x="302" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">CRS · SHA manifest · geometry</text>
+  <!-- Training-Ready box: centre-bottom -->
+  <rect x="220" y="300" width="165" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+  <text x="302" y="320" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Training-Ready</text>
+  <text x="302" y="337" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">chips + masks · dvc push</text>
+  <!-- Arrow: Raw Imagery → CRS Normalization -->
+  <line x1="175" y1="58" x2="218" y2="92" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Reference Vectors → CRS Normalization -->
+  <line x1="175" y1="148" x2="218" y2="116" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: CRS Normalization → Chip Generator -->
+  <line x1="385" y1="92" x2="458" y2="58" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: CRS Normalization → Label Exporter -->
+  <line x1="385" y1="116" x2="458" y2="148" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Chip Generator → Validation Gate -->
+  <line x1="540" y1="86" x2="388" y2="222" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Label Exporter → Validation Gate -->
+  <line x1="460" y1="168" x2="387" y2="222" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Validation Gate → Training-Ready -->
+  <line x1="302" y1="266" x2="302" y2="298" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
 </svg>
 
 ---
 
-## Step 1: Initialize DVC and Configure Remote Storage
+## Core Workflow
+
+### Step 1 — Initialize DVC and Configure Remote Storage
 
 DVC must be initialized alongside Git so that `.dvc` metadata files commit alongside code while binary assets route to cloud storage. Configure the remote backend for parallel multipart transfers and fast checksumming before adding any spatial data.
 
@@ -179,7 +191,7 @@ git commit -m "chore: configure DVC remote for geospatial workloads"
 
 `upload_concurrency` and `download_concurrency` enable parallel multipart transfers for multi-gigabyte GeoTIFFs, preventing timeout failures on initial pushes. Switching from `md5` to `xxhash` reduces CPU overhead by roughly 3–5× during cache validation — critical when checking thousands of raster chips between pipeline runs.
 
-## Step 2: Structure Geospatial Data for Deterministic Tracking
+### Step 2 — Structure Geospatial Data for Deterministic Tracking
 
 Avoid monolithic directories. Organize assets by task, region, and temporal snapshot to enable granular versioning and efficient cache reuse. A flat, predictable hierarchy prevents unnecessary cache invalidation when only a subset of assets changes between annotation iterations.
 
@@ -195,7 +207,7 @@ data/
 └── annotations/          # COCO, GeoJSON, or custom XML
 ```
 
-Before tracking any raster, normalize all inputs to a shared `EPSG:4326` (for global models) or a local UTM zone (for regional tasks) using `gdalwarp` or `rasterio.warp.reproject`. Misaligned projections cause silent spatial drift during convolution that degrades model accuracy without triggering any obvious error. See [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) for CRS contract patterns that prevent this class of failure.
+Before tracking any raster, normalize all inputs to a shared `EPSG:4326` (for global models) or a local UTM zone (for regional tasks) using `gdalwarp` or `rasterio.warp.reproject`. Misaligned projections cause silent spatial drift during convolution that degrades model accuracy without triggering any obvious error.
 
 ```bash
 dvc add data/raw/imagery
@@ -205,7 +217,7 @@ git add data/raw/imagery.dvc data/processed/chips.dvc data/annotations.dvc data/
 git commit -m "feat: initialize geospatial dataset tracking"
 ```
 
-## Step 3: Orchestrate Preprocessing with DVC Pipelines
+### Step 3 — Orchestrate Preprocessing with DVC Pipelines
 
 Manual preprocessing scripts break reproducibility because they leave no record of parameter values, execution order, or intermediate file states. DVC pipelines (`dvc.yaml`) enforce deterministic execution, cache intermediate outputs, and skip unchanged stages automatically.
 
@@ -258,13 +270,13 @@ tile_size: 512
 overlap: 64
 ```
 
-Run the full pipeline with `dvc repro`. DVC evaluates dependency hashes and re-executes only stages where inputs, scripts, or parameters have changed. Experiment variants — different `tile_size` values, alternative `resample_method` settings — can be tracked with `dvc exp run --set-param tile_size=1024` without branching Git history. For a complete treatment of pipeline automation, including [using DVC pipelines for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/), see the companion guide.
+Run the full pipeline with `dvc repro`. DVC evaluates dependency hashes and re-executes only stages where inputs, scripts, or parameters have changed. Experiment variants — different `tile_size` values, alternative `resample_method` settings — can be tracked with `dvc exp run --set-param tile_size=1024` without branching Git history. For a complete treatment of pipeline automation, see [using DVC pipelines for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/).
 
-## Step 4: Track Vector Annotations and Validate Label Consistency
+### Step 4 — Track Vector Annotations and Validate Label Consistency
 
 Vector annotations (GeoJSON, Shapefile, COCO JSON) introduce versioning complexity that rasters do not have. Floating-point coordinates may shift due to software rounding, topology cleaning, or CRS reprojection even when the visual label looks identical. DVC tracks raw file hashes — it cannot distinguish semantic annotation changes from accidental coordinate truncation.
 
-Pair DVC with SHA-256 manifests to catch precision-level drift:
+Pair DVC with [SHA-256 manifests](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to catch precision-level drift:
 
 ```bash
 # Generate manifest before committing annotation updates
@@ -323,13 +335,11 @@ if __name__ == "__main__":
     print("Annotation precision check passed.")
 ```
 
-This approach ensures model retraining triggers only when semantic label boundaries change, not when file metadata or coordinate representation shifts. For a deeper treatment of annotation integrity across iterative labeling cycles, see [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/).
+This approach ensures model retraining triggers only when semantic label boundaries change, not when file metadata or coordinate representation shifts.
 
-## Step 5: Execute Rollbacks and Recover Corrupted Assets
+### Step 5 — Execute Rollbacks and Recover Corrupted Assets
 
 Geospatial datasets are prone to corruption during transfer, storage degradation, or interrupted pipeline runs. A truncated GeoTIFF header or a partially written Shapefile can silently break downstream training jobs — DVC's checkout mechanism provides deterministic recovery.
-
-### Restore a Known-Good Dataset State
 
 ```bash
 # Inspect the history of a specific tracked directory
@@ -345,7 +355,7 @@ git checkout 7b82e10 -- data/processed/chips.dvc
 dvc checkout data/processed/chips.dvc
 ```
 
-### Validate Cache Integrity Against Remote
+Validate cache integrity against the remote before and after restoration:
 
 ```bash
 # Pull cache metadata without downloading data files
@@ -367,11 +377,9 @@ dvc repro --force
 
 Never delete `.dvc` metadata files manually — always use `dvc remove` or `git checkout` to maintain consistency between Git history and DVC cache state. For enterprise-grade recovery patterns including automated integrity checks and fallback remote routing, see [rollback strategies for corrupted spatial datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/).
 
-## Step 6: Scale for Satellite Imagery and Multi-Temporal Stacks
+### Step 6 — Scale for Satellite Imagery and Multi-Temporal Stacks
 
 Single-scene GeoTIFFs often exceed 10 GB, and temporal stacks of the same area multiply storage requirements proportionally. Tracking raw multi-temporal stacks directly causes two problems: DVC must checksum the full file on every `dvc status` call, and each new acquisition invalidates the entire tracked object even when 95% of pixels are unchanged.
-
-### Virtual Raster (VRT) Strategy
 
 Generate lightweight VRT index files that reference underlying cloud-optimized GeoTIFFs (COGs) stored directly in object storage:
 
@@ -388,8 +396,6 @@ git commit -m "feat: add multi-temporal VRT index for 2024 Q1 acquisition series
 ```
 
 VRT files remain under 100 KB while preserving band mappings, spatial extents, and temporal ordering. Training scripts use `rasterio` windowed reads against the VRT to pull exactly the spatial extent needed for each chip, avoiding full-scene downloads.
-
-### COG-Native Tiling for Windowed Training
 
 ```python
 import rasterio
@@ -419,7 +425,7 @@ For guidance on handling petabyte-class archives or STAC catalog integration wit
 
 ---
 
-## Spatial Parameters and Configuration Reference
+## Spatial Parameters & Configuration Reference
 
 | Parameter | Type | Valid range / values | Spatial implication |
 |---|---|---|---|
@@ -433,16 +439,28 @@ For guidance on handling petabyte-class archives or STAC catalog integration wit
 
 ---
 
-## Edge Cases and Spatial-Specific Failure Modes
+## Edge Cases & Spatial-Specific Failure Modes
 
-**Datum shift masquerading as model degradation.** When raw scenes mix `EPSG:4326` (WGS84) and `EPSG:4269` (NAD83) without an explicit datum transformation grid, `gdalwarp` applies a zero-shift fallback that introduces up to 3-metre errors in North America. Always specify `+towgs84` parameters or install PROJ datum grids (`proj-data` package) before running CRS normalization stages.
+<details>
+<summary><strong>Datum shift masquerading as model degradation</strong></summary>
 
-**Partial multipart upload corruption.** An interrupted `dvc push` leaves a partially written object in S3. DVC's `dvc status` reports the file as "modified" locally but may not catch the remote corruption. Run `dvc fetch --jobs 1 --run-cache` to force a full re-download of the remote object and detect size mismatches before training.
+When raw scenes mix `EPSG:4326` (WGS84) and `EPSG:4269` (NAD83) without an explicit datum transformation grid, `gdalwarp` applies a zero-shift fallback that introduces up to 3-metre errors in North America. Always specify `+towgs84` parameters or install PROJ datum grids (`proj-data` package) before running CRS normalization stages.
 
-**Self-intersecting polygon boundaries after topology cleaning.** QGIS buffer or snap operations can introduce self-intersections in annotation polygons that are invisible at normal zoom levels but break GDAL rasterization. Add a shapely validity check in the `export_labels` stage:
+</details>
+
+<details>
+<summary><strong>Partial multipart upload corruption</strong></summary>
+
+An interrupted `dvc push` leaves a partially written object in S3. DVC's `dvc status` reports the file as "modified" locally but may not catch the remote corruption. Run `dvc fetch --jobs 1 --run-cache` to force a full re-download of the remote object and detect size mismatches before training.
+
+</details>
+
+<details>
+<summary><strong>Self-intersecting polygon boundaries after topology cleaning</strong></summary>
+
+QGIS buffer or snap operations can introduce self-intersections in annotation polygons that are invisible at normal zoom levels but break GDAL rasterization. Add a shapely validity check in the `export_labels` stage:
 
 ```python
-from shapely.geometry import shape
 from shapely.validation import make_valid
 import geopandas as gpd
 
@@ -455,13 +473,25 @@ def clean_annotations(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     return gdf
 ```
 
-**Band order inconsistency across acquisition dates.** Satellite providers occasionally reorder spectral bands between product generations. Hardcoding band indices (e.g., `src.read(1)` for red) breaks silently when the band order changes. Always read by band name using GDAL band descriptions or embed a band-to-index mapping in `params.yaml`.
+</details>
 
-**Cache size explosion from frequent raster modifications.** Every `dvc add` on a modified GeoTIFF creates a new cache object. On high-frequency annotation workflows, the local cache can exhaust disk space within days. Run `dvc gc -w --all-commits` weekly and configure cloud lifecycle policies to transition objects older than 90 days to infrequent-access storage tiers.
+<details>
+<summary><strong>Band order inconsistency across acquisition dates</strong></summary>
+
+Satellite providers occasionally reorder spectral bands between product generations. Hardcoding band indices (e.g., `src.read(1)` for red) breaks silently when the band order changes. Always read by band name using GDAL band descriptions or embed a band-to-index mapping in `params.yaml`.
+
+</details>
+
+<details>
+<summary><strong>Cache size explosion from frequent raster modifications</strong></summary>
+
+Every `dvc add` on a modified GeoTIFF creates a new cache object. On high-frequency annotation workflows, the local cache can exhaust disk space within days. Run `dvc gc -w --all-commits` weekly and configure cloud lifecycle policies to transition objects older than 90 days to infrequent-access storage tiers.
+
+</details>
 
 ---
 
-## Integration and Automation Hooks
+## Integration & Automation Hooks
 
 ### GitHub Actions CI Gate
 
@@ -533,7 +563,7 @@ def commit_annotation_export(export_path: str, task_name: str) -> None:
 
 ---
 
-## Validation and Testing
+## Validation & Testing
 
 Confirm DVC setup is functioning correctly before committing to a full pipeline run:
 

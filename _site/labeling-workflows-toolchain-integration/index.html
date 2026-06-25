@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -272,7 +272,7 @@
       "headline": "Labeling Workflows & Toolchain Integration for Geospatial AI",
       "description": "A practitioner's guide to engineering reproducible, API-driven geospatial annotation pipelines: data ingestion, CRS contracts, annotation platforms, QA gates, CI/CD hooks, and continuous training feedback.",
       "datePublished": "2025-02-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "GeoSpatial Annotation"},
       "publisher": {"@type": "Organization", "name": "GeoSpatial Annotation"}
     },
@@ -324,51 +324,62 @@
 <h2 id="core-concepts-raster-vs-vector-crs-contracts-and-label-taxonomies" tabindex="-1"><a class="header-anchor" href="#core-concepts-raster-vs-vector-crs-contracts-and-label-taxonomies" aria-label="Permalink to section &quot;Core Concepts: Raster vs Vector, CRS Contracts, and Label Taxonomies&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Concepts: Raster vs Vector, CRS Contracts, and Label Taxonomies</h2>
 <p>Before designing the pipeline, align your team on three spatial primitives that influence every downstream decision.</p>
 <p><strong>Raster annotations</strong> encode labels as pixel grids — semantic segmentation masks stored as GeoTIFF files with embedded geotransforms. They are well-suited for per-pixel land cover classification, cloud masking, and spectral anomaly detection, but they are resolution-dependent and expensive to store at scale. See the <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">vector vs raster annotation workflows</a> comparison for a full breakdown of when each modality is appropriate.</p>
-<p><strong>Vector annotations</strong> store geometries as coordinate sequences — polygons, polylines, and points in GeoJSON or Shapefile format. They are resolution-independent, compact, and directly usable in spatial databases, but they require topology enforcement and CRS precision management that raster workflows avoid.</p>
-<p><strong>CRS contracts</strong> define the coordinate space in which all geometries are expressed. A pipeline that mixes <code class="inline-code">EPSG:4326</code> (geographic, degrees) with <code class="inline-code">EPSG:32633</code> (UTM Zone 33N, metres) without explicit reprojection will silently produce invalid IoU scores, corrupted spatial joins, and model inputs with misaligned channels. Every stage boundary must assert the expected CRS.</p>
+<p><strong>Vector annotations</strong> store geometries as coordinate sequences — polygons, polylines, and points in GeoJSON or Shapefile format. They are resolution-independent, compact, and directly usable in spatial databases, but they require topology enforcement and coordinate precision management that raster workflows avoid.</p>
+<p><strong>CRS contracts</strong> define the coordinate space in which all geometries are expressed. A pipeline that mixes <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:4326</code></a> (geographic, degrees) with <code class="inline-code">EPSG:32633</code> (UTM Zone 33N, metres) without explicit reprojection will silently produce invalid IoU scores, corrupted spatial joins, and model inputs with misaligned channels. Every stage boundary must assert the expected CRS.</p>
 <p><strong>Label taxonomies</strong> define the class hierarchy that annotators apply. A well-designed <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">ROI label taxonomy for aerial imagery</a> distinguishes between mutually exclusive classes (land cover), hierarchical classes (building → residential → single-family), and multi-label scenarios (road with damage). Taxonomy ambiguity is the single largest source of inter-annotator disagreement in geospatial projects.</p>
 <h2 id="pipeline-architecture-five-stages-from-ingestion-to-training-feedback" tabindex="-1"><a class="header-anchor" href="#pipeline-architecture-five-stages-from-ingestion-to-training-feedback" aria-label="Permalink to section &quot;Pipeline Architecture: Five Stages from Ingestion to Training Feedback&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Pipeline Architecture: Five Stages from Ingestion to Training Feedback</h2>
 <p>A production geospatial annotation pipeline operates as a directed acyclic graph. Data flows through five stages, each with explicit contracts on format, CRS, and validation state.</p>
-<svg viewBox="0 0 820 220" role="img" aria-label="Geospatial annotation pipeline: five stages from ingestion to training feedback" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;display:block;margin:2rem auto;">
+<svg viewBox="0 0 860 250" role="img" aria-label="Five-stage geospatial annotation pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:2rem auto;">
   <title>Geospatial Annotation Pipeline Architecture</title>
-  <desc>Five-stage pipeline diagram showing data flow: Ingestion (COG/Zarr), Preprocessing (tile, CRS normalize), Annotation (web + desktop), Validation (topology, consensus), Export &amp; Feedback (COCO/YOLO/GeoJSON → training loop).</desc>
+  <desc>Five-stage pipeline showing data flow: Stage 1 Ingestion (COG/Zarr, S3/GCS/Blob), Stage 2 Preprocessing (tile and CRS normalize, radiometry and mask), Stage 3 Annotation (web UI and desktop, pre-label assist), Stage 4 Validation (topology and CRS, consensus and QA), Stage 5 Export and Training (COCO/YOLO/GeoJSON, DVC manifest, GPU training loop). A dashed arc shows active learning feedback from the Export stage back to Ingestion.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.55"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <rect x="10" y="70" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="75" y="103" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600">Ingestion</text>
-  <text x="75" y="120" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">COG · Zarr</text>
-  <text x="75" y="136" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">S3 · GCS · Blob</text>
-  <rect x="170" y="70" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="235" y="103" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600">Preprocessing</text>
-  <text x="235" y="120" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Tile · CRS norm</text>
-  <text x="235" y="136" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Radiometry · Mask</text>
-  <rect x="330" y="70" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="395" y="103" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600">Annotation</text>
-  <text x="395" y="120" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Web UI · Desktop</text>
-  <text x="395" y="136" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Pre-label assist</text>
-  <rect x="490" y="70" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="555" y="103" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600">Validation</text>
-  <text x="555" y="120" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Topology · CRS</text>
-  <text x="555" y="136" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Consensus · QA</text>
-  <rect x="650" y="70" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="730" y="96" text-anchor="middle" font-size="12" fill="currentColor" font-weight="600">Export &amp; Training</text>
-  <text x="730" y="113" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">COCO · YOLO · GeoJSON</text>
-  <text x="730" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">DVC manifest · GPU</text>
-  <text x="730" y="145" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">→ feedback loop</text>
-  <!-- Arrows -->
-  <line x1="140" y1="110" x2="168" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="300" y1="110" x2="328" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="460" y1="110" x2="488" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="620" y1="110" x2="648" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <!-- Stage 1: Ingestion -->
+  <rect x="8" y="60" width="148" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="82" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">1. Ingestion</text>
+  <text x="82" y="103" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">COG · Zarr</text>
+  <text x="82" y="119" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">S3 · GCS · Blob</text>
+  <text x="82" y="135" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">JSON sidecar</text>
+  <!-- Arrow 1→2 -->
+  <line x1="157" y1="105" x2="173" y2="105" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)" opacity="0.55"/>
+  <!-- Stage 2: Preprocessing -->
+  <rect x="175" y="60" width="148" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="249" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">2. Preprocess</text>
+  <text x="249" y="103" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Tile · CRS norm</text>
+  <text x="249" y="119" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Radiometry</text>
+  <text x="249" y="135" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Cloud/shadow mask</text>
+  <!-- Arrow 2→3 -->
+  <line x1="324" y1="105" x2="340" y2="105" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)" opacity="0.55"/>
+  <!-- Stage 3: Annotation -->
+  <rect x="342" y="60" width="148" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="416" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">3. Annotation</text>
+  <text x="416" y="103" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Web UI · Desktop</text>
+  <text x="416" y="119" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Pre-label assist</text>
+  <text x="416" y="135" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Webhook task queue</text>
+  <!-- Arrow 3→4 -->
+  <line x1="491" y1="105" x2="507" y2="105" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)" opacity="0.55"/>
+  <!-- Stage 4: Validation -->
+  <rect x="509" y="60" width="148" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="583" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">4. Validation</text>
+  <text x="583" y="103" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Topology · CRS</text>
+  <text x="583" y="119" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Consensus · QA</text>
+  <text x="583" y="135" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Expert adjudication</text>
+  <!-- Arrow 4→5 -->
+  <line x1="658" y1="105" x2="674" y2="105" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)" opacity="0.55"/>
+  <!-- Stage 5: Export & Training -->
+  <rect x="676" y="60" width="176" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="764" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">5. Export &amp; Training</text>
+  <text x="764" y="103" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">COCO · YOLO · GeoJSON</text>
+  <text x="764" y="119" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">DVC manifest · GPU</text>
+  <text x="764" y="135" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Versioned dataset</text>
   <!-- Feedback arc -->
-  <path d="M730,150 Q730,195 395,195 Q60,195 75,152" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,4" opacity="0.4" marker-end="url(#arr)"/>
-  <text x="400" y="210" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5">active learning feedback</text>
+  <path d="M764,152 Q764,210 416,210 Q68,210 82,152" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="6,4" opacity="0.4" marker-end="url(#arrowhead)"/>
+  <text x="424" y="228" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5">active learning feedback loop</text>
 </svg>
-<p>Each stage must be independently testable, connected by explicit contracts (format, CRS, schema), and monitored for throughput and error rates.</p>
+<p>Each stage must be independently testable, connected by explicit contracts on format, CRS, and schema, and monitored for throughput and error rates.</p>
 <h3 id="stage-1-data-ingestion-and-cloud-storage" tabindex="-1"><a class="header-anchor" href="#stage-1-data-ingestion-and-cloud-storage" aria-label="Permalink to section &quot;Stage 1 — Data Ingestion and Cloud Storage&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 1 — Data Ingestion and Cloud Storage</h3>
 <p>Raw source data arrives from satellite APIs (Planet, Sentinel Hub, Maxar), UAV mission exports, or airborne sensor systems. The first act is format normalization.</p>
 <p>Convert all raster inputs to <a href="https://www.cogeo.org/">Cloud-Optimized GeoTIFF</a> (COG) or Zarr. Both formats support HTTP range requests, which means tile servers can stream only the bounding box required for each annotation task without transferring the full scene.</p>
@@ -510,8 +521,6 @@
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token comment"># rasterio >= 1.3</span>
 <span class="token keyword">import</span> json
 <span class="token keyword">import</span> rasterio
-<span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>transform <span class="token keyword">import</span> rowcol
-<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> mapping<span class="token punctuation">,</span> shape
 <span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
 
 <span class="token keyword">def</span> <span class="token function">export_geojson_with_transform</span><span class="token punctuation">(</span>
@@ -544,7 +553,7 @@
 <p><strong>Class imbalance in spatial distributions.</strong> Rare classes (damaged buildings, landslide deposits, oil spills) cluster geographically. A naive random train/test split will leak spatial autocorrelation and overstate model performance. Use geographically stratified splits that prevent adjacent tiles from appearing in both train and test sets.</p>
 <p><strong>Projection-dependent IoU collapse.</strong> Computing intersection-over-union in geographic coordinates (<code class="inline-code">EPSG:4326</code>) introduces systematic area distortion at mid-to-high latitudes. Always reproject to a local metric CRS before <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">calculating IoU thresholds</a> for spatial object detection tasks.</p>
 <p><strong>Metadata loss during format conversion.</strong> Converting GeoTIFF to PNG for web display, or GeoJSON to CSV for annotation review, silently drops CRS, transform, and attribute metadata. Maintain original spatial formats throughout the pipeline and only convert for display, never for storage.</p>
-<p><strong>Annotator boundary disagreement on fuzzy edges.</strong> Forest edges, shorelines, and agricultural field boundaries are genuinely ambiguous. Without explicit guidance in the annotation protocol, inter-annotator disagreement on these features inflates your label uncertainty and degrades model performance on boundary pixels. Add explicit boundary protocols to your <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">label taxonomy</a> definitions.</p>
+<p><strong>Annotator boundary disagreement on fuzzy edges.</strong> Forest edges, shorelines, and agricultural field boundaries are genuinely ambiguous. Without explicit guidance in the annotation protocol, inter-annotator disagreement on these features inflates label uncertainty and degrades model performance on boundary pixels. Add explicit boundary protocols to your <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">label taxonomy</a> definitions.</p>
 <h2 id="cicd-integration-patterns-for-annotation-datasets" tabindex="-1"><a class="header-anchor" href="#cicd-integration-patterns-for-annotation-datasets" aria-label="Permalink to section &quot;CI/CD Integration Patterns for Annotation Datasets&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> CI/CD Integration Patterns for Annotation Datasets</h2>
 <p>Annotation pipelines benefit from the same continuous integration discipline applied to software. Hook spatial validation into automated workflows so that broken labels never reach the training cluster.</p>
 <h3 id="github-actions-spatial-validation-gate" tabindex="-1"><a class="header-anchor" href="#github-actions-spatial-validation-gate" aria-label="Permalink to section &quot;GitHub Actions: Spatial Validation Gate&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> GitHub Actions: Spatial Validation Gate</h3>
@@ -727,21 +736,21 @@ GEOJSON_FEATURE_SCHEMA <span class="token operator">=</span> <span class="token 
 <h2 id="implementation-checklist" tabindex="-1"><a class="header-anchor" href="#implementation-checklist" aria-label="Permalink to section &quot;Implementation Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Implementation Checklist</h2>
 <p>Use this checklist to align engineering, GIS, and ML teams on production-readiness gates before scaling beyond pilot datasets.</p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8469639"><label class="task-list-item-label" for="task-item-8469639"> Standardize on COG or Zarr for all raster ingestion; enforce via pre-commit S3 hook</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3490801"><label class="task-list-item-label" for="task-item-3490801"> Implement automated CRS normalization to a declared target EPSG at the ingestion boundary</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5437269"><label class="task-list-item-label" for="task-item-5437269"> Generate per-tile JSON sidecars with affine transform, CRS, GSD, and sensor metadata</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6383690"><label class="task-list-item-label" for="task-item-6383690"> Apply radiometric correction and cloud/shadow masking before annotation task creation</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-660701"><label class="task-list-item-label" for="task-item-660701"> Configure tile overlap (10–15%) to prevent boundary artifacts in model predictions</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3469622"><label class="task-list-item-label" for="task-item-3469622"> Wire annotation platform to data lake via webhook — tasks in, completions out</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7739799"><label class="task-list-item-label" for="task-item-7739799"> Deploy Tier 1 automated spatial checks (topology, CRS, zero-area, schema) on every completion</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5012760"><label class="task-list-item-label" for="task-item-5012760"> Implement consensus scoring and confidence thresholding for inter-annotator QA</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2008830"><label class="task-list-item-label" for="task-item-2008830"> Integrate active learning routing for low-confidence and class-imbalanced tiles</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6401239"><label class="task-list-item-label" for="task-item-6401239"> Enforce geographically stratified train/test splits to prevent spatial autocorrelation leakage</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4477060"><label class="task-list-item-label" for="task-item-4477060"> Automate export to training format with embedded geotransform metadata and sidecar CRS manifest</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6301391"><label class="task-list-item-label" for="task-item-6301391"> Generate versioned dataset manifests (DVC) on every successful export</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5464876"><label class="task-list-item-label" for="task-item-5464876"> Hook spatial validation into CI/CD (GitHub Actions, Airflow, or DVC pipeline stages)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2004780"><label class="task-list-item-label" for="task-item-2004780"> Enforce RBAC, feature masking, and audit logging from day one</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6182314"><label class="task-list-item-label" for="task-item-6182314"> Monitor annotator throughput, per-class error rates, and geographic coverage weekly</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2308164"><label class="task-list-item-label" for="task-item-2308164"> Standardize on COG or Zarr for all raster ingestion; enforce via pre-commit S3 hook</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9545685"><label class="task-list-item-label" for="task-item-9545685"> Implement automated CRS normalization to a declared target EPSG at the ingestion boundary</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2389875"><label class="task-list-item-label" for="task-item-2389875"> Generate per-tile JSON sidecars with affine transform, CRS, GSD, and sensor metadata</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3744610"><label class="task-list-item-label" for="task-item-3744610"> Apply radiometric correction and cloud/shadow masking before annotation task creation</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-292957"><label class="task-list-item-label" for="task-item-292957"> Configure tile overlap (10–15%) to prevent boundary artifacts in model predictions</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2339067"><label class="task-list-item-label" for="task-item-2339067"> Wire annotation platform to data lake via webhook — tasks in, completions out</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6870125"><label class="task-list-item-label" for="task-item-6870125"> Deploy Tier 1 automated spatial checks (topology, CRS, zero-area, schema) on every completion</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5581884"><label class="task-list-item-label" for="task-item-5581884"> Implement consensus scoring and confidence thresholding for inter-annotator QA</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7180926"><label class="task-list-item-label" for="task-item-7180926"> Integrate active learning routing for low-confidence and class-imbalanced tiles</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5936293"><label class="task-list-item-label" for="task-item-5936293"> Enforce geographically stratified train/test splits to prevent spatial autocorrelation leakage</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9012934"><label class="task-list-item-label" for="task-item-9012934"> Automate export to training format with embedded geotransform metadata and sidecar CRS manifest</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3822090"><label class="task-list-item-label" for="task-item-3822090"> Generate versioned dataset manifests (DVC) on every successful export</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2129093"><label class="task-list-item-label" for="task-item-2129093"> Hook spatial validation into CI/CD (GitHub Actions, Airflow, or DVC pipeline stages)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5767464"><label class="task-list-item-label" for="task-item-5767464"> Enforce RBAC, feature masking, and audit logging from day one</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8334930"><label class="task-list-item-label" for="task-item-8334930"> Monitor annotator throughput, per-class error rates, and geographic coverage weekly</label></li>
 </ul>
 <p>Start with a pilot dataset of 500–2,000 tiles. Validate end-to-end latency, spatial accuracy, and export round-trip fidelity before scaling to regional or global coverage.</p>
 <hr>
@@ -769,12 +778,12 @@ GEOJSON_FEATURE_SCHEMA <span class="token operator">=</span> <span class="token 
           
             <a class="related__card" href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">
               <div class="title">Human-in-the-Loop Validation Cycles for Geospatial AI Training</div>
-              <div class="desc">Automated pre-labeling consistently produces prediction batches where 15–40 % of geometries contain topological errors, CRS ambiguities, or semantic misclassifications that compound into training noise. A well-structured human-in-the-loop validation cycle intercepts these defects before they reach the ground-truth data</div>
+              <div class="desc">Automated pre-labeling consistently produces prediction batches where 15–40% of geometries contain topological errors, coordinate reference system ambiguities, or semantic misclassifications that compound into training noise. A well-structured human-in-the-loop validation cycle intercepts these defects before they reac</div>
             </a>
           
             <a class="related__card" href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">
               <div class="title">Integrating Label Studio with Geospatial Workflows</div>
-              <div class="desc">Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don&#39;t exist in standard CV workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on polygon export</div>
+              <div class="desc">Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don&#39;t exist in standard computer vision workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on p</div>
             </a>
           
             <a class="related__card" href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">

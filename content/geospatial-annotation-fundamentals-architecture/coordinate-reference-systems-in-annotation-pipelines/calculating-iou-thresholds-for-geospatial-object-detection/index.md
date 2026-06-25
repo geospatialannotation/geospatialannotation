@@ -13,7 +13,7 @@ breadcrumb:
   - label: "Calculating IoU Thresholds for Geospatial Object Detection"
     url: "/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/"
 datePublished: "2025-06-01"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 schema:
   - Article
   - BreadcrumbList
@@ -30,7 +30,7 @@ schema:
       "headline": "Calculating IoU Thresholds for Geospatial Object Detection",
       "description": "How to compute projection-aware Intersection over Union (IoU) for aerial and satellite pipelines: CRS transformation with pyproj, topology validation with shapely, and GSD-calibrated threshold selection.",
       "datePublished": "2025-06-01",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -85,55 +85,38 @@ schema:
 
 # Calculating IoU Thresholds for Geospatial Object Detection
 
-Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits do not provide out of the box: reprojection from angular coordinates to a local metric [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), topology validation before any area computation, and threshold values calibrated to ground sample distance (GSD) and mission type. Transform all geometries to a UTM or state-plane CRS using `pyproj` 3.6+, validate with `shapely` 2.0+ `make_valid()`, then apply adaptive cutoffs in the 0.35–0.75 range rather than a fixed 0.50. Skipping any of these steps introduces projection-induced bias that silently corrupts precision/recall curves.
+Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits omit: reprojection from angular coordinates to a [local metric coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) before any area computation, topology validation with `shapely` 2.0+ `make_valid()`, and threshold values calibrated to ground sample distance (GSD) and mission type. Reproject all geometries to a UTM or state-plane CRS using `pyproj` 3.6+, then apply adaptive cutoffs in the 0.35–0.75 range rather than a fixed 0.50. Skipping any of these steps introduces projection-induced bias that silently corrupts precision/recall curves.
 
 ## Why Unprojected IoU Breaks Aerial Pipelines
 
-`EPSG:4326` (WGS84) stores coordinates as decimal degrees. A degree of longitude spans roughly 111 km at the equator but shrinks to near zero at high latitudes. When you compute intersection area directly in degree-squared units, a building in Helsinki occupies a smaller angular footprint than an identical building in Nairobi — even though both are the same physical size on the ground. The result is artificially suppressed IoU scores, false negatives during evaluation, and precision/recall curves that shift as your dataset spans different latitudes.
+`EPSG:4326` (WGS84) stores coordinates as decimal degrees; a degree of longitude spans roughly 111 km at the equator but shrinks near zero at high latitudes, so intersection area computed in degree-squared units is geographically meaningless and produces artificially suppressed IoU scores that shift as your dataset spans different latitudes. Varying GSD compounds the problem: an annotation tolerance of ±2 pixels at 10 cm/pixel is ±20 cm on the ground, but at 50 cm/pixel that same pixel tolerance is ±100 cm — a fixed 0.50 threshold that passes valid detections at high resolution will reject them at coarser resolution purely because boundary pixelation widens the mismatch, not because the model degraded.
 
-Varying GSD compounds the problem. An annotation tolerance of ±2 pixels at 10 cm/pixel represents ±20 cm on the ground; at 50 cm/pixel the same pixel tolerance is ±100 cm. A 0.50 threshold that passes valid detections at high resolution will reject them at coarser resolution purely because boundary pixelation widens the mismatch — not because the model performed worse.
-
-<svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing IoU pipeline: WGS84 input, reproject to metric CRS, validate topology, compute intersection/union in square metres, apply GSD-calibrated threshold" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
-  <title>Projection-aware IoU calculation pipeline</title>
-  <desc>Five sequential stages: WGS84 coordinates enter, are reprojected to a metric CRS, validated for topology, used to compute intersection and union in square metres, and finally matched against a GSD-calibrated IoU threshold.</desc>
-  <defs>
-    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
-    </marker>
-  </defs>
-  <!-- Stage boxes -->
-  <rect x="10" y="90" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="70" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Input coords</text>
-  <text x="70" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">EPSG:4326</text>
-  <rect x="160" y="90" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="225" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Reproject</text>
-  <text x="225" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">pyproj → UTM</text>
-  <rect x="320" y="90" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="385" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Validate</text>
-  <text x="385" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">make_valid()</text>
-  <rect x="480" y="90" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="545" y="109" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Compute IoU</text>
-  <text x="545" y="125" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">∩ / ∪ (m²)</text>
-  <text x="545" y="140" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif"> </text>
-  <rect x="640" y="90" width="108" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="694" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Threshold</text>
-  <text x="694" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">GSD-calibrated</text>
-  <!-- Arrows -->
-  <line x1="130" y1="118" x2="158" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="290" y1="118" x2="318" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="450" y1="118" x2="478" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="610" y1="118" x2="638" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <!-- Labels below -->
-  <text x="70" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">lat/lon pairs</text>
-  <text x="225" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">always_xy=True</text>
-  <text x="385" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">fix rings + self-∩</text>
-  <text x="545" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">exact area ratio</text>
-  <text x="694" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">0.35 – 0.75</text>
+<svg viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Geometric illustration of IoU: two overlapping polygons with intersection area shaded, labelled with the IoU formula" style="width:100%;max-width:520px;display:block;margin:1.5rem auto;">
+  <title>IoU geometric definition for geospatial polygons</title>
+  <desc>Two overlapping quadrilaterals representing a ground-truth annotation and a model prediction. The overlapping region is shaded and labelled Intersection. The combined area is labelled Union. The IoU formula IoU = Intersection divided by Union appears below.</desc>
+  <!-- Ground-truth polygon -->
+  <polygon points="60,60 240,50 260,190 50,200" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="2" stroke-opacity="0.7"/>
+  <!-- Prediction polygon -->
+  <polygon points="160,80 340,70 360,210 150,220" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3" stroke-opacity="0.7"/>
+  <!-- Intersection region (approximated as overlapping area) -->
+  <polygon points="160,80 240,50 260,190 150,220" fill="currentColor" opacity="0.25"/>
+  <!-- Labels -->
+  <text x="100" y="140" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.75" font-family="sans-serif">Ground truth</text>
+  <text x="320" y="120" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.75" font-family="sans-serif">Prediction</text>
+  <text x="205" y="148" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.95" font-family="sans-serif" font-weight="bold">∩</text>
+  <!-- Legend -->
+  <rect x="60" y="230" width="14" height="14" fill="currentColor" opacity="0.10" stroke="currentColor" stroke-width="1.5"/>
+  <text x="80" y="242" font-size="11" fill="currentColor" opacity="0.7" font-family="sans-serif">Union (∪) area</text>
+  <rect x="200" y="230" width="14" height="14" fill="currentColor" opacity="0.25"/>
+  <text x="220" y="242" font-size="11" fill="currentColor" opacity="0.7" font-family="sans-serif">Intersection (∩) area</text>
+  <!-- Formula -->
+  <text x="430" y="150" text-anchor="middle" font-size="13" fill="currentColor" opacity="0.85" font-family="sans-serif" font-weight="bold">IoU = ∩ / ∪</text>
+  <text x="430" y="169" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">compute in m², not degrees²</text>
 </svg>
 
 ## Step-by-Step Implementation
 
-Each step below is a self-contained, runnable block. Install the required packages once:
+Install the required packages once:
 
 ```bash
 pip install shapely==2.0.6 pyproj==3.6.1 numpy==1.26.4
@@ -141,7 +124,7 @@ pip install shapely==2.0.6 pyproj==3.6.1 numpy==1.26.4
 
 ### Step 1 — Reproject All Geometries to a Metric CRS
 
-Choose a UTM zone that covers your tile's centroid. For a dataset at longitude 13.4°E (central Europe), `EPSG:32633` (UTM Zone 33N) is appropriate. Use `always_xy=True` to force (longitude, latitude) input order regardless of the CRS authority definition:
+Choose a UTM zone that covers your tile's centroid. For a dataset at longitude 13.4°E (central Europe), `EPSG:32633` (UTM Zone 33N) is appropriate. Pass `always_xy=True` to force `(longitude, latitude)` input order regardless of CRS authority axis definitions:
 
 ```python
 from pyproj import Transformer
@@ -152,7 +135,7 @@ def make_transformer(source_crs: str = "EPSG:4326",
     return Transformer.from_crs(source_crs, target_crs, always_xy=True)
 ```
 
-For global datasets spanning multiple UTM zones, derive the zone from the centroid longitude:
+For global datasets spanning multiple UTM zones, derive the zone automatically from each annotation's centroid longitude:
 
 ```python
 def utm_epsg_from_lon_lat(lon: float, lat: float) -> str:
@@ -163,7 +146,7 @@ def utm_epsg_from_lon_lat(lon: float, lat: float) -> str:
 
 ### Step 2 — Validate Topology Before Computing Area
 
-`shapely`'s `make_valid()` repairs self-intersecting rings and unclosed exteriors. Call it on every geometry — prediction and ground-truth — before any set operation:
+`shapely`'s `make_valid()` repairs self-intersecting rings and unclosed exteriors. Call it on every geometry — prediction and ground-truth alike — before any set operation:
 
 ```python
 from shapely.geometry import Polygon, box
@@ -185,7 +168,7 @@ def to_valid_polygon(coords: Union[list, tuple]) -> Polygon:
 
 ### Step 3 — Compute IoU in Metric Space
 
-After reprojection and validation, the intersection and union areas are in square metres:
+After reprojection and validation, intersection and union areas are in square metres. Assign [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) alongside the IoU value when building evaluation logs — they let you weight borderline matches rather than applying a hard binary cut:
 
 ```python
 from shapely.ops import transform
@@ -215,7 +198,7 @@ def geospatial_iou(
 
 ### Step 4 — Apply a GSD-Calibrated Threshold
 
-Wrap steps 1–3 in a single evaluation function that accepts explicit CRS and threshold parameters:
+Wrap steps 1–3 in a single evaluation function that accepts explicit CRS and threshold parameters. Consult the reference table in the next section to choose `iou_threshold`:
 
 ```python
 def evaluate_detection(
@@ -247,7 +230,7 @@ def evaluate_detection(
 
 ### Step 5 — Size-Stratified Batch Evaluation
 
-Aggregate IoU scores mask scale-dependent failure modes. Bin predictions by projected area and compute per-bin mean Average Precision after transformation:
+Aggregate IoU scores mask scale-dependent failure modes. Bin predictions by projected area — the same approach used in [polygon vs. bounding-box annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) quality assessment — and compute per-bin match rates after transformation:
 
 ```python
 import numpy as np
@@ -280,38 +263,92 @@ def stratified_map(
     return summary
 ```
 
-## Spatial Parameters and Threshold Reference
+## Threshold and CRS Reference
 
-| Mission Type | Typical Object Scale | Recommended IoU Cutoff | Rationale |
+<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline diagram showing the five stages of projection-aware IoU calculation" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Projection-aware IoU calculation pipeline</title>
+  <desc>Five sequential stages: WGS84 input coordinates are reprojected via pyproj to a UTM CRS, validated with make_valid, used to compute intersection and union in square metres, then compared against a GSD-calibrated IoU threshold.</desc>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- Stage 1 -->
+  <rect x="8" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="64" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Input coords</text>
+  <text x="64" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">EPSG:4326</text>
+  <!-- Stage 2 -->
+  <rect x="148" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="204" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Reproject</text>
+  <text x="204" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">pyproj → UTM</text>
+  <!-- Stage 3 -->
+  <rect x="288" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="344" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Validate</text>
+  <text x="344" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">make_valid()</text>
+  <!-- Stage 4 -->
+  <rect x="428" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="484" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Compute IoU</text>
+  <text x="484" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">∩ / ∪  (m²)</text>
+  <!-- Stage 5 -->
+  <rect x="568" y="68" width="122" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="629" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Threshold</text>
+  <text x="629" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">GSD-calibrated</text>
+  <!-- Arrows -->
+  <line x1="120" y1="95" x2="146" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <line x1="260" y1="95" x2="286" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="95" x2="426" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <line x1="540" y1="95" x2="566" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <!-- Sub-labels -->
+  <text x="64" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">lat/lon pairs</text>
+  <text x="204" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">always_xy=True</text>
+  <text x="344" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">fix rings + self-∩</text>
+  <text x="484" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">exact area ratio</text>
+  <text x="629" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">0.35 – 0.75</text>
+</svg>
+
+**IoU threshold by mission type:**
+
+| Mission type | Typical object scale | Recommended IoU cutoff | Rationale |
 |---|---|---|---|
 | Infrastructure mapping | Small (< 100 m²) | 0.65 – 0.75 | Tight compliance requirements; false positives carry regulatory risk |
 | Vehicle / asset detection | Medium (1 – 50 m²) | 0.50 – 0.60 | Standard recall/precision balance |
 | Agricultural / land cover | Large (> 10 000 m²) | 0.35 – 0.50 | Boundary ambiguity dominates; GSD variance is high |
 | Multi-scale detection | Mixed | 0.40 – 0.60 (adaptive) | Use size-binned evaluation with per-bin thresholds |
 
-**GSD scaling rule:** lower the threshold by ~0.05 per 10 cm/pixel increase in GSD above 20 cm/pixel. At 50 cm/pixel, sub-pixel annotation disagreement between labellers spans the equivalent of 25–50 cm on the ground — more than enough to drop IoU below a fixed 0.50 for a correctly localised detection. When embedding [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) alongside IoU during evaluation, use the confidence value to weight borderline matches rather than applying a hard binary cut.
+**GSD scaling rule:** lower the threshold by approximately 0.05 per 10 cm/pixel increase in GSD above 20 cm/pixel. At 50 cm/pixel, sub-pixel annotation disagreement between labellers spans 25–50 cm on the ground — more than enough to drop IoU below a fixed 0.50 for a correctly localised detection.
 
 **EPSG quick reference:**
 
 - `EPSG:4326` — WGS84, angular degrees, input format only
 - `EPSG:32633` — UTM Zone 33N, metric (central Europe / Africa)
 - `EPSG:32737` — UTM Zone 37S, metric (East Africa / Madagascar)
-- `EPSG:3857` — Web Mercator, metric fallback for multi-zone datasets (distortion acceptable for tile-level area ratios)
+- `EPSG:3857` — Web Mercator, metric fallback for multi-zone datasets (distortion acceptable for tile-level area ratios under ~50 km wide)
 
-## Common Errors & Fixes
+Ensure the CRS and GSD metadata needed for threshold selection travels with every dataset export — [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) covers the mechanics of attaching that context to each versioned snapshot.
 
-| Error / Symptom | Root Cause | Fix |
-|---|---|---|
-| `TopologicalError: The operation 'GEOSIntersection_r' produced a null geometry` | Self-intersecting polygon (bowtie ring) passed to `.intersection()` | Call `make_valid(geom)` on both operands before intersection |
-| IoU is always 0.0 for visually overlapping boxes | Input coordinates in `(lat, lon)` order passed to a transformer expecting `(lon, lat)` | Add `always_xy=True` to `Transformer.from_crs()` |
-| IoU scores drop sharply for tiles above 55°N | Area computed in degree-squared units (`EPSG:4326` never reprojected) | Ensure `to_valid_polygon` receives metric coordinates after `transform(project, geom)` |
-| `ShapelyDeprecationWarning: The array interface is deprecated` / wrong area returned | shapely 1.x geometry passed to shapely 2.x function | Upgrade to `shapely==2.0.6`; re-create all geometry objects from coordinates rather than pickling from 1.x |
+## Common Errors and Fixes
+
+**`TopologicalError: The operation 'GEOSIntersection_r' produced a null geometry`**
+Root cause: self-intersecting polygon (bowtie ring) passed to `.intersection()`.
+Fix: call `make_valid(geom)` on both operands before the intersection call.
+
+**IoU is always 0.0 for visually overlapping boxes**
+Root cause: input coordinates in `(lat, lon)` order passed to a transformer expecting `(lon, lat)`.
+Fix: add `always_xy=True` to `Transformer.from_crs()`.
+
+**IoU scores drop sharply for tiles above 55°N**
+Root cause: area computed in degree-squared units — `EPSG:4326` was never reprojected.
+Fix: ensure `to_valid_polygon` receives metric coordinates after `transform(project, geom)` has been applied.
+
+**`ShapelyDeprecationWarning: The array interface is deprecated` / wrong area returned**
+Root cause: shapely 1.x geometry object passed to a shapely 2.x function.
+Fix: upgrade to `shapely==2.0.6` and re-create all geometry objects from raw coordinates rather than unpickling from 1.x.
 
 ## Related
 
 - [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — parent page covering CRS contracts, datum management, and reprojection patterns across an entire annotation pipeline
 - [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — assign per-annotation uncertainty values that complement IoU during model evaluation and active-learning triage
-- [Best Practices for Polygon vs Bounding Box Annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) — annotation geometry choices upstream that directly determine how tight IoU scores can realistically be
+- [Best Practices for Polygon vs Bounding Box Annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) — annotation geometry choices that determine how tight IoU scores can realistically be
 - [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — ensure the CRS and GSD metadata needed for threshold selection travel with every dataset export
 
-This page covers one specialised calculation within the broader [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) cluster, which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This page covers one specialised calculation within [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).

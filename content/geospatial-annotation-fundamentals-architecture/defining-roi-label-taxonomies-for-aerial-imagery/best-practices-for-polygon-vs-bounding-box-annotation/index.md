@@ -5,7 +5,7 @@ slug: "best-practices-for-polygon-vs-bounding-box-annotation"
 type: "long_tail"
 breadcrumb: "Polygon vs Bounding Box"
 datePublished: "2024-03-15"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -17,7 +17,7 @@ dateModified: "2026-06-24"
       "headline": "Best Practices for Polygon vs Bounding Box Annotation in Aerial Imagery",
       "description": "Choose between polygon and bounding box annotation for aerial imagery: decision criteria, runnable Python validation code, spatial thresholds, and a hybrid active-learning pipeline that cuts manual labeling by 40–70%.",
       "datePublished": "2024-03-15",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -80,7 +80,7 @@ Use bounding boxes for rapid, coarse localization when instance separation and t
 
 ---
 
-<svg viewBox="0 0 720 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision flow: choose bounding box or polygon annotation based on object type and pipeline requirements" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision flow: choose bounding box or polygon annotation based on object type and pipeline requirements" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Polygon vs Bounding Box annotation decision flow</title>
   <desc>Flowchart showing how object compactness, model architecture, and downstream analytics requirements drive the choice between bounding box and polygon annotation, with a hybrid path for active-learning refinement.</desc>
   <defs>
@@ -88,52 +88,53 @@ Use bounding boxes for rapid, coarse localization when instance separation and t
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
     </marker>
   </defs>
-  <!-- Start -->
-  <rect x="280" y="10" width="160" height="40" rx="20" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="360" y="35" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif">New object class</text>
+  <!-- Start node -->
+  <rect x="270" y="10" width="180" height="38" rx="19" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="360" y="34" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif">New object class</text>
   <!-- Arrow down -->
-  <line x1="360" y1="50" x2="360" y2="80" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <!-- Decision: compact? -->
-  <polygon points="360,80 460,115 360,150 260,115" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-  <text x="360" y="110" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Compact /</text>
-  <text x="360" y="126" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">rectangular?</text>
+  <line x1="360" y1="48" x2="360" y2="78" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <!-- Decision diamond: compact? -->
+  <polygon points="360,78 465,118 360,158 255,118" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="360" y="113" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Compact /</text>
+  <text x="360" y="130" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">rectangular?</text>
   <!-- Yes path left -->
-  <line x1="260" y1="115" x2="120" y2="115" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <text x="190" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">Yes</text>
+  <line x1="255" y1="118" x2="110" y2="118" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <text x="183" y="111" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">Yes</text>
   <!-- No path right -->
-  <line x1="460" y1="115" x2="600" y2="115" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <text x="530" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">No</text>
-  <!-- Bounding box box -->
-  <rect x="20" y="88" width="100" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="70" y="111" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Bounding</text>
-  <text x="70" y="127" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">box</text>
-  <!-- Polygon box -->
-  <rect x="600" y="88" width="100" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="650" y="111" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Polygon</text>
-  <text x="650" y="127" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">mask</text>
+  <line x1="465" y1="118" x2="610" y2="118" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <text x="538" y="111" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">No</text>
+  <!-- Bounding box node -->
+  <rect x="20" y="92" width="90" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="65" y="114" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Bounding</text>
+  <text x="65" y="130" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">box</text>
+  <!-- Polygon node -->
+  <rect x="610" y="92" width="90" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="655" y="114" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Polygon</text>
+  <text x="655" y="130" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">mask</text>
   <!-- Arrow down from bbox -->
-  <line x1="70" y1="142" x2="70" y2="175" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="65" y1="144" x2="65" y2="178" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
   <!-- Arrow down from polygon -->
-  <line x1="650" y1="142" x2="650" y2="175" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <!-- Area analytics? decision -->
-  <text x="70" y="198" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Train detector</text>
-  <text x="70" y="212" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">(YOLO/DETR)</text>
-  <text x="650" y="198" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Train segmentation</text>
-  <text x="650" y="212" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">(Mask R-CNN/SAM)</text>
-  <!-- Middle path: active learning -->
-  <line x1="120" y1="115" x2="200" y2="230" stroke="currentColor" stroke-width="1" stroke-dasharray="5,4" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="600" y1="115" x2="520" y2="230" stroke="currentColor" stroke-width="1" stroke-dasharray="5,4" opacity="0.5" marker-end="url(#arr)"/>
-  <rect x="200" y="220" width="320" height="44" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.55"/>
-  <text x="360" y="242" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Hybrid: boxes → uncertainty routing</text>
-  <text x="360" y="258" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">→ polygon refinement (active learning)</text>
-  <!-- Validate -->
-  <line x1="360" y1="264" x2="360" y2="290" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <text x="360" y="305" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">Shapely topology + BIoU QA before export</text>
+  <line x1="655" y1="144" x2="655" y2="178" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <!-- Model labels -->
+  <text x="65" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">YOLO / DETR</text>
+  <text x="65" y="212" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">detector</text>
+  <text x="655" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Mask R-CNN</text>
+  <text x="655" y="212" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">/ SAM</text>
+  <!-- Dashed lines to hybrid -->
+  <line x1="110" y1="118" x2="210" y2="238" stroke="currentColor" stroke-width="1" stroke-dasharray="5,4" opacity="0.5" marker-end="url(#arr)"/>
+  <line x1="610" y1="118" x2="510" y2="238" stroke="currentColor" stroke-width="1" stroke-dasharray="5,4" opacity="0.5" marker-end="url(#arr)"/>
+  <!-- Hybrid node -->
+  <rect x="195" y="228" width="330" height="48" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6,3" opacity="0.55"/>
+  <text x="360" y="250" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Hybrid: boxes → uncertainty routing</text>
+  <text x="360" y="268" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">→ polygon refinement (active learning)</text>
+  <!-- Final arrow to QA -->
+  <line x1="360" y1="276" x2="360" y2="302" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <text x="360" y="316" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">Shapely topology + BIoU QA before export</text>
 </svg>
 
 ## Why geometry choice breaks geospatial pipelines
 
-Annotation geometry determines not just labeling speed but model behaviour, CRS-correctness of area calculations, and the validity of downstream geospatial analytics. Using bounding boxes where polygons are needed floods segmentation heads with background noise and prevents accurate footprint extraction. Conversely, forcing polygon annotation on every class stalls throughput, raises QA failure rates from self-intersecting rings, and inflates GPU memory during mask rasterization — effects that compound across the [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) when geometries are stored in geographic degrees (`EPSG:4326`) rather than a local metric CRS, causing IoU metrics to distort at mid-latitudes.
+Annotation geometry determines not just labeling speed but model behaviour, CRS-correctness of area calculations, and the validity of downstream geospatial analytics. Using bounding boxes where polygons are needed floods segmentation heads with background noise and prevents accurate footprint extraction. Conversely, forcing polygon annotation on every class stalls throughput, raises QA failure rates from self-intersecting rings, and inflates GPU memory during mask rasterization — effects that compound across [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) when geometries are stored in geographic degrees (`EPSG:4326`) rather than a local metric CRS, causing IoU metrics to distort at mid-latitudes.
 
 ## Step-by-step implementation
 
@@ -158,11 +159,11 @@ class ClassSpec:
     rationale: str
 
 taxonomy: list[ClassSpec] = [
-    ClassSpec("vehicle",         AnnotationTier.BBOX,    "compact, high density, throughput priority"),
-    ClassSpec("building",        AnnotationTier.POLYGON, "footprint area analytics, cadastral compliance"),
-    ClassSpec("solar_array",     AnnotationTier.POLYGON, "boundary-precise for area/output estimation"),
-    ClassSpec("vegetation_patch",AnnotationTier.HYBRID,  "box for detection; polygon where area > 500 m²"),
-    ClassSpec("shipping_container", AnnotationTier.BBOX, "rectangular, change-detection use case"),
+    ClassSpec("vehicle",            AnnotationTier.BBOX,    "compact, high density, throughput priority"),
+    ClassSpec("building",           AnnotationTier.POLYGON, "footprint area analytics, cadastral compliance"),
+    ClassSpec("solar_array",        AnnotationTier.POLYGON, "boundary-precise for area/output estimation"),
+    ClassSpec("vegetation_patch",   AnnotationTier.HYBRID,  "box for detection; polygon where area > 500 m²"),
+    ClassSpec("shipping_container", AnnotationTier.BBOX,    "rectangular, change-detection use case"),
 ]
 ```
 
@@ -190,7 +191,7 @@ def train_bbox_bootstrapper(data_yaml: Path, epochs: int = 50) -> Path:
 
 ### Step 3 — Route high-uncertainty instances to polygon annotators
 
-Use prediction confidence and box IoU variance to identify which instances need polygon refinement. This avoids blanket polygon annotation and focuses expert time on the highest-ambiguity objects.
+Use prediction confidence and box IoU variance to identify which instances need polygon refinement. This avoids blanket polygon annotation and focuses expert time on the highest-ambiguity objects. Per-annotation [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) are the key signal driving this routing decision.
 
 ```python
 # Python 3.10+ | ultralytics==8.2.0, numpy==1.26.4
@@ -198,7 +199,7 @@ import numpy as np
 from ultralytics import YOLO
 from pathlib import Path
 
-CONFIDENCE_THRESHOLD = 0.55   # below this → route to polygon annotation queue
+CONFIDENCE_THRESHOLD = 0.55    # below this → route to polygon annotation queue
 IOU_VARIANCE_THRESHOLD = 0.08  # high variance across augmentations → ambiguous boundary
 
 def route_uncertain_predictions(
@@ -234,7 +235,7 @@ def route_uncertain_predictions(
 
 ### Step 4 — Validate polygon topology with Shapely before export
 
-Self-intersecting polygons and duplicate vertices corrupt COCO masks and cause silent failures in Mask R-CNN dataloaders. Run this validation as a mandatory pre-export gate; the same check integrates into a DVC pipeline step for [automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/).
+Self-intersecting polygons and duplicate vertices corrupt COCO masks and cause silent failures in Mask R-CNN dataloaders. Run this validation as a mandatory pre-export gate; the same check integrates into a [DVC pipeline step for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/).
 
 ```python
 # Python 3.10+ | shapely==2.0.6, geopandas==1.0.1
@@ -267,7 +268,7 @@ def validate_and_repair_polygons(geojson_path: Path) -> gpd.GeoDataFrame:
 
 ### Step 5 — Measure Boundary IoU per class to confirm quality
 
-Standard IoU is insensitive to jagged edges. Boundary IoU (BIoU) penalises misaligned contours and is the correct QA metric when [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) drive active-learning queue prioritisation.
+Standard IoU is insensitive to jagged edges. Boundary IoU (BIoU) penalises misaligned contours and is the correct QA metric when confidence scores drive active-learning queue prioritisation.
 
 ```python
 # Python 3.10+ | shapely==2.0.6
@@ -304,19 +305,19 @@ Always reproject geometries to a [local metric CRS](/geospatial-annotation-funda
 
 ## Common errors and fixes
 
-**`TopologicalError: This operation could not be performed`**
+`TopologicalError: This operation could not be performed`
 : Cause: self-intersecting ring generated by vertex snapping or annotator trace error.
 : Fix: `geom = geom.buffer(0)` — Shapely's zero-buffer trick dissolves self-intersections; verify with `geom.is_valid` after.
 
-**`ValueError: A LinearRing requires at least 4 coordinates`**
+`ValueError: A LinearRing requires at least 4 coordinates`
 : Cause: a degenerate polygon with fewer than 4 vertices, often from rushed polygon closure on tiny objects.
 : Fix: filter `gdf[gdf.geometry.apply(lambda g: len(g.exterior.coords) >= 4)]` before export; log discarded instances.
 
-**IoU scores collapse at mid-latitudes despite correct pixel alignment**
+IoU scores collapse at mid-latitudes despite correct pixel alignment
 : Cause: IoU computed in `EPSG:4326`; degree-based distances distort area calculations.
 : Fix: `gdf = gdf.to_crs("EPSG:32633")` (or the appropriate UTM zone) before any metric computation.
 
-**COCO mask export produces out-of-memory error during training**
+COCO mask export produces out-of-memory error during training
 : Cause: polygon vertex count is too high for dense rasterisation across a full batch.
 : Fix: apply `simplify(tolerance=0.15, preserve_topology=True)` and cap at 500 vertices per instance before converting to RLE masks.
 
@@ -326,7 +327,7 @@ This page is one focused how-to within the broader [Defining ROI Label Taxonomie
 
 **Related**
 
-- [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — parent cluster: class hierarchy design and taxonomy governance
+- [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — class hierarchy design and taxonomy governance
 - [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contracts, datum alignment, and projected IoU computation
 - [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — per-class IoU cutoffs by GSD and mission type
 - [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation scoring to drive active-learning queues

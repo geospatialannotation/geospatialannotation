@@ -9,7 +9,7 @@ breadcrumb:
   - label: Rollback Strategies for Corrupted Spatial Datasets
     url: /dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/
 datePublished: "2025-04-10"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -21,7 +21,7 @@ dateModified: "2026-06-24"
       "headline": "Rollback Strategies for Corrupted Spatial Datasets",
       "description": "Production-tested rollback strategies for corrupted geospatial ML datasets: atomic restoration, SHA manifest verification, CRS drift detection, and DVC integration for deterministic pipeline recovery.",
       "datePublished": "2025-04-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -70,17 +70,17 @@ dateModified: "2026-06-24"
 
 # Rollback Strategies for Corrupted Spatial Datasets
 
-A corrupted geospatial training dataset rarely announces itself. A malformed [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation platform exporting incremental patches against a rolled-back tile set produces geometry joins that return empty matches. By the time model validation surfaces the problem, the corrupted version may already be the "latest" snapshot in your remote store.
+A corrupted geospatial training dataset rarely announces itself. A malformed [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation platform exporting incremental patches against a rolled-back tile set produces geometry joins that return empty matches or misaligned instance masks. By the time model validation surfaces the problem, the corrupted version may already be the "latest" snapshot in your remote store.
 
 This page covers the complete recovery workflow: pre-flight triage, distributed locking, atomic restoration, post-restore CRS verification, and the integration hooks that make the whole sequence repeatable inside a CI pipeline.
 
 ---
 
-<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
+<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
   <title>Five-Phase Spatial Dataset Rollback Workflow</title>
-  <desc>A left-to-right flow diagram showing the five phases of a spatial dataset rollback: Detect &amp; Triage, Lock Registry, Stage Snapshot, Atomic Swap, and Verify &amp; Resume. Arrows connect each phase sequentially, with a failure path from Verify looping back to Revert.</desc>
+  <desc>A left-to-right flow diagram showing the five phases of a spatial dataset rollback: Detect and Triage, Lock Registry, Stage Snapshot, Atomic Swap, and Verify and Resume. Arrows connect each phase sequentially. A dashed arc below returns from the Verify phase back to Stage Snapshot to indicate automatic revert on failure.</desc>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+    <marker id="rb-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
     </marker>
   </defs>
@@ -106,13 +106,13 @@ This page covers the complete recovery workflow: pre-flight triage, distributed 
   <text x="625" y="110" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">Resume</text>
   <text x="625" y="124" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.6">gdalinfo + unlock</text>
   <!-- Forward arrows -->
-  <line x1="120" y1="100" x2="148" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
-  <line x1="260" y1="100" x2="288" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
-  <line x1="400" y1="100" x2="428" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
-  <line x1="540" y1="100" x2="568" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
+  <line x1="120" y1="100" x2="148" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
+  <line x1="260" y1="100" x2="288" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
+  <line x1="400" y1="100" x2="428" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
+  <line x1="540" y1="100" x2="568" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
   <!-- Failure revert arc: from Verify back down under Stage -->
-  <path d="M625,130 Q625,175 345,175 Q290,175 290,130" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,3" opacity="0.45" marker-end="url(#arrow)"/>
-  <text x="460" y="170" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.55">auto-revert on failure</text>
+  <path d="M625,130 Q625,180 345,180 Q290,180 290,130" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,3" opacity="0.45" marker-end="url(#rb-arrow)"/>
+  <text x="480" y="197" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.55">auto-revert on failure</text>
 </svg>
 
 ---
@@ -142,7 +142,7 @@ System dependencies: GDAL ≥ 3.6 with PROJ ≥ 9.2. Confirm with `gdal-config -
 
 ### Step 1 — Build and Register the Integrity Manifest
 
-Every dataset commit must generate a `manifest.json` mapping relative file paths to SHA-256 checksums, plus a `crs_registry.json` recording the EPSG code and WKT string for every spatial file. These two artefacts are the ground truth for all downstream validation.
+Every dataset commit must generate a `manifest.json` mapping relative file paths to SHA-256 checksums, plus a `crs_registry.json` recording the [EPSG code](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) and WKT string for every spatial file. These two artefacts are the ground truth for all downstream validation.
 
 ```python
 import hashlib
@@ -364,7 +364,6 @@ def verify_raster_crs_with_gdalinfo(raster_path: Path, expected_epsg: int) -> bo
         logger.error("gdalinfo failed for %s: %s", raster_path, result.stderr)
         return False
     info = json.loads(result.stdout)
-    auth = info.get("coordinateSystem", {}).get("dataAxisToSRSAxisMapping")
     wkt = info.get("coordinateSystem", {}).get("wkt", "")
     actual = CRS.from_wkt(wkt) if wkt else None
     if actual is None or not actual.equals(CRS.from_epsg(expected_epsg)):
@@ -565,9 +564,39 @@ Run with `pytest -v tests/test_rollback.py`. For integration tests against real 
 
 ---
 
+## Production Readiness Checklist
+
+- [ ] SHA-256 manifest and `crs_registry.json` generated and committed for every dataset version
+- [ ] CRS conformance check validates WKT strings, not just authority codes
+- [ ] Distributed lock acquired before any restoration attempt
+- [ ] Staging directory is on the same filesystem mount as the production directory
+- [ ] Atomic swap (`os.rename`) used — no file-by-file copy into live path
+- [ ] Post-restore triage pass runs automatically after swap completes
+- [ ] Failed post-restore verification triggers automatic revert to pre-rollback backup
+- [ ] At least two prior production-tagged versions retained in cold storage
+- [ ] All sidecar files (`.tfw`, `.prj`, `.shx`, `.aux.xml`) included in manifest and restored as a unit
+- [ ] `dvc commit --force` run after any manual restoration to re-sync the run-cache
+- [ ] Rollback telemetry logged to a persistent audit sink for recurrence analysis
+- [ ] GitHub Actions dataset integrity gate blocks training job dispatch on triage failure
+
+---
+
+## Frequently Asked Questions
+
+**What causes silent corruption in geospatial training datasets?**
+The most common sources are CRS mismatches introduced during reprojection, partial writes from interrupted multipart uploads to cloud storage, sidecar file desynchronisation (`.tfw`, `.prj`, `.shx`), and annotation drift when labeling platforms export incremental patches rather than full manifests. None of these produce obvious errors at ingest time — they fail silently until downstream metrics degrade.
+
+**Is `os.rename()` atomic on network-mounted filesystems like NFS or S3FS?**
+No. `os.rename()` atomicity guarantees apply only to POSIX-compliant local filesystems within the same mount. For cloud object storage use a manifest-swap pattern: write the new manifest last, after all data objects are confirmed present, and validate checksums before flipping the pointer. For S3-backed DVC remotes, verify `Content-Length` headers and ETag hashes after each pull.
+
+**How many previous versions should a retention policy preserve?**
+Maintain at least two prior production-tagged versions in cold storage. Single-version retention is insufficient because gradual degradation — such as slow annotation drift — may not surface until several commits after the corruption event. Two prior versions ensure you can roll back past a corruption that survived one release cycle undetected.
+
+---
+
 ## Related
 
-- [Debugging Annotation Drift Across Dataset Versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — deep-dive into the geometry delta analysis that catches gradual label corruption before checksums flag anything
+- [Debugging Annotation Drift Across Dataset Versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — geometry delta analysis that catches gradual label corruption before checksums flag anything
 - [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — how per-annotation SHA hashes are generated and stored so rollback triage can pinpoint the labeling layer vs. the raster layer
 - [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — remote cache configuration, `dvc checkout`, and run-cache synchronisation that underpin version-aware rollback
 - [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — ensuring CRS records, bounding boxes, and schema versions survive across dataset commits and rollback events

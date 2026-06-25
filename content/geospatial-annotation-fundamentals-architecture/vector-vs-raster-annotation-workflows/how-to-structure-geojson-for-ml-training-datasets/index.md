@@ -13,7 +13,7 @@ breadcrumb:
   - label: "How to Structure GeoJSON for ML Training Datasets"
     url: "/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/"
 datePublished: "2025-03-12"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -25,7 +25,7 @@ dateModified: "2026-06-24"
       "headline": "How to Structure GeoJSON for ML Training Datasets",
       "description": "Enforce FeatureCollection root, EPSG:4326 coordinates, flat snake_case properties, and homogeneous geometry types so spatial annotations load directly into PyTorch and TorchGeo without custom parsing.",
       "datePublished": "2025-03-12",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
     {
@@ -84,9 +84,9 @@ dateModified: "2026-06-24"
 
 # How to Structure GeoJSON for ML Training Datasets
 
-Wrap all annotated features in a single `FeatureCollection`, enforce `EPSG:4326` (WGS84) coordinates throughout, and store model targets in a flat `properties` dictionary with consistent `snake_case` keys. Each `Feature` must contain exactly one `geometry` object and a `properties` object that maps directly to your label schema — classification IDs, segmentation mask references, or bounding box coordinates. Avoid nested dictionaries, mixed geometry types within a batch, or non-standard [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) declarations — these break batch loaders and spatial join operations in automated pipelines.
+Wrap all annotated features in a single `FeatureCollection`, enforce [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS84) coordinates throughout, and store model targets in a flat `properties` dictionary with consistent `snake_case` keys. Each `Feature` must contain exactly one `geometry` object and a `properties` object that maps directly to your label schema — classification IDs, segmentation mask references, or bounding box coordinates. Avoid nested dictionaries, mixed geometry types within a batch, or non-standard coordinate reference system declarations — these break batch loaders and spatial join operations in automated pipelines.
 
-## Why GeoJSON Structure Breaks ML Pipelines
+## Where GeoJSON Structure Breaks ML Pipelines
 
 GeoJSON's inherent flexibility is the root cause of most training-data failures. An annotation tool that exports a valid GeoJSON file can still produce data that silently corrupts your model. Three failure modes are common:
 
@@ -94,9 +94,67 @@ GeoJSON's inherent flexibility is the root cause of most training-data failures.
 
 **Collation failures from mixed geometry.** PyTorch's default collation function tries to stack arrays of identical shape. A `Polygon` coordinate array is rank-3 (rings × vertices × 2), a `Point` is rank-1. Mixing both in a single batch raises a `RuntimeError` or silently drops features, corrupting ground-truth label counts without a traceable exception.
 
-**Feature leakage from nested properties.** Annotation tools frequently export metadata — annotator IDs, review timestamps, confidence flags — nested inside `properties`. If a custom parser flattens these alongside training targets, the model receives annotator identity as a feature, producing inflated validation metrics that disappear at inference time.
+**Feature leakage from nested properties.** Annotation tools frequently export metadata — annotator IDs, review timestamps, [confidence flags](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — nested inside `properties`. If a custom parser flattens these alongside training targets, the model receives annotator identity as a feature, producing inflated validation metrics that disappear at inference time.
 
 Understanding where [vector vs raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) diverge explains why these issues are GeoJSON-specific: raster masks bake CRS and pixel alignment into the file format, while GeoJSON delegates both to the consuming application.
+
+## GeoJSON Normalization Pipeline
+
+The diagram below shows the full normalization flow from a raw annotation export to a dataloader-ready `FeatureCollection`. Each stage corresponds to a step in the implementation below.
+
+<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GeoJSON normalization pipeline showing five stages from raw export to ML-ready FeatureCollection" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>GeoJSON normalization pipeline</title>
+  <desc>Five processing stages connected by arrows: (1) Raw GeoJSON Export, (2) Assert FeatureCollection root and RFC 7946 coordinate order, (3) Reproject to EPSG:4326 and round coordinates, (4) Flatten properties and strip meta keys, (5) Validate topology with shapely — producing an ML-Ready FeatureCollection for the DataLoader.</desc>
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Stage boxes -->
+  <!-- Box 1: Raw GeoJSON -->
+  <rect x="10" y="90" width="118" height="52" rx="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="69" y="112" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Raw GeoJSON</text>
+  <text x="69" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Export</text>
+  <!-- Arrow 1→2 -->
+  <line x1="128" y1="116" x2="148" y2="116" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- Box 2: Assert FeatureCollection -->
+  <rect x="148" y="78" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="211" y="100" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">Assert</text>
+  <text x="211" y="115" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">FeatureCollection</text>
+  <text x="211" y="130" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">root + lon/lat</text>
+  <text x="211" y="145" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">order</text>
+  <!-- Arrow 2→3 -->
+  <line x1="274" y1="116" x2="294" y2="116" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- Box 3: Reproject -->
+  <rect x="294" y="78" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="357" y="100" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">Reproject to</text>
+  <text x="357" y="115" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">EPSG:4326</text>
+  <text x="357" y="130" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">+ round coords</text>
+  <text x="357" y="145" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">to 6 d.p.</text>
+  <!-- Arrow 3→4 -->
+  <line x1="420" y1="116" x2="440" y2="116" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- Box 4: Flatten properties -->
+  <rect x="440" y="78" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="503" y="100" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">Flatten props</text>
+  <text x="503" y="115" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">+ strip</text>
+  <text x="503" y="130" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">__meta_ keys</text>
+  <text x="503" y="145" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">+ validate</text>
+  <!-- Arrow 4→5 -->
+  <line x1="566" y1="116" x2="586" y2="116" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <!-- Box 5: ML-Ready -->
+  <rect x="586" y="68" width="124" height="96" rx="7" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="648" y="94" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif" font-weight="bold">ML-Ready</text>
+  <text x="648" y="109" text-anchor="middle" font-size="10.5" fill="currentColor" font-family="sans-serif">FeatureCollection</text>
+  <text x="648" y="127" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">homogeneous geom</text>
+  <text x="648" y="142" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">flat props</text>
+  <text x="648" y="157" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">→ DataLoader</text>
+  <!-- Step labels below boxes -->
+  <text x="69" y="160" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">Step 0</text>
+  <text x="211" y="165" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">Step 1</text>
+  <text x="357" y="165" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">Step 2</text>
+  <text x="503" y="165" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">Steps 3–4</text>
+  <text x="648" y="175" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">Step 5</text>
+</svg>
 
 ## Step-by-Step Implementation
 
@@ -123,7 +181,7 @@ def assert_featurecollection(path: str) -> dict:
 
 ### Step 2: Convert All Geometries to `EPSG:4326` and Round Coordinates
 
-All source data must be converted to `EPSG:4326` before ingestion, regardless of what the annotation tool used internally. If your training targets later require projected coordinates (e.g., metre-scale bounding boxes for loss functions that use Euclidean distance), perform that projection **after** validation and store the target CRS in a separate pipeline config — never inside the GeoJSON.
+All source data must be converted to `EPSG:4326` before ingestion, regardless of what the annotation tool used internally. If your training targets later require projected coordinates — for example, metre-scale bounding boxes for loss functions that use Euclidean distance — perform that projection **after** validation and store the target CRS in a separate pipeline config, never inside the GeoJSON.
 
 Rounding coordinates to 5–6 decimal places (~11 cm accuracy at the equator) is sufficient for all aerial and satellite vision tasks and reduces file size by 30–40%.
 
@@ -140,7 +198,7 @@ def to_wgs84(geom_dict: dict, source_crs: str, precision: int = 6) -> dict:
     geom = shape(geom_dict)
     geom_wgs84 = transform(transformer.transform, geom)
 
-    def _round(x, y, z=None):
+    def _round(x: float, y: float, z: float | None = None):
         if z is not None:
             return round(x, precision), round(y, precision), round(z, precision)
         return round(x, precision), round(y, precision)
@@ -191,13 +249,15 @@ def validate_geometry(geom_dict: dict) -> dict:
     """Repair invalid geometry; raise if the result is empty."""
     geom = make_valid(shape(geom_dict))
     if geom.is_empty:
-        raise ValueError("Geometry is empty after make_valid — check source annotation")
+        raise ValueError(
+            "Geometry is empty after make_valid — check source annotation"
+        )
     return mapping(geom)
 ```
 
 ### Step 5: Assemble and Ingest with TorchGeo or a Custom Dataset
 
-Once normalized, the `FeatureCollection` can be ingested by `TorchGeo`, `rasterio`+`shapely`, or a custom `torch.utils.data.Dataset` without custom parsing. Map `properties` keys directly to tensor targets inside `__getitem__`, never inside the training loop.
+Once normalized, the `FeatureCollection` can be ingested by TorchGeo, `rasterio`+`shapely`, or a custom `torch.utils.data.Dataset` without custom parsing. Map `properties` keys directly to tensor targets inside `__getitem__`, never inside the training loop.
 
 ```python
 import json
@@ -208,7 +268,7 @@ from torch.utils.data import Dataset
 class GeoJSONAnnotationDataset(Dataset):
     """Minimal Dataset wrapping a normalized FeatureCollection."""
 
-    def __init__(self, geojson_path: str, class_key: str = "class_id"):
+    def __init__(self, geojson_path: str, class_key: str = "class_id") -> None:
         with open(geojson_path) as f:
             fc = json.load(f)
         self.features = fc["features"]
@@ -217,7 +277,7 @@ class GeoJSONAnnotationDataset(Dataset):
     def __len__(self) -> int:
         return len(self.features)
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
         feat = self.features[idx]
         # Polygon exterior ring: shape (N, 2)
         coords = np.array(
@@ -229,39 +289,7 @@ class GeoJSONAnnotationDataset(Dataset):
 
 Avoid on-the-fly CRS transformations or property parsing inside `__getitem__`. Precompute and cache the normalized structure — this is where [dataset versioning with DVC](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) provides the most value: version the normalized file, not the raw export.
 
-The diagram below shows the normalization pipeline from raw export to DataLoader:
-
-<svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GeoJSON normalization pipeline: raw export through four stages to DataLoader" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
-  <title>GeoJSON normalization pipeline</title>
-  <desc>Five boxes connected by arrows: Raw GeoJSON Export, then CRS → EPSG:4326, then Flatten Properties, then Validate Geometry, then ML-Ready FeatureCollection feeding into DataLoader.</desc>
-  <rect x="4" y="70" width="112" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="60" y="88" text-anchor="middle" font-size="11" fill="currentColor">Raw GeoJSON</text>
-  <text x="60" y="103" text-anchor="middle" font-size="11" fill="currentColor">Export</text>
-  <line x1="116" y1="92" x2="136" y2="92" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="136" y="70" width="110" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="191" y="88" text-anchor="middle" font-size="11" fill="currentColor">CRS →</text>
-  <text x="191" y="103" text-anchor="middle" font-size="11" fill="currentColor">EPSG:4326</text>
-  <line x1="246" y1="92" x2="266" y2="92" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="266" y="70" width="110" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="321" y="88" text-anchor="middle" font-size="11" fill="currentColor">Flatten</text>
-  <text x="321" y="103" text-anchor="middle" font-size="11" fill="currentColor">Properties</text>
-  <line x1="376" y1="92" x2="396" y2="92" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="396" y="70" width="110" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="451" y="88" text-anchor="middle" font-size="11" fill="currentColor">Validate</text>
-  <text x="451" y="103" text-anchor="middle" font-size="11" fill="currentColor">Geometry</text>
-  <line x1="506" y1="92" x2="526" y2="92" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="526" y="55" width="130" height="74" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
-  <text x="591" y="83" text-anchor="middle" font-size="11" fill="currentColor">ML-Ready</text>
-  <text x="591" y="98" text-anchor="middle" font-size="11" fill="currentColor">FeatureCollection</text>
-  <text x="591" y="113" text-anchor="middle" font-size="10" fill="currentColor">→ DataLoader</text>
-  <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
-    </marker>
-  </defs>
-</svg>
-
-## Key Parameters and Thresholds
+## Spatial Parameters and Thresholds Reference
 
 | Parameter | Recommended value | Spatial implication |
 |---|---|---|
@@ -276,18 +304,31 @@ The diagram below shows the normalization pipeline from raw export to DataLoader
 ## Common Errors and Fixes
 
 **`AssertionError: Root type must be 'FeatureCollection'`**
+
 Cause: Export was saved as a bare `Feature` or a `GeometryCollection`. Fix: Wrap in a `FeatureCollection` during the export step — never at load time inside the training loop.
 
+---
+
 **`RuntimeError: stack expects each tensor to be equal size`**
+
 Cause: Mixed geometry types (`Polygon` and `Point`) in the same batch. Fix: Split the `FeatureCollection` by `geometry.type` into separate files; align via `feature_id` during batch construction.
 
+---
+
 **Silent bounding box offset in model predictions**
+
 Cause: Source data was in `EPSG:3857` or a UTM zone; coordinates were never reprojected. Fix: Run `pyproj.Transformer.from_crs(source_crs, "EPSG:4326", always_xy=True)` on every geometry before writing the output file.
 
+---
+
 **`KeyError: 'class_id'` in `__getitem__`**
+
 Cause: The property key differs between annotation batches (e.g., `classId` vs `class_id`). Fix: Enforce `k.lower().replace(" ", "_")` normalization in `flatten_properties` and validate the label mapping file against the output schema before training.
 
+---
+
 **`TopologicalError` from `shapely.ops.unary_union`**
+
 Cause: Self-intersecting polygon from a rushed annotation session. Fix: Run `shapely.validation.make_valid()` during the validation step; log the feature ID for human review rather than silently dropping it.
 
 ---

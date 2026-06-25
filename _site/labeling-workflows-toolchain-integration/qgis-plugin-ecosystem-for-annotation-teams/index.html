@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -281,7 +281,7 @@
       "headline": "QGIS Plugin Ecosystem for Annotation Teams",
       "description": "Configure, extend, and automate the QGIS plugin stack for production geospatial annotation pipelines: CRS harmonization, schema enforcement, pre-label ingestion, FlatGeobuf export, and CI/CD integration.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -744,12 +744,31 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
 </tbody>
 </table>
 </div><h2 id="edge-cases-spatial-gotchas" tabindex="-1"><a class="header-anchor" href="#edge-cases-spatial-gotchas" aria-label="Permalink to section &quot;Edge Cases &amp; Spatial Gotchas&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases &amp; Spatial Gotchas</h2>
-<p><strong>On-the-fly reprojection during annotation.</strong> If a basemap layer uses <code class="inline-code">EPSG:4326</code> while the annotation layer uses <code class="inline-code">EPSG:3857</code>, QGIS reprojects the basemap at render time. Annotators see correctly aligned features in the canvas but the underlying coordinates store accumulated rounding error from the display transform. Lock the project CRS before opening annotation layers and disable on-the-fly reprojection for annotation layers specifically.</p>
-<p><strong>Datum shift between NAD83 and WGS84.</strong> In North American projects, mixing <code class="inline-code">EPSG:4269</code> (NAD83) and <code class="inline-code">EPSG:4326</code> (WGS84) introduces a sub-metre offset that is invisible at country-scale zoom but material for 10 cm/px drone imagery. Apply the <code class="inline-code">+nadgrids=@null</code> PROJ flag only if datum grid files are genuinely absent; prefer installing <code class="inline-code">proj-data</code> to use accurate grid-based transformations.</p>
-<p><strong>Self-intersecting polygons from SAM masks.</strong> Vectorized SAM output frequently produces self-intersecting rings at class boundaries where adjacent mask regions share pixels. Run <code class="inline-code">shapely.make_valid()</code> on every ingested polygon before storing it as an editable feature, and record the repair in the audit log.</p>
-<p><strong>Thread-safety violations in background processing.</strong> Calling <code class="inline-code">QgsVectorLayer.getFeatures()</code> directly from a worker thread without <code class="inline-code">QgsTask</code> causes random crashes that are impossible to reproduce deterministically. Always subclass <code class="inline-code">QgsTask</code>, perform all data access inside <code class="inline-code">run()</code>, and emit a custom signal that the main thread connects to for UI updates.</p>
-<p><strong>Plugin conflicts between annotation releases.</strong> QuickMapServices and custom digitizing plugins sometimes register overlapping keyboard shortcuts, causing silent action-hijacking. After installing a new plugin, run <code class="inline-code">QgsApplication.actionManager()</code> in the QGIS Python console to list all registered actions and detect duplicate keybindings before distributing to annotators.</p>
-<p><strong>Sliver polygons at tile boundaries.</strong> Tiled SAM inference with insufficient overlap (&lt; 10%) generates narrow sliver polygons at tile edges where masks from adjacent tiles do not fully overlap. Apply a minimum-area filter and use <code class="inline-code">shapely.buffer(0)</code> to dissolve slivers before loading features into the annotation layer.</p>
+<p>These are the failure modes that most often reach a training job undetected. Each expands to the symptom, the root cause, and the fix.</p>
+<details>
+<summary><strong>On-the-fly reprojection during annotation</strong></summary>
+<p>If a basemap layer uses <code class="inline-code">EPSG:4326</code> while the annotation layer uses <code class="inline-code">EPSG:3857</code>, QGIS reprojects the basemap at render time. Annotators see correctly aligned features in the canvas, but the underlying coordinates accumulate rounding error from the display transform. Lock the project CRS before opening annotation layers, and disable on-the-fly reprojection for the annotation layers specifically so vertices are digitized directly in stored coordinates.</p>
+</details>
+<details>
+<summary><strong>Datum shift between NAD83 and WGS84</strong></summary>
+<p>In North American projects, mixing <code class="inline-code">EPSG:4269</code> (NAD83) and <code class="inline-code">EPSG:4326</code> (WGS84) introduces a sub-metre offset that is invisible at country-scale zoom but material for 10 cm/px drone imagery. Apply the <code class="inline-code">+nadgrids=@null</code> PROJ flag only if datum grid files are genuinely absent; prefer installing <code class="inline-code">proj-data</code> so transformations use accurate grid-based shifts rather than a null approximation.</p>
+</details>
+<details>
+<summary><strong>Self-intersecting polygons from SAM masks</strong></summary>
+<p>Vectorized SAM output frequently produces self-intersecting rings at class boundaries where adjacent mask regions share pixels. Run <code class="inline-code">shapely.make_valid()</code> on every ingested polygon before storing it as an editable feature, and record the repair in the audit log so the geometry change is traceable back to its source mask.</p>
+</details>
+<details>
+<summary><strong>Thread-safety violations in background processing</strong></summary>
+<p>Calling <code class="inline-code">QgsVectorLayer.getFeatures()</code> directly from a worker thread without <code class="inline-code">QgsTask</code> causes random crashes that are impossible to reproduce deterministically. Always subclass <code class="inline-code">QgsTask</code>, perform all data access inside <code class="inline-code">run()</code>, and emit a custom signal that the main thread connects to for UI updates.</p>
+</details>
+<details>
+<summary><strong>Plugin conflicts between annotation releases</strong></summary>
+<p>QuickMapServices and custom digitizing plugins sometimes register overlapping keyboard shortcuts, causing silent action-hijacking. After installing a new plugin, run <code class="inline-code">QgsApplication.actionManager()</code> in the QGIS Python console to list every registered action and detect duplicate keybindings before distributing the profile to annotators.</p>
+</details>
+<details>
+<summary><strong>Sliver polygons at tile boundaries</strong></summary>
+<p>Tiled SAM inference with insufficient overlap (&lt; 10%) generates narrow sliver polygons at tile edges where masks from adjacent tiles do not fully overlap. Apply a minimum-area filter and use <code class="inline-code">shapely.buffer(0)</code> to dissolve slivers before loading features into the annotation layer.</p>
+</details>
 <h2 id="integration-automation-hooks" tabindex="-1"><a class="header-anchor" href="#integration-automation-hooks" aria-label="Permalink to section &quot;Integration &amp; Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Integration &amp; Automation Hooks</h2>
 <p>The QGIS plugin stack integrates with <a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Label Studio for geospatial workflows</a> via its REST API. Export GeoPackage layers from QGIS and push them to Label Studio as pre-annotations, then pull human-reviewed results back as GeoJSON for final export:</p>
 <div class="code-block">
@@ -873,7 +892,6 @@ API_TOKEN <span class="token operator">=</span> <span class="token string">"your
 <p>This workflow is one component of the broader <a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration</a> pipeline.</p>
 <p><strong>Related</strong></p>
 <ul>
-<li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a> — chain SAM inference with QGIS processing tools for batch polygon generation</li>
 <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/">Automating Batch Pre-Labeling with SAM and QGIS</a> — step-by-step SAM tiling, inference, and mask vectorization inside QGIS</li>
 <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles</a> — structure review queues and track annotator disagreement across sprints</li>
 <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a> — webhook and REST API bridging between QGIS and Label Studio</li>
@@ -888,7 +906,7 @@ API_TOKEN <span class="token operator">=</span> <span class="token string">"your
           
             <a class="related__card" href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/">
               <div class="title">Automating Batch Pre-Labeling with SAM and QGIS</div>
-              <div class="desc">A headless Python pipeline runs Meta&#39;s Segment Anything Model (SAM) on georeferenced raster tiles, transforms binary segmentation masks back to map coordinates using each tile&#39;s affine transform, and exports spatially aligned GeoJSON that QGIS loads directly for human review. The pipeline eliminates manual digitizing a</div>
+              <div class="desc">A headless Python pipeline runs Meta&#39;s Segment Anything Model (SAM) on georeferenced raster tiles, transforms binary segmentation masks back to map coordinates using each tile&#39;s affine transform, and exports spatially aligned GeoJSON that QGIS loads directly for human review. The pipeline removes manual digitizing as t</div>
             </a>
           
         </div>
@@ -907,12 +925,12 @@ API_TOKEN <span class="token operator">=</span> <span class="token string">"your
           
             <a class="related__card" href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">
               <div class="title">Human-in-the-Loop Validation Cycles for Geospatial AI Training</div>
-              <div class="desc">Automated pre-labeling consistently produces prediction batches where 15–40 % of geometries contain topological errors, CRS ambiguities, or semantic misclassifications that compound into training noise. A well-structured human-in-the-loop validation cycle intercepts these defects before they reach the ground-truth data</div>
+              <div class="desc">Automated pre-labeling consistently produces prediction batches where 15–40% of geometries contain topological errors, coordinate reference system ambiguities, or semantic misclassifications that compound into training noise. A well-structured human-in-the-loop validation cycle intercepts these defects before they reac</div>
             </a>
           
             <a class="related__card" href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">
               <div class="title">Integrating Label Studio with Geospatial Workflows</div>
-              <div class="desc">Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don&#39;t exist in standard CV workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on polygon export</div>
+              <div class="desc">Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don&#39;t exist in standard computer vision workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on p</div>
             </a>
           
         </div>

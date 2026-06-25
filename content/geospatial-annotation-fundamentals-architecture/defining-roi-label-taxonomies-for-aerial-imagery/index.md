@@ -74,6 +74,14 @@ dateModified: "2026-06-24"
             "@type": "Answer",
             "text": "Add an acquisition_season field to each annotation and define class-specific seasonal decision rules (e.g., deciduous_canopy is only valid for leaf-on imagery). Store the acquisition date in annotation metadata and validate it against the class definition during schema validation."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you fix self-intersecting polygons from manual digitizing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Annotators drawing freehand polygons in web tools frequently produce bowtie or figure-eight geometries. shapely.is_valid returns False for these; explain_validity() identifies the crossing point. Fix with shapely.make_valid() and re-validate, but always log auto-corrections for annotator feedback."
+          }
         }
       ]
     }
@@ -120,49 +128,46 @@ pip install "geopandas==0.14.4" "shapely==2.0.4" "pydantic==2.7.1" \
 
 The diagram below shows how a domain ontology flows through hierarchy design, schema enforcement, and CI validation into a training-ready dataset.
 
-<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROI taxonomy pipeline: domain ontology flows through hierarchy design, Pydantic schema validation, and CI gates into a training-ready GeoJSON dataset" style="width:100%;max-width:760px;display:block;font-family:inherit">
+<svg viewBox="0 0 760 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROI taxonomy pipeline: domain ontology flows through hierarchy design, Pydantic schema validation, and CI gates into a training-ready GeoJSON dataset" style="width:100%;max-width:760px;display:block;font-family:inherit">
   <title>ROI Label Taxonomy Pipeline</title>
   <desc>Domain ontology maps to a class hierarchy, which is encoded in a versioned taxonomy JSON. Pydantic validators and shapely geometry checks run on every annotation commit via CI, producing a validated GeoJSON training dataset.</desc>
-  <!-- Background -->
-  <rect width="760" height="320" rx="8" fill="none"/>
-  <!-- Stage boxes -->
-  <rect x="10" y="120" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="70" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Domain</text>
-  <text x="70" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Ontology</text>
-  <text x="70" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">objectives → classes</text>
-  <rect x="175" y="120" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="240" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Hierarchy</text>
-  <text x="240" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Design</text>
-  <text x="240" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">parent → child tree</text>
-  <rect x="350" y="120" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="415" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Schema</text>
-  <text x="415" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Validation</text>
-  <text x="415" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Pydantic + shapely</text>
-  <rect x="525" y="120" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="585" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">CI Gate</text>
-  <text x="585" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">(pre-commit)</text>
-  <text x="585" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">fail on schema error</text>
-  <rect x="660" y="120" width="88" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="704" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Training</text>
-  <text x="704" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Dataset</text>
-  <text x="704" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">GeoJSON / Parquet</text>
-  <!-- Arrows -->
-  <line x1="130" y1="148" x2="173" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="305" y1="148" x2="348" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="480" y1="148" x2="523" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="645" y1="148" x2="658" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- Reject feedback loop -->
-  <path d="M585 176 Q585 260 415 260 Q245 260 240 178" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr)"/>
-  <text x="415" y="278" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">schema error → revise hierarchy</text>
-  <!-- Taxonomy JSON annotation -->
-  <text x="240" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">taxonomy.json (versioned)</text>
-  <line x1="240" y1="112" x2="240" y2="120" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2"/>
-  <!-- Arrowhead marker -->
   <defs>
     <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
       <path d="M0,0 L7,3.5 L0,7 Z" fill="currentColor"/>
     </marker>
   </defs>
+  <!-- Stage boxes -->
+  <rect x="10" y="110" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="70" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Domain</text>
+  <text x="70" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Ontology</text>
+  <text x="70" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">objectives → classes</text>
+  <rect x="175" y="110" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="240" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Hierarchy</text>
+  <text x="240" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Design</text>
+  <text x="240" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">parent → child tree</text>
+  <rect x="350" y="110" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="415" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Schema</text>
+  <text x="415" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Validation</text>
+  <text x="415" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Pydantic + shapely</text>
+  <rect x="525" y="110" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="585" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">CI Gate</text>
+  <text x="585" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">(pre-commit)</text>
+  <text x="585" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">fail on schema error</text>
+  <rect x="660" y="110" width="88" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="704" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Training</text>
+  <text x="704" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Dataset</text>
+  <text x="704" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">GeoJSON / Parquet</text>
+  <!-- Arrows -->
+  <line x1="130" y1="138" x2="173" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="305" y1="138" x2="348" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="480" y1="138" x2="523" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="645" y1="138" x2="658" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Reject feedback loop -->
+  <path d="M585 166 Q585 250 415 250 Q245 250 240 168" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+  <text x="415" y="268" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">schema error → revise hierarchy</text>
+  <!-- Taxonomy JSON annotation -->
+  <text x="240" y="98" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">taxonomy.json (versioned)</text>
+  <line x1="240" y1="102" x2="240" y2="110" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2"/>
 </svg>
 
 ## Core Workflow
@@ -200,27 +205,71 @@ A well-scoped ontology reduces inter-annotator variance and simplifies downstrea
 
 ### Step 2 — Establish a Hierarchical Label Structure
 
-A flat taxonomy rarely scales across complex aerial scenes. Implement a parent-child hierarchy that supports both coarse-grained scene classification and fine-grained object detection:
+A flat taxonomy rarely scales across complex aerial scenes. Implement a parent-child hierarchy that supports both coarse-grained scene classification and fine-grained object detection. The diagram below illustrates a two-domain hierarchy covering land use and land cover — the two root categories most aerial annotation projects require.
 
-```
-land_use
-├── residential
-│   ├── single_family
-│   └── multi_unit
-├── commercial
-└── industrial
-    ├── manufacturing
-    └── logistics_hub
-
-land_cover
-├── vegetation_canopy
-│   ├── deciduous
-│   └── coniferous
-├── impervious_surface
-└── water
-    ├── standing
-    └── flowing
-```
+<svg viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two-domain label hierarchy: land_use and land_cover root classes each branch into parent and leaf subclasses" style="width:100%;max-width:680px;display:block;font-family:inherit">
+  <title>ROI Label Taxonomy Hierarchy</title>
+  <desc>Two root domains: land_use (residential → single_family, multi_unit; commercial; industrial → manufacturing, logistics_hub) and land_cover (vegetation_canopy → deciduous, coniferous; impervious_surface; water → standing, flowing).</desc>
+  <defs>
+    <marker id="htree" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- ── Left tree: land_use ── -->
+  <!-- Root -->
+  <rect x="10" y="140" width="110" height="32" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="65" y="161" text-anchor="middle" font-size="12" fill="currentColor" font-weight="700">land_use</text>
+  <!-- residential -->
+  <rect x="148" y="60" width="120" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="208" y="80" text-anchor="middle" font-size="11" fill="currentColor">residential</text>
+  <!-- commercial -->
+  <rect x="148" y="141" width="120" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="208" y="161" text-anchor="middle" font-size="11" fill="currentColor">commercial</text>
+  <!-- industrial -->
+  <rect x="148" y="222" width="120" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="208" y="242" text-anchor="middle" font-size="11" fill="currentColor">industrial</text>
+  <!-- root → level-1 connectors -->
+  <line x1="120" y1="156" x2="147" y2="75" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="120" y1="156" x2="147" y2="156" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="120" y1="156" x2="147" y2="237" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <!-- residential leaf classes -->
+  <rect x="298" y="42" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="60" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">single_family</text>
+  <rect x="298" y="75" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="93" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">multi_unit</text>
+  <line x1="268" y1="75" x2="297" y2="55" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <line x1="268" y1="75" x2="297" y2="88" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <!-- industrial leaf classes -->
+  <rect x="298" y="208" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="226" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">manufacturing</text>
+  <rect x="298" y="241" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="259" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">logistics_hub</text>
+  <line x1="268" y1="237" x2="297" y2="221" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <line x1="268" y1="237" x2="297" y2="254" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <!-- ── Divider ── -->
+  <line x1="430" y1="20" x2="430" y2="320" stroke="currentColor" stroke-width="0.6" stroke-dasharray="4 4" opacity="0.3"/>
+  <!-- ── Right tree: land_cover ── -->
+  <rect x="444" y="140" width="110" height="32" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="499" y="161" text-anchor="middle" font-size="12" fill="currentColor" font-weight="700">land_cover</text>
+  <!-- vegetation_canopy -->
+  <rect x="580" y="60" width="88" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="624" y="77" text-anchor="middle" font-size="10" fill="currentColor">vegetation</text>
+  <text x="624" y="89" text-anchor="middle" font-size="10" fill="currentColor">_canopy</text>
+  <!-- impervious_surface -->
+  <rect x="580" y="140" width="88" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="624" y="158" text-anchor="middle" font-size="10" fill="currentColor">impervious</text>
+  <text x="624" y="169" text-anchor="middle" font-size="10" fill="currentColor" display="none">_surface</text>
+  <!-- water -->
+  <rect x="580" y="220" width="88" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="624" y="240" text-anchor="middle" font-size="11" fill="currentColor">water</text>
+  <!-- root → level-1 connectors -->
+  <line x1="554" y1="156" x2="579" y2="75" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="554" y1="156" x2="579" y2="155" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="554" y1="156" x2="579" y2="235" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <!-- Domain labels at top -->
+  <text x="208" y="18" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600" opacity="0.6">Land Use Domain</text>
+  <text x="570" y="18" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600" opacity="0.6">Land Cover Domain</text>
+</svg>
 
 This structure enables multi-task learning architectures and allows models to predict at varying confidence thresholds. During inference, aggregate child-class probabilities to validate parent-class consistency — a useful automated sanity check for label quality.
 
@@ -264,8 +313,9 @@ import json
 
 # Load versioned taxonomy at import time
 with open("taxonomy.json") as f:
-    TAXONOMY = {c["class_name"]: c for c in json.load(f)["classes"]}
-    VALID_CLASS_IDS = {c["class_id"]: c["class_name"] for c in json.load(open("taxonomy.json"))["classes"]}
+    _raw = json.load(f)
+    TAXONOMY = {c["class_name"]: c for c in _raw["classes"]}
+    VALID_CLASS_IDS = {c["class_id"]: c["class_name"] for c in _raw["classes"]}
 
 class ROIProperties(BaseModel):
     annotation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -328,7 +378,7 @@ class ROIAnnotation(BaseModel):
 
 def validate_annotation_file(path: str) -> list[str]:
     """Validate all features in a GeoJSON file. Returns list of error strings."""
-    errors = []
+    errors: list[str] = []
     with open(path) as f:
         fc = json.load(f)
     for i, feature in enumerate(fc.get("features", [])):
@@ -460,7 +510,11 @@ def fix_and_log(geom_dict: dict, annotation_id: str) -> dict:
 ```python
 import geopandas as gpd
 
-def validate_min_area(gdf: gpd.GeoDataFrame, min_area_m2: float, metric_crs: str = "EPSG:32633") -> gpd.GeoDataFrame:
+def validate_min_area(
+    gdf: gpd.GeoDataFrame,
+    min_area_m2: float,
+    metric_crs: str = "EPSG:32633"
+) -> gpd.GeoDataFrame:
     projected = gdf.to_crs(metric_crs)
     too_small = projected[projected.geometry.area < min_area_m2]
     if not too_small.empty:
@@ -470,7 +524,7 @@ def validate_min_area(gdf: gpd.GeoDataFrame, min_area_m2: float, metric_crs: str
 
 ## Integration & Automation Hooks
 
-**Label Studio integration.** Export taxonomy classes as a Label Studio XML config block. Use Label Studio's pre-annotation API to push taxonomy-validated predictions back into the review queue, reducing cold-annotation throughput:
+**[Label Studio](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) integration.** Export taxonomy classes as a Label Studio XML config block. Use Label Studio's pre-annotation API to push taxonomy-validated predictions back into the review queue, reducing cold-annotation throughput:
 
 ```python
 import label_studio_sdk
@@ -491,7 +545,7 @@ project.create_prediction(
 )
 ```
 
-**QGIS plugin hook.** Store `taxonomy.json` on a shared network path and load it into the QGIS annotation form at session start. Use a QGIS Python plugin to enforce dropdown class selection — preventing free-text entry that bypasses schema validation.
+**[QGIS plugin](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) hook.** Store `taxonomy.json` on a shared network path and load it into the QGIS annotation form at session start. Use a QGIS Python plugin to enforce dropdown class selection — preventing free-text entry that bypasses schema validation.
 
 **DVC pipeline snapshot.** Lock annotation state at each taxonomy version with a DVC stage. Any taxonomy version bump triggers a full re-validation run:
 
@@ -520,7 +574,7 @@ from validate_roi import ROIAnnotation
 
 class TestROITaxonomyValidation:
 
-    def test_valid_annotation_passes(self):
+    def test_valid_annotation_passes(self) -> None:
         polygon = Polygon([(0, 0), (0, 0.001), (0.001, 0.001), (0.001, 0), (0, 0)])
         feature = {
             "type": "Feature",
@@ -536,7 +590,7 @@ class TestROITaxonomyValidation:
         result = ROIAnnotation.model_validate(feature)
         assert result.properties.class_name == "residential"
 
-    def test_class_id_mismatch_raises(self):
+    def test_class_id_mismatch_raises(self) -> None:
         polygon = Polygon([(0, 0), (0, 0.001), (0.001, 0.001), (0.001, 0), (0, 0)])
         feature = {
             "type": "Feature",
@@ -552,7 +606,7 @@ class TestROITaxonomyValidation:
         with pytest.raises(Exception, match="class_id"):
             ROIAnnotation.model_validate(feature)
 
-    def test_out_of_range_confidence_raises(self):
+    def test_out_of_range_confidence_raises(self) -> None:
         polygon = Polygon([(0, 0), (0, 0.001), (0.001, 0.001), (0.001, 0), (0, 0)])
         feature = {
             "type": "Feature",
@@ -577,14 +631,17 @@ Beyond structural validation, implement statistical gates to monitor annotation 
 
 **Inter-Annotator Agreement (IAA).** Calculate Cohen's Kappa for overlapping ROI assignments using `sklearn.metrics.cohen_kappa_score`. Values below 0.75 indicate ambiguous class definitions requiring ontology refinement. Trigger an alert and open an ontology review when IAA drops below this threshold across any two annotators.
 
-**Class distribution monitoring.** Track ROI counts per class across batches. Sudden spikes or drops signal annotator confusion or imagery bias. Alert when any class falls below 5% or exceeds 40% of the total ROI count in a batch, as these imbalances propagate directly to model precision/recall on underrepresented classes.
+**Class distribution monitoring.** Track ROI counts per class across batches. Sudden spikes or drops signal annotator confusion or imagery bias. Alert when any class falls below 5% or exceeds 40% of the total ROI count in a batch, as these imbalances propagate directly to model precision/recall on underrepresented classes. Pair this with the [SHA-based annotation change tracking](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to audit which specific commits shifted the distribution.
 
 **Spatial consistency checks.** Validate that adjacent ROIs do not overlap unless explicitly permitted by the taxonomy (e.g., multi-layer `vegetation_canopy` over `impervious_surface`). Use `geopandas.overlay()` to detect illegal intersections:
 
 ```python
 import geopandas as gpd
 
-def check_illegal_overlaps(gdf: gpd.GeoDataFrame, permitted_pairs: list[tuple]) -> gpd.GeoDataFrame:
+def check_illegal_overlaps(
+    gdf: gpd.GeoDataFrame,
+    permitted_pairs: list[tuple[str, str]]
+) -> gpd.GeoDataFrame:
     """Returns GeoDataFrame of overlapping features that violate taxonomy rules."""
     overlaps = gpd.overlay(gdf, gdf, how="intersection")
     # Exclude self-intersections and permitted class pairs

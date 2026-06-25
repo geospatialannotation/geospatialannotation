@@ -5,7 +5,7 @@ slug: "coordinate-reference-systems-in-annotation-pipelines"
 type: "cluster"
 breadcrumb: "Geospatial Annotation Fundamentals & Architecture > Coordinate Reference Systems in Annotation Pipelines"
 datePublished: "2025-09-12"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -17,7 +17,7 @@ dateModified: "2026-06-24"
       "headline": "Coordinate Reference Systems in Annotation Pipelines",
       "description": "A production-grade guide to CRS normalization in geospatial ML annotation pipelines: ingest, validate, transform, and export with pyproj, geopandas, and rasterio — including CI gates and edge-case handling.",
       "datePublished": "2025-09-12",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -66,6 +66,14 @@ dateModified: "2026-06-24"
             "@type": "Answer",
             "text": "Use a local UTM zone (e.g. EPSG:32632 for central Europe) for distance-sensitive tasks like IoU and buffer operations. Use EPSG:4326 only for web-facing GeoJSON or when geographic extent is the sole concern."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I fix self-intersecting polygons from annotation tools?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Apply gdf['geometry'] = gdf.geometry.buffer(0) for simple cases, or use shapely.validation.make_valid() (Shapely >= 2.0) for persistent invalidity. Always repair geometry before reprojection, not after."
+          }
         }
       ]
     }
@@ -77,39 +85,44 @@ dateModified: "2026-06-24"
 
 A single unhandled projection mismatch can collapse IoU scores across an entire annotation batch. When ground-truth polygons in `EPSG:4326` are compared against model predictions reprojected to a local UTM zone, the resulting coordinate offset can exceed the object's own footprint — rendering evaluation metrics meaningless and forcing costly re-annotation cycles.
 
-This guide covers the complete CRS normalization workflow for production [geospatial annotation fundamentals & architecture](/geospatial-annotation-fundamentals-architecture/): how to detect, validate, transform, and export spatial labels with auditable provenance, and how to gate every batch in CI so projection errors never reach the training queue.
+This guide covers the complete CRS normalization workflow for production [geospatial annotation pipelines](/geospatial-annotation-fundamentals-architecture/): how to detect, validate, transform, and export spatial labels with auditable provenance, and how to gate every batch in CI so projection errors never reach the training queue.
 
 ---
 
-<svg viewBox="0 0 820 200" role="img" aria-label="CRS normalization pipeline: Ingest, Validate, Transform, Export, CI Gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 860 220" role="img" aria-label="Five-stage CRS normalization pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
   <title>CRS Normalization Pipeline</title>
-  <desc>Five-stage pipeline showing Ingest, Validate Bounds, Reproject, Export, and CI Gate steps connected by arrows</desc>
+  <desc>Five-stage pipeline showing Ingest, Validate Bounds, Reproject, Export, and CI Gate steps connected by arrows, each with a brief description</desc>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <rect x="10" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="75" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">1. Ingest</text>
-  <text x="75" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Detect CRS / WKT2</text>
-  <rect x="170" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="235" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">2. Validate</text>
-  <text x="235" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Bounds + Topology</text>
-  <rect x="330" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="395" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">3. Reproject</text>
-  <text x="395" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Target CRS (UTM)</text>
-  <rect x="490" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="555" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">4. Export</text>
-  <text x="555" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoParquet + provenance</text>
-  <rect x="650" y="60" width="155" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="727" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">5. CI Gate</text>
-  <text x="727" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Round-trip drift check</text>
+  <!-- Stage boxes: 5 boxes at equal spacing, wider viewBox -->
+  <rect x="8"   y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="78"  y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">1. Ingest</text>
+  <text x="78"  y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Detect CRS</text>
+  <text x="78"  y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Normalize WKT2</text>
+  <rect x="178" y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="248" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">2. Validate</text>
+  <text x="248" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Bounds check</text>
+  <text x="248" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Topology repair</text>
+  <rect x="348" y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="418" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">3. Reproject</text>
+  <text x="418" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Target CRS (UTM)</text>
+  <text x="418" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">always_xy=True</text>
+  <rect x="518" y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="588" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">4. Export</text>
+  <text x="588" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoParquet</text>
+  <text x="588" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">+ provenance</text>
+  <rect x="688" y="50" width="160" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="768" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">5. CI Gate</text>
+  <text x="768" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Round-trip drift</text>
+  <text x="768" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">check &lt; 0.5 m</text>
   <!-- Arrows -->
-  <line x1="142" y1="100" x2="168" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="302" y1="100" x2="328" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="462" y1="100" x2="488" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="622" y1="100" x2="648" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="150" y1="95" x2="176" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="320" y1="95" x2="346" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="490" y1="95" x2="516" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="660" y1="95" x2="686" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
 </svg>
 
 ---
@@ -149,6 +162,58 @@ When [defining ROI label taxonomies for aerial imagery](/geospatial-annotation-f
 
 ---
 
+## Axis-Order Inversion: The Most Common CRS Bug
+
+Before writing any reprojection code, understand the axis-order problem that catches nearly every team. `EPSG:4326` officially defines coordinates as `(latitude, longitude)` — but virtually every GIS tool, web API, and raster format expects `(longitude, latitude)`. When the two orderings collide without `always_xy=True`, geometries appear reflected across the diagonal or land in the wrong ocean.
+
+<svg viewBox="0 0 700 260" role="img" aria-label="Axis-order comparison diagram: EPSG:4326 latitude-first vs longitude-first convention" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>EPSG:4326 Axis Order: Authority vs. Convention</title>
+  <desc>Side-by-side comparison showing the authority-defined latitude-first order of EPSG:4326 on the left, and the longitude-first convention used by GeoJSON and web tools on the right, with an arrow indicating the always_xy=True fix in the middle</desc>
+  <!-- Left box: Authority order -->
+  <rect x="10" y="30" width="270" height="200" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Authority (EPSG:4326)</text>
+  <text x="145" y="80" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 1: Latitude (°N)</text>
+  <text x="145" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 2: Longitude (°E)</text>
+  <text x="145" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">(51.5, -0.12)  ← London</text>
+  <text x="145" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.6">lat first, lon second</text>
+  <rect x="40" y="172" width="210" height="38" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <text x="145" y="188" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">Default pyproj behaviour</text>
+  <text x="145" y="204" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">without always_xy=True</text>
+  <!-- Middle: fix arrow -->
+  <line x1="284" y1="130" x2="416" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr2)" opacity="0.5"/>
+  <text x="350" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">always_xy</text>
+  <text x="350" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">=True</text>
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- Right box: Convention -->
+  <rect x="420" y="30" width="270" height="200" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="555" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Convention (GeoJSON / Web)</text>
+  <text x="555" y="80" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 1: Longitude (°E)</text>
+  <text x="555" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 2: Latitude (°N)</text>
+  <text x="555" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">(-0.12, 51.5)  ← London</text>
+  <text x="555" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.6">lon first, lat second</text>
+  <rect x="450" y="172" width="210" height="38" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <text x="555" y="188" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">geopandas.to_crs() handles</text>
+  <text x="555" y="204" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">this internally</text>
+</svg>
+
+The fix is straightforward but must be applied consistently across every explicit `Transformer` call in your codebase:
+
+```python
+from pyproj import Transformer
+
+# ALWAYS pass always_xy=True for geographic CRS:
+t = Transformer.from_crs("EPSG:4326", "EPSG:32632", always_xy=True)
+x, y = t.transform(-0.12, 51.5)   # lon, lat order → correct
+```
+
+`geopandas.to_crs()` already enforces `always_xy` internally, so the risk surfaces only in raw `pyproj.Transformer` calls, custom WKT parsing, or tools that pre-date PROJ 6.
+
+---
+
 ## Core CRS Normalization Workflow
 
 ### Step 1 — Ingest & Detect Metadata
@@ -177,6 +242,7 @@ For raster sources (COG, GeoTIFF), extract the CRS from the dataset profile:
 
 ```python
 import rasterio
+from pyproj import CRS
 
 def detect_raster_crs(path: str) -> str:
     with rasterio.open(path) as src:
@@ -190,23 +256,21 @@ def detect_raster_crs(path: str) -> str:
 Coordinates outside the valid extent of the declared CRS indicate projection errors, coordinate swapping, or corrupted exports. Self-intersecting polygons break downstream rasterization and invalidate [IoU threshold calculations for geospatial object detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/).
 
 ```python
-from pyproj import CRS
+import warnings
+import geopandas as gpd
+from pyproj import CRS, Transformer
 from shapely.geometry import box as shapely_box
 
 def validate_bounds_and_topology(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     crs_obj = CRS.from_user_input(gdf.crs)
 
-    # Determine valid extent
     if crs_obj.is_geographic:
         bounds = (-180.0, -90.0, 180.0, 90.0)
     else:
         aou = crs_obj.area_of_use
         if aou is None:
             raise ValueError("Projected CRS has no area_of_use; cannot validate bounds.")
-        # area_of_use always returns geographic bounds — reproject the extent box
-        from_geo = CRS.from_epsg(4326)
-        from pyproj import Transformer
-        t = Transformer.from_crs(from_geo, crs_obj, always_xy=True)
+        t = Transformer.from_crs(CRS.from_epsg(4326), crs_obj, always_xy=True)
         x_min, y_min = t.transform(aou.west, aou.south)
         x_max, y_max = t.transform(aou.east, aou.north)
         bounds = (x_min, y_min, x_max, y_max)
@@ -215,11 +279,9 @@ def validate_bounds_and_topology(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     in_bounds = gdf.geometry.within(extent_geom)
     rejected = (~in_bounds).sum()
     if rejected:
-        import warnings
         warnings.warn(f"{rejected} geometries outside CRS valid extent — dropping.")
     gdf = gdf[in_bounds].copy()
 
-    # Remove topologically invalid geometries
     valid_mask = gdf.geometry.is_valid
     gdf = gdf[valid_mask].copy()
     return gdf
@@ -227,12 +289,12 @@ def validate_bounds_and_topology(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 ### Step 3 — Standardize to Target Projection
 
-Transform validated geometries to the pipeline's canonical CRS. Always pass `always_xy=True` when constructing a `pyproj.Transformer` directly — this overrides authority-defined axis order and prevents the `lat, lon` vs `lon, lat` inversion that plagues `EPSG:4326` workflows.
-
-For [vector vs raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), coordinate transformations must be applied to both vector labels and their corresponding raster footprints to maintain pixel-to-geometry alignment across tiles.
+Transform validated geometries to the pipeline's canonical CRS. For [vector vs raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), coordinate transformations must be applied to both vector labels and their corresponding raster footprints to maintain pixel-to-geometry alignment across tiles.
 
 ```python
+import geopandas as gpd
 import shapely
+from pyproj import CRS
 
 def standardize_to_target(
     gdf: gpd.GeoDataFrame,
@@ -257,6 +319,7 @@ For raster reprojection, use `rasterio.warp.reproject` and align to tile boundar
 ```python
 import rasterio
 from rasterio.warp import calculate_default_transform, reproject, Resampling
+from pyproj import CRS
 
 def reproject_raster(src_path: str, dst_path: str, target_epsg: int) -> None:
     with rasterio.open(src_path) as src:
@@ -288,6 +351,8 @@ def reproject_raster(src_path: str, dst_path: str, target_epsg: int) -> None:
 GeoParquet is the modern standard for annotation pipelines: columnar compression, native CRS support via embedded WKT2, and compatibility with distributed query engines. Attach transformation provenance so every downstream consumer can audit the CRS lineage without re-reading raw source files.
 
 ```python
+import geopandas as gpd
+
 def export_with_provenance(gdf: gpd.GeoDataFrame, output_path: str) -> None:
     # Requires geopandas >= 0.12 and pyarrow
     gdf.to_parquet(output_path)
@@ -321,14 +386,15 @@ For [preserving metadata across dataset versions](/dataset-versioning-spatial-da
 
 ### Datum shift grid files missing at runtime
 
-Datum conversions such as NAD27 → WGS84 or RD New (EPSG:28992) → ETRS89 require NTv2 or PROJ TIFF grid shift files. If PROJ cannot locate them, it silently falls back to an approximate Helmert transformation — introducing errors of 1–20 m depending on region.
+Datum conversions such as NAD27 → WGS84 or RD New (`EPSG:28992`) → ETRS89 require NTv2 or PROJ TIFF grid shift files. If PROJ cannot locate them, it silently falls back to an approximate Helmert transformation — introducing errors of 1–20 m depending on region.
 
 Detect the issue proactively:
 
 ```python
 from pyproj import datadir, network
-print(datadir.get_data_dir())       # where PROJ looks for grids
-print(network.is_network_enabled()) # True = online CDN fallback active
+
+print(datadir.get_data_dir())        # where PROJ looks for grids
+print(network.is_network_enabled())  # True = online CDN fallback active
 ```
 
 Fix: set `PROJ_NETWORK=ON` in your environment, or download the relevant grid from [cdn.proj.org](https://cdn.proj.org) and place it in the PROJ data directory. In Docker, `COPY` the `.tif` grids into `/usr/share/proj/` before `RUN pip install pyproj`.
@@ -341,6 +407,7 @@ Always enforce:
 
 ```python
 from pyproj import Transformer
+
 t = Transformer.from_crs("EPSG:4326", "EPSG:32632", always_xy=True)
 ```
 
@@ -351,10 +418,11 @@ When using `geopandas.to_crs()` this is handled internally, but explicit `Transf
 Some labeling platforms produce butterfly or bow-tie polygons when annotators click across an existing edge. These are geometrically invalid and cause `shapely` operations to raise `TopologicalError`. Fix before reprojection, not after:
 
 ```python
-gdf["geometry"] = gdf.geometry.buffer(0)  # standard validity repair
-# For persistent invalidity, use make_valid (shapely >= 2.0):
+import geopandas as gpd
 from shapely.validation import make_valid
-gdf["geometry"] = gdf.geometry.apply(make_valid)
+
+gdf["geometry"] = gdf.geometry.buffer(0)        # standard repair
+gdf["geometry"] = gdf.geometry.apply(make_valid) # persistent cases (shapely >= 2.0)
 ```
 
 ### Coordinate precision mismatch between image and label layers
@@ -364,6 +432,26 @@ Rasterized label masks generated from float64 vector coordinates but stored in f
 ### Legacy Shapefile `.prj` files with outdated authority definitions
 
 Pre-2000 Shapefiles often contain WKT1 `.prj` strings with non-standard authority names that PROJ cannot resolve. Use `pyproj.CRS.from_user_input()` and catch `CRSError` to detect failures, then map to the correct EPSG via a maintained lookup table (`epsg.io` or the PROJ database).
+
+---
+
+## Frequently Asked Questions
+
+**Why does EPSG:4326 cause axis-order bugs in Python?**
+
+`EPSG:4326` officially defines latitude before longitude, but most web frameworks and legacy GIS tools expect longitude first. Pass `always_xy=True` to `pyproj.Transformer` or use `geopandas.to_crs()`, which handles this automatically.
+
+**What happens if PROJ grid shift files are missing?**
+
+PROJ silently falls back to an approximate Helmert transformation, introducing meter-scale errors in datum conversions such as NAD27 to WGS84. Bundle required `.tif` grid files in your Docker image or enable `PROJ_NETWORK=ON` for online access.
+
+**Which CRS should I use for training data?**
+
+Use a local UTM zone (e.g. `EPSG:32632` for central Europe) for distance-sensitive tasks like [IoU threshold computation](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) and buffer operations. Use `EPSG:4326` only for web-facing GeoJSON or when geographic extent is the sole concern.
+
+**How do I fix self-intersecting polygons from annotation tools?**
+
+Apply `gdf['geometry'] = gdf.geometry.buffer(0)` for simple cases, or use `shapely.validation.make_valid()` (Shapely >= 2.0) for persistent invalidity. Always repair geometry before reprojection, not after.
 
 ---
 
@@ -425,6 +513,8 @@ jobs:
 ### Round-trip drift check (CI gate)
 
 ```python
+import geopandas as gpd
+
 def ci_crs_gate(
     gdf: gpd.GeoDataFrame,
     source_epsg: int,
@@ -439,7 +529,6 @@ def ci_crs_gate(
     transformed = standardize_to_target(gdf.copy(), target_epsg)
     roundtrip = standardize_to_target(transformed.copy(), source_epsg)
 
-    # Align index before distance calculation
     roundtrip.index = gdf.index
     drift = gdf.geometry.distance(roundtrip.geometry).max()
 
@@ -471,13 +560,17 @@ def assert_export_valid(path: str, expected_epsg: int) -> None:
 ### Geometry validity smoke test
 
 ```python
+import geopandas as gpd
+from pyproj import CRS
+
 def smoke_test_crs_pipeline(sample_path: str, target_epsg: int = 32632) -> None:
     gdf = load_and_detect_crs(sample_path)
     gdf = validate_bounds_and_topology(gdf)
     gdf = standardize_to_target(gdf, target_epsg)
+    raw = gpd.read_file(sample_path)
     ci_crs_gate(
-        gpd.read_file(sample_path),  # reload raw for fair comparison
-        source_epsg=CRS.from_user_input(gpd.read_file(sample_path).crs).to_epsg(),
+        raw,
+        source_epsg=CRS.from_user_input(raw.crs).to_epsg(),
         target_epsg=target_epsg,
     )
     print("Smoke test passed.")
@@ -491,7 +584,7 @@ At scale, repeated CRS transformations become a measurable bottleneck. Apply the
 
 **Batch rather than row-wise.** Apply `to_crs()` once per `GeoDataFrame` — `geopandas` delegates to `pyproj`, which caches transformation pipelines internally. Per-row `apply(lambda geom: transform(t, geom))` is 10–100x slower.
 
-**Cache pre-transformed outputs.** Name GeoParquet files by content hash plus target EPSG (e.g. `sha256_32632.parquet`) and skip retransformation when neither source hash nor target projection has changed. Pair with [SHA hashing for annotation change tracking](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/).
+**Cache pre-transformed outputs.** Name GeoParquet files by content hash plus target EPSG (e.g. `sha256_32632.parquet`) and skip retransformation when neither source hash nor target projection has changed. Pair with [SHA hashing for annotation change tracking](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to make cache keys content-addressable.
 
 **Parallelise validation with dask-geopandas.** For batches exceeding ~500k features, partition the `GeoDataFrame` across cores:
 

@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -275,7 +275,7 @@
       "headline": "Coordinate Reference Systems in Annotation Pipelines",
       "description": "A production-grade guide to CRS normalization in geospatial ML annotation pipelines: ingest, validate, transform, and export with pyproj, geopandas, and rasterio — including CI gates and edge-case handling.",
       "datePublished": "2025-09-12",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -324,6 +324,14 @@
             "@type": "Answer",
             "text": "Use a local UTM zone (e.g. EPSG:32632 for central Europe) for distance-sensitive tasks like IoU and buffer operations. Use EPSG:4326 only for web-facing GeoJSON or when geographic extent is the sole concern."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I fix self-intersecting polygons from annotation tools?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Apply gdf['geometry'] = gdf.geometry.buffer(0) for simple cases, or use shapely.validation.make_valid() (Shapely >= 2.0) for persistent invalidity. Always repair geometry before reprojection, not after."
+          }
         }
       ]
     }
@@ -332,37 +340,42 @@
 </script>
 <h1>Coordinate Reference Systems in Annotation Pipelines</h1>
 <p>A single unhandled projection mismatch can collapse IoU scores across an entire annotation batch. When ground-truth polygons in <code class="inline-code">EPSG:4326</code> are compared against model predictions reprojected to a local UTM zone, the resulting coordinate offset can exceed the object’s own footprint — rendering evaluation metrics meaningless and forcing costly re-annotation cycles.</p>
-<p>This guide covers the complete CRS normalization workflow for production <a href="/geospatial-annotation-fundamentals-architecture/">geospatial annotation fundamentals &amp; architecture</a>: how to detect, validate, transform, and export spatial labels with auditable provenance, and how to gate every batch in CI so projection errors never reach the training queue.</p>
+<p>This guide covers the complete CRS normalization workflow for production <a href="/geospatial-annotation-fundamentals-architecture/">geospatial annotation pipelines</a>: how to detect, validate, transform, and export spatial labels with auditable provenance, and how to gate every batch in CI so projection errors never reach the training queue.</p>
 <hr>
-<svg viewBox="0 0 820 200" role="img" aria-label="CRS normalization pipeline: Ingest, Validate, Transform, Export, CI Gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 860 220" role="img" aria-label="Five-stage CRS normalization pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
   <title>CRS Normalization Pipeline</title>
-  <desc>Five-stage pipeline showing Ingest, Validate Bounds, Reproject, Export, and CI Gate steps connected by arrows</desc>
+  <desc>Five-stage pipeline showing Ingest, Validate Bounds, Reproject, Export, and CI Gate steps connected by arrows, each with a brief description</desc>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <rect x="10" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="75" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">1. Ingest</text>
-  <text x="75" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Detect CRS / WKT2</text>
-  <rect x="170" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="235" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">2. Validate</text>
-  <text x="235" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Bounds + Topology</text>
-  <rect x="330" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="395" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">3. Reproject</text>
-  <text x="395" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Target CRS (UTM)</text>
-  <rect x="490" y="60" width="130" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="555" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">4. Export</text>
-  <text x="555" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoParquet + provenance</text>
-  <rect x="650" y="60" width="155" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="727" y="96" text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">5. CI Gate</text>
-  <text x="727" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Round-trip drift check</text>
+  <!-- Stage boxes: 5 boxes at equal spacing, wider viewBox -->
+  <rect x="8"   y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="78"  y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">1. Ingest</text>
+  <text x="78"  y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Detect CRS</text>
+  <text x="78"  y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Normalize WKT2</text>
+  <rect x="178" y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="248" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">2. Validate</text>
+  <text x="248" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Bounds check</text>
+  <text x="248" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Topology repair</text>
+  <rect x="348" y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="418" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">3. Reproject</text>
+  <text x="418" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Target CRS (UTM)</text>
+  <text x="418" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">always_xy=True</text>
+  <rect x="518" y="50" width="140" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="588" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">4. Export</text>
+  <text x="588" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoParquet</text>
+  <text x="588" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">+ provenance</text>
+  <rect x="688" y="50" width="160" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="768" y="88"  text-anchor="middle" font-size="13" fill="currentColor" font-family="sans-serif" font-weight="600">5. CI Gate</text>
+  <text x="768" y="108" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">Round-trip drift</text>
+  <text x="768" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">check &lt; 0.5 m</text>
   <!-- Arrows -->
-  <line x1="142" y1="100" x2="168" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="302" y1="100" x2="328" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="462" y1="100" x2="488" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="622" y1="100" x2="648" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="150" y1="95" x2="176" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="320" y1="95" x2="346" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="490" y1="95" x2="516" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
+  <line x1="660" y1="95" x2="686" y2="95" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
 </svg>
 <hr>
 <h2 id="prerequisites-toolchain-alignment" tabindex="-1"><a class="header-anchor" href="#prerequisites-toolchain-alignment" aria-label="Permalink to section &quot;Prerequisites &amp; Toolchain Alignment&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Toolchain Alignment</h2>
@@ -390,11 +403,66 @@
 <p>When <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">defining ROI label taxonomies for aerial imagery</a>, document the expected CRS for each label class in the taxonomy schema — this prevents downstream ambiguity when annotation batches arrive from different tools or annotators.</p>
 <p><strong>Baseline checklist before starting:</strong></p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6751922"> All source assets contain valid <code class="inline-code">spatial_ref</code> or <code class="inline-code">crs</code><label class="task-list-item-label" for="task-item-6751922"> All source assets contain valid `spatial_ref` or `crs` metadata</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1832784"> Target CRS for model training is agreed upon (typically a local UTM zone such as <code class="inline-code">EPSG:32632</code><label class="task-list-item-label" for="task-item-1832784"> Target CRS for model training is agreed upon (typically a local UTM zone such as `EPSG:32632`)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1338039"> PROJ network access is enabled (<code class="inline-code">PROJ_NETWORK=ON</code><label class="task-list-item-label" for="task-item-1338039"> PROJ network access is enabled (`PROJ_NETWORK=ON`) or required grid files are bundled offline</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8067314"> Canonical axis order policy is documented (<code class="inline-code">lon, lat</code> for geographic; <code class="inline-code">x, y</code><label class="task-list-item-label" for="task-item-8067314"> Canonical axis order policy is documented (`lon, lat` for geographic; `x, y` for projected)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-146324"> All source assets contain valid <code class="inline-code">spatial_ref</code> or <code class="inline-code">crs</code><label class="task-list-item-label" for="task-item-146324"> All source assets contain valid `spatial_ref` or `crs` metadata</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1696533"> Target CRS for model training is agreed upon (typically a local UTM zone such as <code class="inline-code">EPSG:32632</code><label class="task-list-item-label" for="task-item-1696533"> Target CRS for model training is agreed upon (typically a local UTM zone such as `EPSG:32632`)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4709251"> PROJ network access is enabled (<code class="inline-code">PROJ_NETWORK=ON</code><label class="task-list-item-label" for="task-item-4709251"> PROJ network access is enabled (`PROJ_NETWORK=ON`) or required grid files are bundled offline</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1848258"> Canonical axis order policy is documented (<code class="inline-code">lon, lat</code> for geographic; <code class="inline-code">x, y</code><label class="task-list-item-label" for="task-item-1848258"> Canonical axis order policy is documented (`lon, lat` for geographic; `x, y` for projected)</label></li>
 </ul>
+<hr>
+<h2 id="axis-order-inversion-the-most-common-crs-bug" tabindex="-1"><a class="header-anchor" href="#axis-order-inversion-the-most-common-crs-bug" aria-label="Permalink to section &quot;Axis-Order Inversion: The Most Common CRS Bug&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Axis-Order Inversion: The Most Common CRS Bug</h2>
+<p>Before writing any reprojection code, understand the axis-order problem that catches nearly every team. <code class="inline-code">EPSG:4326</code> officially defines coordinates as <code class="inline-code">(latitude, longitude)</code> — but virtually every GIS tool, web API, and raster format expects <code class="inline-code">(longitude, latitude)</code>. When the two orderings collide without <code class="inline-code">always_xy=True</code>, geometries appear reflected across the diagonal or land in the wrong ocean.</p>
+<svg viewBox="0 0 700 260" role="img" aria-label="Axis-order comparison diagram: EPSG:4326 latitude-first vs longitude-first convention" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>EPSG:4326 Axis Order: Authority vs. Convention</title>
+  <desc>Side-by-side comparison showing the authority-defined latitude-first order of EPSG:4326 on the left, and the longitude-first convention used by GeoJSON and web tools on the right, with an arrow indicating the always_xy=True fix in the middle</desc>
+  <!-- Left box: Authority order -->
+  <rect x="10" y="30" width="270" height="200" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Authority (EPSG:4326)</text>
+  <text x="145" y="80" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 1: Latitude (°N)</text>
+  <text x="145" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 2: Longitude (°E)</text>
+  <text x="145" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">(51.5, -0.12)  ← London</text>
+  <text x="145" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.6">lat first, lon second</text>
+  <rect x="40" y="172" width="210" height="38" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <text x="145" y="188" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">Default pyproj behaviour</text>
+  <text x="145" y="204" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">without always_xy=True</text>
+  <!-- Middle: fix arrow -->
+  <line x1="284" y1="130" x2="416" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr2)" opacity="0.5"/>
+  <text x="350" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">always_xy</text>
+  <text x="350" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">=True</text>
+  <defs>
+    <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- Right box: Convention -->
+  <rect x="420" y="30" width="270" height="200" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="555" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Convention (GeoJSON / Web)</text>
+  <text x="555" y="80" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 1: Longitude (°E)</text>
+  <text x="555" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" opacity="0.8">Axis 2: Latitude (°N)</text>
+  <text x="555" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.9">(-0.12, 51.5)  ← London</text>
+  <text x="555" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.6">lon first, lat second</text>
+  <rect x="450" y="172" width="210" height="38" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <text x="555" y="188" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">geopandas.to_crs() handles</text>
+  <text x="555" y="204" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7">this internally</text>
+</svg>
+<p>The fix is straightforward but must be applied consistently across every explicit <code class="inline-code">Transformer</code> call in your codebase:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> pyproj <span class="token keyword">import</span> Transformer
+
+<span class="token comment"># ALWAYS pass always_xy=True for geographic CRS:</span>
+t <span class="token operator">=</span> Transformer<span class="token punctuation">.</span>from_crs<span class="token punctuation">(</span><span class="token string">"EPSG:4326"</span><span class="token punctuation">,</span> <span class="token string">"EPSG:32632"</span><span class="token punctuation">,</span> always_xy<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+x<span class="token punctuation">,</span> y <span class="token operator">=</span> t<span class="token punctuation">.</span>transform<span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">0.12</span><span class="token punctuation">,</span> <span class="token number">51.5</span><span class="token punctuation">)</span>   <span class="token comment"># lon, lat order → correct</span>
+</code></pre>
+</div>
+<p><code class="inline-code">geopandas.to_crs()</code> already enforces <code class="inline-code">always_xy</code> internally, so the risk surfaces only in raw <code class="inline-code">pyproj.Transformer</code> calls, custom WKT parsing, or tools that pre-date PROJ 6.</p>
 <hr>
 <h2 id="core-crs-normalization-workflow" tabindex="-1"><a class="header-anchor" href="#core-crs-normalization-workflow" aria-label="Permalink to section &quot;Core CRS Normalization Workflow&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core CRS Normalization Workflow</h2>
 <h3 id="step-1-ingest-detect-metadata" tabindex="-1"><a class="header-anchor" href="#step-1-ingest-detect-metadata" aria-label="Permalink to section &quot;Step 1 — Ingest &amp; Detect Metadata&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Ingest &amp; Detect Metadata</h3>
@@ -438,6 +506,7 @@
     </button>
   </div>
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> rasterio
+<span class="token keyword">from</span> pyproj <span class="token keyword">import</span> CRS
 
 <span class="token keyword">def</span> <span class="token function">detect_raster_crs</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">str</span><span class="token punctuation">:</span>
     <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
@@ -458,23 +527,21 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> pyproj <span class="token keyword">import</span> CRS
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> warnings
+<span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">from</span> pyproj <span class="token keyword">import</span> CRS<span class="token punctuation">,</span> Transformer
 <span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> box <span class="token keyword">as</span> shapely_box
 
 <span class="token keyword">def</span> <span class="token function">validate_bounds_and_topology</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
     crs_obj <span class="token operator">=</span> CRS<span class="token punctuation">.</span>from_user_input<span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>crs<span class="token punctuation">)</span>
 
-    <span class="token comment"># Determine valid extent</span>
     <span class="token keyword">if</span> crs_obj<span class="token punctuation">.</span>is_geographic<span class="token punctuation">:</span>
         bounds <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">180.0</span><span class="token punctuation">,</span> <span class="token operator">-</span><span class="token number">90.0</span><span class="token punctuation">,</span> <span class="token number">180.0</span><span class="token punctuation">,</span> <span class="token number">90.0</span><span class="token punctuation">)</span>
     <span class="token keyword">else</span><span class="token punctuation">:</span>
         aou <span class="token operator">=</span> crs_obj<span class="token punctuation">.</span>area_of_use
         <span class="token keyword">if</span> aou <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
             <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"Projected CRS has no area_of_use; cannot validate bounds."</span><span class="token punctuation">)</span>
-        <span class="token comment"># area_of_use always returns geographic bounds — reproject the extent box</span>
-        from_geo <span class="token operator">=</span> CRS<span class="token punctuation">.</span>from_epsg<span class="token punctuation">(</span><span class="token number">4326</span><span class="token punctuation">)</span>
-        <span class="token keyword">from</span> pyproj <span class="token keyword">import</span> Transformer
-        t <span class="token operator">=</span> Transformer<span class="token punctuation">.</span>from_crs<span class="token punctuation">(</span>from_geo<span class="token punctuation">,</span> crs_obj<span class="token punctuation">,</span> always_xy<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+        t <span class="token operator">=</span> Transformer<span class="token punctuation">.</span>from_crs<span class="token punctuation">(</span>CRS<span class="token punctuation">.</span>from_epsg<span class="token punctuation">(</span><span class="token number">4326</span><span class="token punctuation">)</span><span class="token punctuation">,</span> crs_obj<span class="token punctuation">,</span> always_xy<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
         x_min<span class="token punctuation">,</span> y_min <span class="token operator">=</span> t<span class="token punctuation">.</span>transform<span class="token punctuation">(</span>aou<span class="token punctuation">.</span>west<span class="token punctuation">,</span> aou<span class="token punctuation">.</span>south<span class="token punctuation">)</span>
         x_max<span class="token punctuation">,</span> y_max <span class="token operator">=</span> t<span class="token punctuation">.</span>transform<span class="token punctuation">(</span>aou<span class="token punctuation">.</span>east<span class="token punctuation">,</span> aou<span class="token punctuation">.</span>north<span class="token punctuation">)</span>
         bounds <span class="token operator">=</span> <span class="token punctuation">(</span>x_min<span class="token punctuation">,</span> y_min<span class="token punctuation">,</span> x_max<span class="token punctuation">,</span> y_max<span class="token punctuation">)</span>
@@ -483,19 +550,16 @@
     in_bounds <span class="token operator">=</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>within<span class="token punctuation">(</span>extent_geom<span class="token punctuation">)</span>
     rejected <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token operator">~</span>in_bounds<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token builtin">sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
     <span class="token keyword">if</span> rejected<span class="token punctuation">:</span>
-        <span class="token keyword">import</span> warnings
         warnings<span class="token punctuation">.</span>warn<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>rejected<span class="token punctuation">}</span></span><span class="token string"> geometries outside CRS valid extent — dropping."</span></span><span class="token punctuation">)</span>
     gdf <span class="token operator">=</span> gdf<span class="token punctuation">[</span>in_bounds<span class="token punctuation">]</span><span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
 
-    <span class="token comment"># Remove topologically invalid geometries</span>
     valid_mask <span class="token operator">=</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_valid
     gdf <span class="token operator">=</span> gdf<span class="token punctuation">[</span>valid_mask<span class="token punctuation">]</span><span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span>
     <span class="token keyword">return</span> gdf
 </code></pre>
 </div>
 <h3 id="step-3-standardize-to-target-projection" tabindex="-1"><a class="header-anchor" href="#step-3-standardize-to-target-projection" aria-label="Permalink to section &quot;Step 3 — Standardize to Target Projection&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Standardize to Target Projection</h3>
-<p>Transform validated geometries to the pipeline’s canonical CRS. Always pass <code class="inline-code">always_xy=True</code> when constructing a <code class="inline-code">pyproj.Transformer</code> directly — this overrides authority-defined axis order and prevents the <code class="inline-code">lat, lon</code> vs <code class="inline-code">lon, lat</code> inversion that plagues <code class="inline-code">EPSG:4326</code> workflows.</p>
-<p>For <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">vector vs raster annotation workflows</a>, coordinate transformations must be applied to both vector labels and their corresponding raster footprints to maintain pixel-to-geometry alignment across tiles.</p>
+<p>Transform validated geometries to the pipeline’s canonical CRS. For <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">vector vs raster annotation workflows</a>, coordinate transformations must be applied to both vector labels and their corresponding raster footprints to maintain pixel-to-geometry alignment across tiles.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -506,7 +570,9 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> shapely
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">import</span> shapely
+<span class="token keyword">from</span> pyproj <span class="token keyword">import</span> CRS
 
 <span class="token keyword">def</span> <span class="token function">standardize_to_target</span><span class="token punctuation">(</span>
     gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span>
@@ -539,6 +605,7 @@
   </div>
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> rasterio
 <span class="token keyword">from</span> rasterio<span class="token punctuation">.</span>warp <span class="token keyword">import</span> calculate_default_transform<span class="token punctuation">,</span> reproject<span class="token punctuation">,</span> Resampling
+<span class="token keyword">from</span> pyproj <span class="token keyword">import</span> CRS
 
 <span class="token keyword">def</span> <span class="token function">reproject_raster</span><span class="token punctuation">(</span>src_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> dst_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> target_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
     <span class="token keyword">with</span> rasterio<span class="token punctuation">.</span><span class="token builtin">open</span><span class="token punctuation">(</span>src_path<span class="token punctuation">)</span> <span class="token keyword">as</span> src<span class="token punctuation">:</span>
@@ -577,7 +644,9 @@
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">def</span> <span class="token function">export_with_provenance</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span> output_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+
+<span class="token keyword">def</span> <span class="token function">export_with_provenance</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span> output_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
     <span class="token comment"># Requires geopandas >= 0.12 and pyarrow</span>
     gdf<span class="token punctuation">.</span>to_parquet<span class="token punctuation">(</span>output_path<span class="token punctuation">)</span>
     epsg <span class="token operator">=</span> gdf<span class="token punctuation">.</span>attrs<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"target_epsg"</span><span class="token punctuation">,</span> <span class="token string">"unknown"</span><span class="token punctuation">)</span>
@@ -648,7 +717,7 @@
 </div><hr>
 <h2 id="edge-cases-spatial-gotchas" tabindex="-1"><a class="header-anchor" href="#edge-cases-spatial-gotchas" aria-label="Permalink to section &quot;Edge Cases &amp; Spatial Gotchas&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases &amp; Spatial Gotchas</h2>
 <h3 id="datum-shift-grid-files-missing-at-runtime" tabindex="-1"><a class="header-anchor" href="#datum-shift-grid-files-missing-at-runtime" aria-label="Permalink to section &quot;Datum shift grid files missing at runtime&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Datum shift grid files missing at runtime</h3>
-<p>Datum conversions such as NAD27 → WGS84 or RD New (EPSG:28992) → ETRS89 require NTv2 or PROJ TIFF grid shift files. If PROJ cannot locate them, it silently falls back to an approximate Helmert transformation — introducing errors of 1–20 m depending on region.</p>
+<p>Datum conversions such as NAD27 → WGS84 or RD New (<code class="inline-code">EPSG:28992</code>) → ETRS89 require NTv2 or PROJ TIFF grid shift files. If PROJ cannot locate them, it silently falls back to an approximate Helmert transformation — introducing errors of 1–20 m depending on region.</p>
 <p>Detect the issue proactively:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -661,8 +730,9 @@
     </button>
   </div>
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> pyproj <span class="token keyword">import</span> datadir<span class="token punctuation">,</span> network
-<span class="token keyword">print</span><span class="token punctuation">(</span>datadir<span class="token punctuation">.</span>get_data_dir<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>       <span class="token comment"># where PROJ looks for grids</span>
-<span class="token keyword">print</span><span class="token punctuation">(</span>network<span class="token punctuation">.</span>is_network_enabled<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment"># True = online CDN fallback active</span>
+
+<span class="token keyword">print</span><span class="token punctuation">(</span>datadir<span class="token punctuation">.</span>get_data_dir<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>        <span class="token comment"># where PROJ looks for grids</span>
+<span class="token keyword">print</span><span class="token punctuation">(</span>network<span class="token punctuation">.</span>is_network_enabled<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment"># True = online CDN fallback active</span>
 </code></pre>
 </div>
 <p>Fix: set <code class="inline-code">PROJ_NETWORK=ON</code> in your environment, or download the relevant grid from <a href="https://cdn.proj.org">cdn.proj.org</a> and place it in the PROJ data directory. In Docker, <code class="inline-code">COPY</code> the <code class="inline-code">.tif</code> grids into <code class="inline-code">/usr/share/proj/</code> before <code class="inline-code">RUN pip install pyproj</code>.</p>
@@ -680,6 +750,7 @@
     </button>
   </div>
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> pyproj <span class="token keyword">import</span> Transformer
+
 t <span class="token operator">=</span> Transformer<span class="token punctuation">.</span>from_crs<span class="token punctuation">(</span><span class="token string">"EPSG:4326"</span><span class="token punctuation">,</span> <span class="token string">"EPSG:32632"</span><span class="token punctuation">,</span> always_xy<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
 </code></pre>
 </div>
@@ -696,16 +767,27 @@ t <span class="token operator">=</span> Transformer<span class="token punctuatio
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python">gdf<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">buffer</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>  <span class="token comment"># standard validity repair</span>
-<span class="token comment"># For persistent invalidity, use make_valid (shapely >= 2.0):</span>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
 <span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> make_valid
-gdf<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>make_valid<span class="token punctuation">)</span>
+
+gdf<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">buffer</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>        <span class="token comment"># standard repair</span>
+gdf<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span><span class="token builtin">apply</span><span class="token punctuation">(</span>make_valid<span class="token punctuation">)</span> <span class="token comment"># persistent cases (shapely >= 2.0)</span>
 </code></pre>
 </div>
 <h3 id="coordinate-precision-mismatch-between-image-and-label-layers" tabindex="-1"><a class="header-anchor" href="#coordinate-precision-mismatch-between-image-and-label-layers" aria-label="Permalink to section &quot;Coordinate precision mismatch between image and label layers&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Coordinate precision mismatch between image and label layers</h3>
 <p>Rasterized label masks generated from float64 vector coordinates but stored in float32 rasters accumulate rounding error that misaligns pixel boundaries. Use <code class="inline-code">shapely.set_precision()</code> to snap vector coordinates to the raster grid before rasterization.</p>
 <h3 id="legacy-shapefile-prj-files-with-outdated-authority-definitions" tabindex="-1"><a class="header-anchor" href="#legacy-shapefile-prj-files-with-outdated-authority-definitions" aria-label="Permalink to section &quot;Legacy Shapefile .prj files with outdated authority definitions&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Legacy Shapefile <code class="inline-code">.prj</code> files with outdated authority definitions</h3>
 <p>Pre-2000 Shapefiles often contain WKT1 <code class="inline-code">.prj</code> strings with non-standard authority names that PROJ cannot resolve. Use <code class="inline-code">pyproj.CRS.from_user_input()</code> and catch <code class="inline-code">CRSError</code> to detect failures, then map to the correct EPSG via a maintained lookup table (<code class="inline-code">epsg.io</code> or the PROJ database).</p>
+<hr>
+<h2 id="frequently-asked-questions" tabindex="-1"><a class="header-anchor" href="#frequently-asked-questions" aria-label="Permalink to section &quot;Frequently Asked Questions&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Frequently Asked Questions</h2>
+<p><strong>Why does EPSG:4326 cause axis-order bugs in Python?</strong></p>
+<p><code class="inline-code">EPSG:4326</code> officially defines latitude before longitude, but most web frameworks and legacy GIS tools expect longitude first. Pass <code class="inline-code">always_xy=True</code> to <code class="inline-code">pyproj.Transformer</code> or use <code class="inline-code">geopandas.to_crs()</code>, which handles this automatically.</p>
+<p><strong>What happens if PROJ grid shift files are missing?</strong></p>
+<p>PROJ silently falls back to an approximate Helmert transformation, introducing meter-scale errors in datum conversions such as NAD27 to WGS84. Bundle required <code class="inline-code">.tif</code> grid files in your Docker image or enable <code class="inline-code">PROJ_NETWORK=ON</code> for online access.</p>
+<p><strong>Which CRS should I use for training data?</strong></p>
+<p>Use a local UTM zone (e.g. <code class="inline-code">EPSG:32632</code> for central Europe) for distance-sensitive tasks like <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">IoU threshold computation</a> and buffer operations. Use <code class="inline-code">EPSG:4326</code> only for web-facing GeoJSON or when geographic extent is the sole concern.</p>
+<p><strong>How do I fix self-intersecting polygons from annotation tools?</strong></p>
+<p>Apply <code class="inline-code">gdf[&#39;geometry&#39;] = gdf.geometry.buffer(0)</code> for simple cases, or use <code class="inline-code">shapely.validation.make_valid()</code> (Shapely &gt;= 2.0) for persistent invalidity. Always repair geometry before reprojection, not after.</p>
 <hr>
 <h2 id="integration-automation-hooks" tabindex="-1"><a class="header-anchor" href="#integration-automation-hooks" aria-label="Permalink to section &quot;Integration &amp; Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Integration &amp; Automation Hooks</h2>
 <h3 id="label-studio-export-hook" tabindex="-1"><a class="header-anchor" href="#label-studio-export-hook" aria-label="Permalink to section &quot;Label Studio export hook&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Label Studio export hook</h3>
@@ -781,7 +863,9 @@ gdf<span class="token punctuation">[</span><span class="token string">"geometry"
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">def</span> <span class="token function">ci_crs_gate</span><span class="token punctuation">(</span>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+
+<span class="token keyword">def</span> <span class="token function">ci_crs_gate</span><span class="token punctuation">(</span>
     gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span>
     source_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
     target_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span>
@@ -795,7 +879,6 @@ gdf<span class="token punctuation">[</span><span class="token string">"geometry"
     transformed <span class="token operator">=</span> standardize_to_target<span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> target_epsg<span class="token punctuation">)</span>
     roundtrip <span class="token operator">=</span> standardize_to_target<span class="token punctuation">(</span>transformed<span class="token punctuation">.</span>copy<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> source_epsg<span class="token punctuation">)</span>
 
-    <span class="token comment"># Align index before distance calculation</span>
     roundtrip<span class="token punctuation">.</span>index <span class="token operator">=</span> gdf<span class="token punctuation">.</span>index
     drift <span class="token operator">=</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>distance<span class="token punctuation">(</span>roundtrip<span class="token punctuation">.</span>geometry<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token builtin">max</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
 
@@ -843,13 +926,17 @@ gdf<span class="token punctuation">[</span><span class="token string">"geometry"
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">def</span> <span class="token function">smoke_test_crs_pipeline</span><span class="token punctuation">(</span>sample_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> target_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">32632</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">from</span> pyproj <span class="token keyword">import</span> CRS
+
+<span class="token keyword">def</span> <span class="token function">smoke_test_crs_pipeline</span><span class="token punctuation">(</span>sample_path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> target_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span> <span class="token operator">=</span> <span class="token number">32632</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
     gdf <span class="token operator">=</span> load_and_detect_crs<span class="token punctuation">(</span>sample_path<span class="token punctuation">)</span>
     gdf <span class="token operator">=</span> validate_bounds_and_topology<span class="token punctuation">(</span>gdf<span class="token punctuation">)</span>
     gdf <span class="token operator">=</span> standardize_to_target<span class="token punctuation">(</span>gdf<span class="token punctuation">,</span> target_epsg<span class="token punctuation">)</span>
+    raw <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>sample_path<span class="token punctuation">)</span>
     ci_crs_gate<span class="token punctuation">(</span>
-        gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>sample_path<span class="token punctuation">)</span><span class="token punctuation">,</span>  <span class="token comment"># reload raw for fair comparison</span>
-        source_epsg<span class="token operator">=</span>CRS<span class="token punctuation">.</span>from_user_input<span class="token punctuation">(</span>gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>sample_path<span class="token punctuation">)</span><span class="token punctuation">.</span>crs<span class="token punctuation">)</span><span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+        raw<span class="token punctuation">,</span>
+        source_epsg<span class="token operator">=</span>CRS<span class="token punctuation">.</span>from_user_input<span class="token punctuation">(</span>raw<span class="token punctuation">.</span>crs<span class="token punctuation">)</span><span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
         target_epsg<span class="token operator">=</span>target_epsg<span class="token punctuation">,</span>
     <span class="token punctuation">)</span>
     <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Smoke test passed."</span><span class="token punctuation">)</span>
@@ -859,7 +946,7 @@ gdf<span class="token punctuation">[</span><span class="token string">"geometry"
 <h2 id="performance-optimization-for-large-scale-pipelines" tabindex="-1"><a class="header-anchor" href="#performance-optimization-for-large-scale-pipelines" aria-label="Permalink to section &quot;Performance Optimization for Large-Scale Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Performance Optimization for Large-Scale Pipelines</h2>
 <p>At scale, repeated CRS transformations become a measurable bottleneck. Apply these patterns:</p>
 <p><strong>Batch rather than row-wise.</strong> Apply <code class="inline-code">to_crs()</code> once per <code class="inline-code">GeoDataFrame</code> — <code class="inline-code">geopandas</code> delegates to <code class="inline-code">pyproj</code>, which caches transformation pipelines internally. Per-row <code class="inline-code">apply(lambda geom: transform(t, geom))</code> is 10–100x slower.</p>
-<p><strong>Cache pre-transformed outputs.</strong> Name GeoParquet files by content hash plus target EPSG (e.g. <code class="inline-code">sha256_32632.parquet</code>) and skip retransformation when neither source hash nor target projection has changed. Pair with <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA hashing for annotation change tracking</a>.</p>
+<p><strong>Cache pre-transformed outputs.</strong> Name GeoParquet files by content hash plus target EPSG (e.g. <code class="inline-code">sha256_32632.parquet</code>) and skip retransformation when neither source hash nor target projection has changed. Pair with <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA hashing for annotation change tracking</a> to make cache keys content-addressable.</p>
 <p><strong>Parallelise validation with dask-geopandas.</strong> For batches exceeding ~500k features, partition the <code class="inline-code">GeoDataFrame</code> across cores:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -897,7 +984,7 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">
               <div class="title">Calculating IoU Thresholds for Geospatial Object Detection</div>
-              <div class="desc">Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits do not provide out of the box: reprojection from angular coordinates to a local metric coordinate reference system, topology validation before any area computation, and threshold values calibra</div>
+              <div class="desc">Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits omit: reprojection from angular coordinates to a local metric coordinate reference system before any area computation, topology validation with shapely 2.0+ makevalid(), and threshold values ca</div>
             </a>
           
         </div>
@@ -911,7 +998,7 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">
               <div class="title">Confidence Scoring for Geospatial Labels</div>
-              <div class="desc">Confidence scoring transforms raw annotation outputs into quantifiable training signals that directly control model convergence, active learning prioritization, and QA routing. In spatial machine learning pipelines, not all labeled polygons, bounding boxes, or raster masks carry equal reliability: annotator fatigue, am</div>
+              <div class="desc">When a pre-labeling model trained on Sentinel-2 imagery is applied to a new SAR dataset, its raw softmax outputs appear confident — but those probabilities are miscalibrated for the new sensor modality. If your pipeline treats every model output above 0.5 as a valid training label, the resulting dataset is silently con</div>
             </a>
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">

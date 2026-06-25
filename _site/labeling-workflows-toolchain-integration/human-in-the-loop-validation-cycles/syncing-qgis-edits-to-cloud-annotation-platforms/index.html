@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -291,7 +291,8 @@
       "description": "A step-by-step guide to building a deterministic PyQGIS extract-transform-upload pipeline that syncs QGIS desktop edits to cloud annotation APIs with idempotency controls, schema validation, and retry logic.",
       "datePublished": "2025-03-10",
       "dateModified": "2026-06-24",
-      "author": { "@type": "Organization", "name": "Geospatial Annotation" }
+      "author": { "@type": "Organization", "name": "Geospatial Annotation" },
+      "url": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/"
     },
     {
       "@type": "BreadcrumbList",
@@ -354,41 +355,52 @@
 }
 </script>
 <h1>Syncing QGIS Edits to Cloud Annotation Platforms</h1>
-<p>Syncing QGIS edits to a cloud annotation platform requires a deterministic <strong>extract-transform-upload</strong> pipeline built in PyQGIS. The correct approach reads only the pending changes from <code class="inline-code">QgsVectorLayerEditBuffer</code>, reprojects all geometries to <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:4326</code></a> (WGS 84), maps QGIS field names to the platform’s JSON schema, and pushes authenticated batch payloads with per-request idempotency keys and exponential backoff. This eliminates manual shapefile handoffs, prevents silent geometry corruption, and keeps desktop GIS work traceable in the <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">human-in-the-loop validation cycle</a>.</p>
+<p>Syncing QGIS edits to a cloud annotation platform requires a deterministic <strong>extract-transform-upload</strong> pipeline built in PyQGIS. The correct approach reads only the pending changes from <code class="inline-code">QgsVectorLayerEditBuffer</code>, reprojects all geometries to <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:4326</code></a> (WGS 84), maps QGIS field names to the platform’s JSON schema, and pushes authenticated batch payloads with per-request idempotency keys and exponential backoff. This eliminates manual shapefile handoffs, prevents silent geometry corruption, and keeps desktop GIS work traceable within the <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">human-in-the-loop validation cycle</a>.</p>
 <h2 id="why-this-matters-in-geospatial-annotation-pipelines" tabindex="-1"><a class="header-anchor" href="#why-this-matters-in-geospatial-annotation-pipelines" aria-label="Permalink to section &quot;Why This Matters in Geospatial Annotation Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why This Matters in Geospatial Annotation Pipelines</h2>
-<p>Cloud annotation APIs never accept native <code class="inline-code">.qgz</code> or <code class="inline-code">.shp</code> files. They expect structured GeoJSON payloads with explicit coordinate arrays, label dictionaries, and metadata tags. When teams skip a formal sync pipeline and export manually, three failure modes appear consistently: mixed CRS across batches causes geometry offsets that collapse IoU scores; <code class="inline-code">NaN</code> float attributes silently break strict JSON parsers and drop entire feature batches; and duplicate uploads from manual re-runs corrupt the annotation record without warning. A scripted, idempotent pipeline closes all three gaps.</p>
+<p>Cloud annotation APIs never accept native <code class="inline-code">.qgz</code> or <code class="inline-code">.shp</code> files — they expect structured GeoJSON payloads with explicit coordinate arrays, label dictionaries, and metadata tags. When teams skip a formal sync pipeline and export manually, three failure modes appear consistently: mixed coordinate reference systems across batches cause geometry offsets that collapse IoU scores; <code class="inline-code">NaN</code> float attributes silently break strict JSON parsers and drop entire feature batches; and duplicate uploads from manual re-runs corrupt the annotation record without warning. A scripted, idempotent pipeline closes all three gaps and feeds directly into the <a href="/dataset-versioning-spatial-data-sync/">dataset versioning</a> audit trail.</p>
 <h2 id="pipeline-architecture" tabindex="-1"><a class="header-anchor" href="#pipeline-architecture" aria-label="Permalink to section &quot;Pipeline Architecture&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Pipeline Architecture</h2>
 <p>The three-phase pipeline below maps directly to the extract, transform, and upload operations that every production sync must implement.</p>
-<svg viewBox="0 0 700 160" role="img" aria-label="QGIS to cloud annotation sync pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 760 220" role="img" aria-label="QGIS to cloud annotation sync pipeline: extract, transform, upload with retry loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>QGIS to Cloud Annotation Sync Pipeline</title>
-  <desc>Three sequential phases: Extract from QgsVectorLayerEditBuffer, Transform (reproject + validate + map schema), Upload (batch POST with idempotency keys and retry logic). Arrows connect each phase left to right.</desc>
-  <!-- Phase boxes -->
-  <rect x="10" y="40" width="190" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="105" y="72" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Extract</text>
-  <text x="105" y="91" text-anchor="middle" font-size="11" fill="currentColor">QgsVectorLayerEditBuffer</text>
-  <text x="105" y="108" text-anchor="middle" font-size="11" fill="currentColor">changed + added feature IDs</text>
-  <!-- Arrow 1 -->
-  <line x1="200" y1="80" x2="248" y2="80" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="250" y="40" width="190" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="345" y="72" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Transform</text>
-  <text x="345" y="91" text-anchor="middle" font-size="11" fill="currentColor">reproject → EPSG:4326</text>
-  <text x="345" y="108" text-anchor="middle" font-size="11" fill="currentColor">validate + map schema</text>
-  <!-- Arrow 2 -->
-  <line x1="440" y1="80" x2="488" y2="80" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <rect x="490" y="40" width="200" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="590" y="72" text-anchor="middle" font-size="13" font-weight="600" fill="currentColor">Upload</text>
-  <text x="590" y="91" text-anchor="middle" font-size="11" fill="currentColor">batch POST + idempotency key</text>
-  <text x="590" y="108" text-anchor="middle" font-size="11" fill="currentColor">exponential backoff on 429/5xx</text>
+  <desc>Three sequential phases connected by arrows. Phase 1 Extract reads from QgsVectorLayerEditBuffer: changed and added feature IDs. Phase 2 Transform reprojects to EPSG:4326 and validates and maps schema. Phase 3 Upload sends batch POST requests with idempotency key and exponential backoff on 429 and 5xx errors. A retry loop arrow curves back from Upload to Upload labelled retry on transient error.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="currentColor"/>
+    </marker>
+    <marker id="arr-retry" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="currentColor" opacity="0.55"/>
     </marker>
   </defs>
+  <!-- Phase 1: Extract -->
+  <rect x="10" y="30" width="200" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="110" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">1. Extract</text>
+  <text x="110" y="78" text-anchor="middle" font-size="11" fill="currentColor">QgsVectorLayerEditBuffer</text>
+  <text x="110" y="96" text-anchor="middle" font-size="11" fill="currentColor">changed + added feature IDs</text>
+  <text x="110" y="113" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">only delta, not full layer</text>
+  <!-- Arrow 1→2 -->
+  <line x1="210" y1="75" x2="268" y2="75" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Phase 2: Transform -->
+  <rect x="270" y="30" width="200" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="370" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">2. Transform</text>
+  <text x="370" y="78" text-anchor="middle" font-size="11" fill="currentColor">reproject → EPSG:4326</text>
+  <text x="370" y="96" text-anchor="middle" font-size="11" fill="currentColor">makeValid() + map schema</text>
+  <text x="370" y="113" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">sanitise NaN floats</text>
+  <!-- Arrow 2→3 -->
+  <line x1="470" y1="75" x2="528" y2="75" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Phase 3: Upload -->
+  <rect x="530" y="30" width="220" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="640" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">3. Upload</text>
+  <text x="640" y="78" text-anchor="middle" font-size="11" fill="currentColor">batch POST + Idempotency-Key</text>
+  <text x="640" y="96" text-anchor="middle" font-size="11" fill="currentColor">backoff on 429 / 5xx</text>
+  <text x="640" y="113" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">respect X-RateLimit-Remaining</text>
+  <!-- Retry loop arc below Phase 3 -->
+  <path d="M750,120 Q780,170 640,170 Q530,170 530,120" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,3" opacity="0.55" marker-end="url(#arr-retry)"/>
+  <text x="660" y="192" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.65">retry on transient error</text>
 </svg>
-<p>Skipping any phase introduces silent failures. The transform step is particularly critical: most ML annotation engines reject features with mixed coordinate reference systems or unclosed polygon rings, and the rejection often surfaces as a non-specific <code class="inline-code">422 Unprocessable Entity</code> with no per-feature detail.</p>
+<p>Skipping any phase introduces silent failures. The transform step is especially critical: most ML annotation engines reject features with unclosed polygon rings or coordinates outside <code class="inline-code">[-180, 180]</code> / <code class="inline-code">[-90, 90]</code>, and the rejection often surfaces as a non-specific <code class="inline-code">422 Unprocessable Entity</code> with no per-feature detail.</p>
 <h2 id="step-by-step-implementation" tabindex="-1"><a class="header-anchor" href="#step-by-step-implementation" aria-label="Permalink to section &quot;Step-by-Step Implementation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step Implementation</h2>
 <h3 id="step-1-extract-pending-edits-from-the-edit-buffer" tabindex="-1"><a class="header-anchor" href="#step-1-extract-pending-edits-from-the-edit-buffer" aria-label="Permalink to section &quot;Step 1 — Extract Pending Edits from the Edit Buffer&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Extract Pending Edits from the Edit Buffer</h3>
-<p>Query only modified and added features from the active editing session. Querying the full layer generates redundant payloads, increases network overhead, and risks overwriting annotations that other team members have already reviewed.</p>
+<p>Query only modified and added features from the active editing session. Reading the full layer generates redundant payloads and risks overwriting annotations that other team members have already reviewed during the <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">validation cycle</a>.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -420,7 +432,7 @@ LAYER_NAME <span class="token operator">=</span> <span class="token string">"ann
 </div>
 <p><code class="inline-code">QgsVectorLayerEditBuffer</code> tracks three separate dictionaries: <code class="inline-code">changedAttributeValues</code>, <code class="inline-code">changedGeometries</code>, and <code class="inline-code">addedFeatures</code>. Unioning the first and last captures both attribute-only updates and new polygon draws; <code class="inline-code">changedGeometries</code> is implicitly included because geometry edits also update attributes in most annotation workflows.</p>
 <h3 id="step-2-reproject-and-validate-geometries" tabindex="-1"><a class="header-anchor" href="#step-2-reproject-and-validate-geometries" aria-label="Permalink to section &quot;Step 2 — Reproject and Validate Geometries&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Reproject and Validate Geometries</h3>
-<p>Transform all coordinates to <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:4326</code></a> before serialising to GeoJSON. Cloud annotation APIs enforce the GeoJSON specification’s WGS 84 requirement; submitting features in a projected CRS (e.g. <code class="inline-code">EPSG:32633</code>) causes silent coordinate drift that can shift polygon vertices by hundreds of meters on the platform map.</p>
+<p>Transform all coordinates to <code class="inline-code">EPSG:4326</code> before serialising to GeoJSON. Cloud annotation APIs enforce the GeoJSON specification’s WGS 84 requirement; submitting features in a projected CRS such as <code class="inline-code">EPSG:32633</code> causes silent coordinate drift that can shift polygon vertices by hundreds of metres on the platform map. This CRS contract is the same one described in the broader guide to <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a>.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -458,9 +470,9 @@ LAYER_NAME <span class="token operator">=</span> <span class="token string">"ann
     <span class="token keyword">return</span> json<span class="token punctuation">.</span>loads<span class="token punctuation">(</span>geom<span class="token punctuation">.</span>asJson<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
 </code></pre>
 </div>
-<p><code class="inline-code">QgsGeometryValidator</code> catches self-intersecting rings and unclosed polygons before they hit the network. <code class="inline-code">makeValid()</code> resolves most issues by splitting self-intersections into separate parts — confirm the output geometry type matches your annotation schema (e.g. <code class="inline-code">MultiPolygon</code> where <code class="inline-code">Polygon</code> is expected may require an additional unwrap step).</p>
+<p><code class="inline-code">QgsGeometryValidator</code> catches self-intersecting rings and unclosed polygons before they hit the network. <code class="inline-code">makeValid()</code> resolves most issues by splitting self-intersections into separate parts — confirm the output geometry type matches your annotation schema (<code class="inline-code">MultiPolygon</code> where <code class="inline-code">Polygon</code> is expected may require an additional unwrap step).</p>
 <h3 id="step-3-map-attributes-to-the-platform-schema" tabindex="-1"><a class="header-anchor" href="#step-3-map-attributes-to-the-platform-schema" aria-label="Permalink to section &quot;Step 3 — Map Attributes to the Platform Schema&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Map Attributes to the Platform Schema</h3>
-<p>Flatten QGIS field values, sanitise floats, and rename fields to match the target annotation API’s expected property names. Mismatched field names cause silent attribute drops; <code class="inline-code">NaN</code> floats break JSON serialisation in strict parsers used by Label Studio and similar platforms.</p>
+<p>Flatten QGIS field values, sanitise floats, and rename fields to match the target annotation API’s expected property names. Mismatched field names cause silent attribute drops; <code class="inline-code">NaN</code> floats break JSON serialisation in the strict parsers used by <a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Label Studio</a> and similar platforms.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -497,9 +509,9 @@ FIELD_MAP <span class="token operator">=</span> <span class="token punctuation">
     <span class="token keyword">return</span> <span class="token punctuation">{</span>FIELD_MAP<span class="token punctuation">.</span>get<span class="token punctuation">(</span>k<span class="token punctuation">,</span> k<span class="token punctuation">)</span><span class="token punctuation">:</span> v <span class="token keyword">for</span> k<span class="token punctuation">,</span> v <span class="token keyword">in</span> raw<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span>
 </code></pre>
 </div>
-<p>Define <code class="inline-code">FIELD_MAP</code> per project. Confirm the platform schema against its OpenAPI or JSON Schema spec — check whether the platform treats unlisted extra properties as errors or silently ignores them before deciding how aggressively to filter.</p>
+<p>Define <code class="inline-code">FIELD_MAP</code> per project and confirm the platform schema against its OpenAPI or JSON Schema spec — check whether the platform treats unlisted extra properties as errors or silently ignores them before deciding how aggressively to filter.</p>
 <h3 id="step-4-batch-upload-with-idempotency-and-retry" tabindex="-1"><a class="header-anchor" href="#step-4-batch-upload-with-idempotency-and-retry" aria-label="Permalink to section &quot;Step 4 — Batch Upload with Idempotency and Retry&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Batch Upload with Idempotency and Retry</h3>
-<p>Upload in configurable batches with per-batch <code class="inline-code">Idempotency-Key</code> headers and exponential backoff. Idempotency keys prevent duplicate ingestion when network retries fire; without them, a single transient <code class="inline-code">502</code> can result in the same feature appearing twice in the annotation record.</p>
+<p>Upload in configurable batches with per-batch <code class="inline-code">Idempotency-Key</code> headers and exponential backoff. Idempotency keys prevent duplicate ingestion when network retries fire; without them, a single transient <code class="inline-code">502</code> can result in the same feature appearing twice in the annotation record and corrupting <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> aggregated at the platform level.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -536,10 +548,10 @@ BATCH_SIZE     <span class="token operator">=</span> <span class="token number">
     <span class="token keyword">return</span> session
 
 <span class="token keyword">def</span> <span class="token function">upload_batch</span><span class="token punctuation">(</span>session<span class="token punctuation">:</span> requests<span class="token punctuation">.</span>Session<span class="token punctuation">,</span> records<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">dict</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
-    remaining_header <span class="token operator">=</span> <span class="token boolean">None</span>
     <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token builtin">len</span><span class="token punctuation">(</span>records<span class="token punctuation">)</span><span class="token punctuation">,</span> BATCH_SIZE<span class="token punctuation">)</span><span class="token punctuation">:</span>
         chunk <span class="token operator">=</span> records<span class="token punctuation">[</span>i <span class="token punctuation">:</span> i <span class="token operator">+</span> BATCH_SIZE<span class="token punctuation">]</span>
-        headers <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">"Idempotency-Key"</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>uuid<span class="token punctuation">.</span>uuid4<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">}</span>
+        idempotency_key <span class="token operator">=</span> <span class="token builtin">str</span><span class="token punctuation">(</span>uuid<span class="token punctuation">.</span>uuid4<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>   <span class="token comment"># one key per batch, reused on retries</span>
+        headers <span class="token operator">=</span> <span class="token punctuation">{</span><span class="token string">"Idempotency-Key"</span><span class="token punctuation">:</span> idempotency_key<span class="token punctuation">}</span>
         resp <span class="token operator">=</span> session<span class="token punctuation">.</span>post<span class="token punctuation">(</span>
             TARGET_API_URL<span class="token punctuation">,</span>
             json<span class="token operator">=</span><span class="token punctuation">{</span><span class="token string">"features"</span><span class="token punctuation">:</span> chunk<span class="token punctuation">}</span><span class="token punctuation">,</span>
@@ -549,14 +561,14 @@ BATCH_SIZE     <span class="token operator">=</span> <span class="token number">
         resp<span class="token punctuation">.</span>raise_for_status<span class="token punctuation">(</span><span class="token punctuation">)</span>
 
         <span class="token comment"># Respect rate-limit headers if the platform exposes them</span>
-        remaining_header <span class="token operator">=</span> resp<span class="token punctuation">.</span>headers<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"X-RateLimit-Remaining"</span><span class="token punctuation">)</span>
-        <span class="token keyword">if</span> remaining_header <span class="token keyword">and</span> <span class="token builtin">int</span><span class="token punctuation">(</span>remaining_header<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">:</span>
+        remaining <span class="token operator">=</span> resp<span class="token punctuation">.</span>headers<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"X-RateLimit-Remaining"</span><span class="token punctuation">)</span>
+        <span class="token keyword">if</span> remaining <span class="token keyword">and</span> <span class="token builtin">int</span><span class="token punctuation">(</span>remaining<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token number">5</span><span class="token punctuation">:</span>
             time<span class="token punctuation">.</span>sleep<span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span>
 
         <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Uploaded </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>chunk<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> features — status </span><span class="token interpolation"><span class="token punctuation">{</span>resp<span class="token punctuation">.</span>status_code<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
 </code></pre>
 </div>
-<h3 id="putting-it-together" tabindex="-1"><a class="header-anchor" href="#putting-it-together" aria-label="Permalink to section &quot;Putting It Together&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Putting It Together</h3>
+<h3 id="step-5-orchestrate-the-full-sync" tabindex="-1"><a class="header-anchor" href="#step-5-orchestrate-the-full-sync" aria-label="Permalink to section &quot;Step 5 — Orchestrate the Full Sync&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5 — Orchestrate the Full Sync</h3>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -603,7 +615,21 @@ BATCH_SIZE     <span class="token operator">=</span> <span class="token number">
     <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Sync complete."</span><span class="token punctuation">)</span>
 </code></pre>
 </div>
-<h2 id="key-parameters-and-configuration-reference" tabindex="-1"><a class="header-anchor" href="#key-parameters-and-configuration-reference" aria-label="Permalink to section &quot;Key Parameters and Configuration Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Key Parameters and Configuration Reference</h2>
+<p>Connect to the <code class="inline-code">committedChanges</code> signal so the sync fires automatically after every QGIS commit without manual intervention:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python">layer<span class="token punctuation">.</span>committedChanges<span class="token punctuation">.</span>connect<span class="token punctuation">(</span><span class="token keyword">lambda</span><span class="token punctuation">:</span> sync_qgis_edits_to_cloud<span class="token punctuation">(</span>LAYER_NAME<span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<h2 id="spatial-parameters-and-configuration-reference" tabindex="-1"><a class="header-anchor" href="#spatial-parameters-and-configuration-reference" aria-label="Permalink to section &quot;Spatial Parameters and Configuration Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial Parameters and Configuration Reference</h2>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -617,55 +643,55 @@ BATCH_SIZE     <span class="token operator">=</span> <span class="token number">
 <tr>
 <td><code class="inline-code">BATCH_SIZE</code></td>
 <td><code class="inline-code">int</code></td>
-<td>50</td>
-<td>Reduce to 20 for large polygon vertices; increase to 100 for point datasets</td>
+<td><code class="inline-code">50</code></td>
+<td>Reduce to <code class="inline-code">20</code> for large polygon vertex counts; raise to <code class="inline-code">100</code> for point datasets</td>
 </tr>
 <tr>
 <td>Target CRS</td>
 <td>EPSG code</td>
 <td><code class="inline-code">EPSG:4326</code></td>
-<td>Required by GeoJSON spec; all cloud annotation APIs enforce this</td>
+<td>Required by the GeoJSON spec; all cloud annotation APIs enforce WGS 84</td>
 </tr>
 <tr>
 <td><code class="inline-code">backoff_factor</code></td>
 <td><code class="inline-code">float</code></td>
-<td>1.5</td>
+<td><code class="inline-code">1.5</code></td>
 <td>Produces delays of 1.5 s, 3 s, 4.5 s across three retry attempts</td>
 </tr>
 <tr>
 <td><code class="inline-code">status_forcelist</code></td>
 <td><code class="inline-code">list[int]</code></td>
 <td><code class="inline-code">[429, 500, 502, 503, 504]</code></td>
-<td>Do not add <code class="inline-code">400</code>/<code class="inline-code">422</code> — those indicate malformed payloads, not transient errors</td>
+<td>Do not add <code class="inline-code">400</code> / <code class="inline-code">422</code> — those indicate malformed payloads, not transient errors</td>
 </tr>
 <tr>
 <td><code class="inline-code">timeout</code></td>
 <td><code class="inline-code">int</code> (seconds)</td>
-<td>30</td>
-<td>Per-request timeout; large batches on slow connections may need 60</td>
+<td><code class="inline-code">30</code></td>
+<td>Per-request; large batches on slow connections may need <code class="inline-code">60</code></td>
 </tr>
 <tr>
 <td><code class="inline-code">Idempotency-Key</code></td>
 <td>UUID v4</td>
-<td>Per-batch</td>
-<td>Regenerate for each new batch, not per retry of the same batch</td>
+<td>One per batch</td>
+<td>Generate before the retry loop; reuse on all retry attempts for the same batch</td>
 </tr>
 </tbody>
 </table>
 </div><h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common Errors and Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors and Fixes</h2>
-<p><strong><code class="inline-code">RuntimeError: Layer &#39;annotation_edits&#39; must be in edit mode</code></strong>
-Cause: the layer’s editing session was committed or rolled back before <code class="inline-code">sync_qgis_edits_to_cloud()</code> was called, so <code class="inline-code">editBuffer()</code> returns <code class="inline-code">None</code>.
-Fix: connect the sync function to <code class="inline-code">layer.committedChanges</code> so it fires immediately after the QGIS commit, before the buffer is cleared: <code class="inline-code">layer.committedChanges.connect(sync_qgis_edits_to_cloud)</code>.</p>
-<p><strong><code class="inline-code">422 Unprocessable Entity</code> on batch upload</strong>
-Cause: the platform’s schema validator rejected at least one feature in the batch — commonly an unclosed polygon ring, a coordinate pair outside <code class="inline-code">[-180, 180]</code> / <code class="inline-code">[-90, 90]</code>, or a required property missing after field mapping.
-Fix: shrink <code class="inline-code">BATCH_SIZE</code> to 1 to isolate the offending feature, then inspect the response body for the field-level error detail. Add the missing field to <code class="inline-code">FIELD_MAP</code> or tighten the <code class="inline-code">reproject_and_validate</code> gate.</p>
-<p><strong>Silent duplicate annotations after a network retry</strong>
-Cause: <code class="inline-code">Idempotency-Key</code> was regenerated per retry attempt rather than per batch, so the platform treated each retry as a new write.
-Fix: generate one UUID per batch <em>before</em> entering the retry loop and reuse it on all attempts for that batch.</p>
-<p><strong><code class="inline-code">json.dumps</code> raises <code class="inline-code">ValueError: Out of range float values</code></strong>
-Cause: <code class="inline-code">sanitize_value</code> was not applied, and a QGIS field contained <code class="inline-code">float(&#39;nan&#39;)</code> or <code class="inline-code">float(&#39;inf&#39;)</code>.
-Fix: ensure <code class="inline-code">map_attributes</code> calls <code class="inline-code">sanitize_value</code> on every field value, including nested dictionary values if any QGIS field stores JSON strings that are parsed and re-serialised.</p>
-<h2 id="credential-management-and-automation-hooks" tabindex="-1"><a class="header-anchor" href="#credential-management-and-automation-hooks" aria-label="Permalink to section &quot;Credential Management and Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Credential Management and Automation Hooks</h2>
+<p><code class="inline-code">RuntimeError: Layer &#39;annotation_edits&#39; must be in edit mode</code>
+: <strong>Cause:</strong> the editing session was committed or rolled back before <code class="inline-code">sync_qgis_edits_to_cloud()</code> was called, clearing the buffer.
+: <strong>Fix:</strong> connect the sync function to <code class="inline-code">layer.committedChanges</code> so it fires immediately after the QGIS commit, before the buffer is discarded.</p>
+<p><code class="inline-code">422 Unprocessable Entity</code> on batch upload
+: <strong>Cause:</strong> the platform’s schema validator rejected at least one feature — commonly an unclosed polygon ring, a coordinate pair outside <code class="inline-code">[-180, 180]</code> / <code class="inline-code">[-90, 90]</code>, or a required property missing after field mapping.
+: <strong>Fix:</strong> shrink <code class="inline-code">BATCH_SIZE</code> to <code class="inline-code">1</code> to isolate the offending feature, inspect the response body for field-level error detail, and add the missing field to <code class="inline-code">FIELD_MAP</code> or tighten the <code class="inline-code">reproject_and_validate</code> gate.</p>
+<p>Silent duplicate annotations after a network retry
+: <strong>Cause:</strong> <code class="inline-code">Idempotency-Key</code> was regenerated per retry attempt rather than per batch, so the platform treated each retry as a distinct write.
+: <strong>Fix:</strong> generate one UUID per batch <em>before</em> entering the retry loop and reuse it on all attempts for that batch.</p>
+<p><code class="inline-code">ValueError: Out of range float values</code> during JSON serialisation
+: <strong>Cause:</strong> <code class="inline-code">sanitize_value</code> was not applied and a QGIS field contained <code class="inline-code">float(&#39;nan&#39;)</code> or <code class="inline-code">float(&#39;inf&#39;)</code>.
+: <strong>Fix:</strong> confirm <code class="inline-code">map_attributes</code> calls <code class="inline-code">sanitize_value</code> on every field value, including any nested dictionary values if QGIS fields store JSON strings that are parsed and re-serialised.</p>
+<h2 id="credential-management-with-qgsauthmanager" tabindex="-1"><a class="header-anchor" href="#credential-management-with-qgsauthmanager" aria-label="Permalink to section &quot;Credential Management with QgsAuthManager&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Credential Management with QgsAuthManager</h2>
 <p>Never hardcode API tokens in <code class="inline-code">.py</code> files or embed them in <code class="inline-code">.qgz</code> project files shared across a team. Use QGIS Authentication Manager (<code class="inline-code">QgsAuthManager</code>) to store credentials under a named configuration ID and retrieve them at runtime:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -680,33 +706,20 @@ Fix: ensure <code class="inline-code">map_attributes</code> calls <code class="i
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> qgis<span class="token punctuation">.</span>core <span class="token keyword">import</span> QgsApplication
 
 auth_mgr <span class="token operator">=</span> QgsApplication<span class="token punctuation">.</span>authManager<span class="token punctuation">(</span><span class="token punctuation">)</span>
-conf <span class="token operator">=</span> auth_mgr<span class="token punctuation">.</span>availableAuthMethodConfigs<span class="token punctuation">(</span><span class="token punctuation">)</span>
-<span class="token comment"># retrieve token by config ID set in QGIS > Settings > Authentication</span>
+<span class="token comment"># Retrieve config by the ID set in QGIS > Settings > Authentication</span>
+cfg <span class="token operator">=</span> <span class="token punctuation">{</span>k<span class="token punctuation">:</span> v <span class="token keyword">for</span> k<span class="token punctuation">,</span> v <span class="token keyword">in</span> auth_mgr<span class="token punctuation">.</span>availableAuthMethodConfigs<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span>
+       <span class="token keyword">if</span> v<span class="token punctuation">.</span>name<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token string">"cloud_annotation_api"</span><span class="token punctuation">}</span>
 </code></pre>
 </div>
-<p>To automate syncs without manual intervention, connect to the <code class="inline-code">committedChanges</code> signal on layer load:</p>
-<div class="code-block">
-  <div class="code-block__head">
-    <span class="code-lang">python</span>
-    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
-      <span class="code-copy__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-      </span>
-      <span class="code-copy__label">Copy</span>
-    </button>
-  </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python">layer<span class="token punctuation">.</span>committedChanges<span class="token punctuation">.</span>connect<span class="token punctuation">(</span><span class="token keyword">lambda</span><span class="token punctuation">:</span> sync_qgis_edits_to_cloud<span class="token punctuation">(</span>LAYER_NAME<span class="token punctuation">)</span><span class="token punctuation">)</span>
-</code></pre>
-</div>
-<p>For delta recovery — resuming a failed mid-batch sync without re-uploading already-accepted features — maintain a local SQLite log of synced feature IDs alongside their <code class="inline-code">sync_timestamp</code>. On restart, exclude IDs present in the log from <code class="inline-code">pending_ids</code> before calling <code class="inline-code">upload_batch</code>. This log also feeds the <a href="/dataset-versioning-spatial-data-sync/">dataset versioning</a> audit trail if you are tracking annotation changes with <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA hashing</a> per feature version.</p>
+<p>For delta recovery — resuming a failed mid-batch sync without re-uploading already-accepted features — maintain a local SQLite log of synced feature IDs alongside their <code class="inline-code">sync_timestamp</code>. On restart, exclude IDs present in the log from <code class="inline-code">pending_ids</code> before calling <code class="inline-code">upload_batch</code>. This log also feeds the <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA hashing audit trail</a> that version-stamps each feature payload for rollback and change tracking.</p>
 <hr>
-<p>This workflow is one specific integration point within the broader <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles</a> cluster.</p>
+<p>This integration is one component of the broader <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles</a> workflow, which covers the full reviewer feedback loop from pre-labeling through quality gates.</p>
 <p><strong>Related</strong></p>
 <ul>
-<li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles</a> — parent cluster covering the full reviewer feedback loop</li>
+<li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles</a> — parent page covering the full reviewer feedback loop</li>
 <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a> — toolchain context: which QGIS plugins complement a PyQGIS sync script</li>
-<li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — CRS contracts that govern the <code class="inline-code">EPSG:4326</code> requirement in this pipeline</li>
-<li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — how to version-stamp each feature payload before upload for audit and rollback</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — the CRS contracts that govern the <code class="inline-code">EPSG:4326</code> requirement in this pipeline</li>
+<li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — version-stamp each feature payload before upload for audit and rollback</li>
 <li><a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration</a> — the top-level section covering the full annotation toolchain</li>
 </ul>
 

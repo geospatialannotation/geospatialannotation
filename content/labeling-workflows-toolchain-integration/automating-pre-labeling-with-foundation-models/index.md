@@ -11,7 +11,7 @@ breadcrumb:
   - label: "Automating Pre-Labeling with Foundation Models"
     url: "/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/"
 datePublished: "2025-01-15"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -23,7 +23,7 @@ dateModified: "2026-06-24"
       "headline": "Automating Pre-Labeling with Foundation Models",
       "description": "A production engineering guide to building deterministic, CRS-aware pre-labeling pipelines using SAM, Grounding DINO, and open-vocabulary vision models for geospatial ML training datasets.",
       "datePublished": "2025-01-15",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": { "@type": "Organization", "name": "Geospatial Annotation" },
       "publisher": { "@type": "Organization", "name": "Geospatial Annotation" }
     },
@@ -120,56 +120,65 @@ Before building the pipeline, review [vector vs. raster annotation workflows](/g
 
 ## Pipeline Architecture
 
-The diagram below shows the five deterministic stages and the key metadata that must survive each transition without loss or mutation.
+The five stages below form a deterministic chain. The key constraint is that spatial metadata — the affine transform and CRS — must survive every stage boundary intact. Losing either at any handoff causes all downstream polygon coordinates to map to incorrect geographic positions.
 
-<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Foundation model pre-labeling pipeline: five stages from raster ingest to annotation export" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 780 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Foundation model pre-labeling pipeline: five stages from raster ingest to annotation export" style="width:100%;max-width:780px;height:auto;display:block;margin:1.5rem auto;">
   <title>Foundation Model Pre-Labeling Pipeline</title>
-  <desc>Five-stage data flow: Raster Ingest → Tile + Window → Foundation Model Inference → Vectorize + Georeference → Filter + Merge → Export + Validate. Arrows between stages show the spatial metadata (affine transform, CRS, confidence scores) that must be preserved at each step.</desc>
-  <!-- Stage boxes -->
-  <rect x="10" y="110" width="120" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="70" y="135" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Raster</text>
-  <text x="70" y="150" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Ingest</text>
-  <text x="70" y="165" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.75">GeoTIFF / COG</text>
-  <rect x="160" y="110" width="120" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="220" y="135" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Tile + Window</text>
-  <text x="220" y="150" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Read</text>
-  <text x="220" y="165" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.75">rasterio.windows</text>
-  <rect x="310" y="110" width="130" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="375" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Foundation</text>
-  <text x="375" y="145" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Model Inference</text>
-  <text x="375" y="162" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.75">SAM / Grounding DINO</text>
-  <rect x="470" y="110" width="130" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="535" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Vectorize +</text>
-  <text x="535" y="145" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Georeference</text>
-  <text x="535" y="162" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.75">affine → CRS coords</text>
-  <rect x="630" y="50" width="120" height="55" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="690" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Filter +</text>
-  <text x="690" y="85" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Merge</text>
-  <text x="690" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.75">NMS / thresholds</text>
-  <rect x="630" y="200" width="120" height="55" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="690" y="222" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Export +</text>
-  <text x="690" y="237" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Validate</text>
-  <text x="690" y="252" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.75">GeoJSON / Parquet</text>
-  <!-- Horizontal arrows -->
-  <line x1="130" y1="140" x2="158" y2="140" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="280" y1="140" x2="308" y2="140" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="440" y1="140" x2="468" y2="140" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="600" y1="130" x2="628" y2="90" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="690" y1="105" x2="690" y2="198" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr)"/>
-  <!-- Metadata labels on arrows -->
-  <text x="144" y="132" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">CRS</text>
-  <text x="294" y="132" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">affine</text>
-  <text x="454" y="132" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">masks</text>
-  <text x="620" y="108" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">scores</text>
-  <text x="706" y="155" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">merged</text>
-  <!-- Feedback arrow label -->
-  <text x="690" y="290" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.7">→ Label Studio / QGIS</text>
-  <!-- Arrow marker -->
+  <desc>Five-stage data flow: Raster Ingest, Tile and Window Read, Foundation Model Inference, Vectorize and Georeference, then two parallel outputs: Filter and Merge followed by Export and Validate. Arrows between stages carry the spatial metadata (affine transform, CRS, confidence scores) that must be preserved at each step.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <marker id="arr-pm" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
     </marker>
   </defs>
+  <!-- Stage 1: Raster Ingest -->
+  <rect x="10" y="90" width="120" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="70" y="115" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Raster</text>
+  <text x="70" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Ingest</text>
+  <text x="70" y="145" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.72">GeoTIFF / COG</text>
+  <!-- Arrow 1 -->
+  <line x1="130" y1="120" x2="153" y2="120" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pm)"/>
+  <text x="141" y="113" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.65">CRS</text>
+  <!-- Stage 2: Tile + Window -->
+  <rect x="155" y="90" width="120" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="215" y="115" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Tile + Window</text>
+  <text x="215" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Read</text>
+  <text x="215" y="145" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.72">rasterio.windows</text>
+  <!-- Arrow 2 -->
+  <line x1="275" y1="120" x2="298" y2="120" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pm)"/>
+  <text x="286" y="113" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.65">affine</text>
+  <!-- Stage 3: Inference -->
+  <rect x="300" y="90" width="135" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="367" y="113" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Foundation</text>
+  <text x="367" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Model Inference</text>
+  <text x="367" y="143" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.72">SAM / Grounding DINO</text>
+  <!-- Arrow 3 -->
+  <line x1="435" y1="120" x2="458" y2="120" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pm)"/>
+  <text x="446" y="113" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.65">masks</text>
+  <!-- Stage 4: Vectorize -->
+  <rect x="460" y="90" width="130" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="525" y="113" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Vectorize +</text>
+  <text x="525" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Georeference</text>
+  <text x="525" y="143" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.72">affine → CRS coords</text>
+  <!-- Arrow 4a up-right to Filter -->
+  <line x1="590" y1="108" x2="638" y2="68" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pm)"/>
+  <text x="609" y="85" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.65">scores</text>
+  <!-- Arrow 4b down-right to Export -->
+  <line x1="590" y1="132" x2="638" y2="172" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arr-pm)"/>
+  <!-- Stage 5a: Filter + Merge -->
+  <rect x="640" y="30" width="128" height="55" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="704" y="52" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Filter + Merge</text>
+  <text x="704" y="67" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.72">NMS / thresholds</text>
+  <text x="704" y="80" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.72">spatial dedup</text>
+  <!-- Arrow Filter → Export -->
+  <line x1="704" y1="85" x2="704" y2="168" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-pm)"/>
+  <text x="717" y="130" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.65">merged</text>
+  <!-- Stage 5b: Export + Validate -->
+  <rect x="640" y="170" width="128" height="55" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="704" y="192" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Export +</text>
+  <text x="704" y="207" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Validate</text>
+  <text x="704" y="220" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.72">GeoJSON / Parquet</text>
+  <!-- Destination label -->
+  <text x="704" y="248" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.65">→ Label Studio / QGIS</text>
 </svg>
 
 Every stage must accept the same tile identifier as input and produce an idempotent output. Interrupted runs resume from the last successfully checkpointed tile without duplicating geometries.
@@ -205,7 +214,7 @@ def validate_raster(raster_path: Path) -> dict:
         }
 ```
 
-If `epsg` returns `None`, the CRS is non-standard (common with older aerial survey files). Convert explicitly to a known `EPSG` before proceeding — see [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) for the standard reprojection pattern.
+If `epsg` returns `None`, the CRS is non-standard (common with older aerial survey files). Convert explicitly to a known EPSG code before proceeding — the [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page covers the standard reprojection pattern.
 
 ### Step 2 — Tiling with Windowed Reads
 
@@ -358,10 +367,11 @@ Apply `make_valid` from Shapely immediately after construction. Contour extracti
 
 ### Step 5 — Confidence Filtering and Tile-Boundary Deduplication
 
-Two-stage filtering removes noise before the merge step. Calibrate thresholds on a 200-tile validation split of manually labeled imagery.
+Two-stage filtering removes noise before the merge step. Calibrate thresholds on a 200-tile validation split of manually labeled imagery. Assign per-annotation [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as attributes so annotation platforms can prioritize low-confidence candidates for human review.
 
 ```python
 from shapely.ops import unary_union
+from shapely.validation import make_valid
 
 def filter_predictions(
     gdf: gpd.GeoDataFrame,
@@ -407,7 +417,7 @@ For regional datasets with millions of predictions, replace the O(n²) loop with
 
 ### Step 6 — Export and Platform Integration
 
-Serialize to GeoJSON or GeoParquet with a mandatory metadata schema. Assign per-annotation [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as attributes so annotation platforms can prioritize low-confidence candidates for human review.
+Serialize to GeoJSON or GeoParquet with a mandatory metadata schema. Reproject to [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS 84) for direct import into Label Studio without additional reprojection steps. GeoParquet is preferred for datasets exceeding 50,000 annotations — it compresses 5–10× compared to GeoJSON and retains geometry precision without floating-point truncation.
 
 ```python
 import json
@@ -438,8 +448,6 @@ def export_prelabels(
     return output_path
 ```
 
-Exporting to `EPSG:4326` (WGS 84) allows direct import into [Label Studio with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) without additional reprojection. GeoParquet is preferred for datasets exceeding 50,000 annotations — it compresses 5–10× compared to GeoJSON and retains geometry precision without floating-point truncation.
-
 ---
 
 ## Spatial Parameters & Configuration Reference
@@ -459,9 +467,17 @@ Exporting to `EPSG:4326` (WGS 84) allows direct import into [Label Studio with g
 
 ## Edge Cases and Spatial Failure Modes
 
-**Tile affine transform dropped during multiprocessing.** When tiles are processed with `multiprocessing.Pool`, Python pickles the tile array but not the associated `Affine` object if it is not explicitly included in the task tuple. All polygon coordinates silently map to pixel-space (0, 0) origin. Fix: always bundle `(tile_array, affine, tile_id, crs_wkt)` as a single serializable unit.
+<details>
+<summary><strong>Tile affine transform dropped during multiprocessing</strong></summary>
 
-**Mixed CRS sources in a mosaic.** If the input raster is a mosaic assembled from tiles with different source CRSes, `rasterio.open` may report the dominant CRS while individual tiles carry offset geometry. Validate by checking that a sample of output polygons land within the declared bounding box of the raster:
+When tiles are processed with `multiprocessing.Pool`, Python pickles the tile array but not the associated `Affine` object if it is not explicitly included in the task tuple. All polygon coordinates silently map to pixel-space (0, 0) origin. Fix: always bundle `(tile_array, affine, tile_id, crs_wkt)` as a single serializable unit so the geotransform travels with the pixels into every worker process.
+
+</details>
+
+<details>
+<summary><strong>Mixed CRS sources in a mosaic</strong></summary>
+
+If the input raster is a mosaic assembled from tiles with different source CRSes, `rasterio.open` may report the dominant CRS while individual tiles carry offset geometry. Validate by checking that a sample of output polygons land within the declared bounding box of the raster:
 
 ```python
 from shapely.geometry import box as shapely_box
@@ -473,11 +489,28 @@ def assert_geom_in_bounds(gdf: gpd.GeoDataFrame, raster_bounds: tuple) -> None:
         raise AssertionError(f"{len(outside)} predictions fall outside raster bounds — CRS mismatch suspected.")
 ```
 
-**Self-intersecting polygons from noisy contours.** SAM masks on low-contrast imagery (fog, haze, uniform rooftops) produce jagged contours with figure-eight topology. `Shapely` operations on these raise `TopologicalError`. Always call `make_valid` immediately after contour-to-polygon conversion, not as a post-processing step — by then a spatial join may already have silently dropped the geometry.
+</details>
 
-**Confidence score inflation from radiometric imbalances.** Models trained on standard RGB imagery report inflated confidence on tiles with unusual radiometric properties (sensor saturation, shadow masking, seasonal reflectance shifts). Cross-validate confidence distributions against a held-out validation set whenever you process imagery from a new sensor or acquisition date.
+<details>
+<summary><strong>Self-intersecting polygons from noisy contours</strong></summary>
 
-**Datum shift when mixing `EPSG:4326` and `EPSG:4269` (NAD83).** For North American datasets, treating WGS 84 and NAD83 as identical introduces up to 1.5 m offset. At a 0.3 m GSD, this shifts polygon centroids by 5 pixel widths. Explicitly declare the datum in all `CRS.from_epsg()` calls and use PROJ with datum grid files enabled.
+SAM masks on low-contrast imagery (fog, haze, uniform rooftops) produce jagged contours with figure-eight topology. `Shapely` operations on these raise `TopologicalError`. Always call `make_valid` immediately after contour-to-polygon conversion, not as a post-processing step — by then a spatial join may already have silently dropped the geometry.
+
+</details>
+
+<details>
+<summary><strong>Confidence score inflation from radiometric imbalances</strong></summary>
+
+Models trained on standard RGB imagery report inflated confidence on tiles with unusual radiometric properties (sensor saturation, shadow masking, seasonal reflectance shifts). Cross-validate confidence distributions against a held-out validation set whenever you process imagery from a new sensor or acquisition date.
+
+</details>
+
+<details>
+<summary><strong>Datum shift when mixing <code>EPSG:4326</code> and <code>EPSG:4269</code> (NAD83)</strong></summary>
+
+For North American datasets, treating WGS 84 and NAD83 as identical introduces up to 1.5 m offset. At a 0.3 m GSD, this shifts polygon centroids by 5 pixel widths. Explicitly declare the datum in all `CRS.from_epsg()` calls and use PROJ with datum grid files enabled.
+
+</details>
 
 ---
 
@@ -485,7 +518,7 @@ def assert_geom_in_bounds(gdf: gpd.GeoDataFrame, raster_bounds: tuple) -> None:
 
 ### Label Studio Pre-Annotation Integration
 
-Push pre-labels as Label Studio pre-annotations using the SDK, filtered to a specific confidence band to surface the most uncertain candidates first:
+Push pre-labels as Label Studio pre-annotations using the SDK, filtered to a specific confidence band to surface the most uncertain candidates first. See [integrating Label Studio with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) for full platform setup, S3/GCS storage sync, and per-annotator quality scoring.
 
 ```python
 from label_studio_sdk import Client
@@ -546,7 +579,7 @@ When `confidence_threshold` changes in the config, DVC invalidates and re-runs o
 
 ## Validation and Testing
 
-Run these assertions before committing pre-labels to storage or pushing to an annotation platform:
+Run these assertions before committing pre-labels to storage or pushing to an annotation platform. Teams producing training data for safety-critical applications (flood mapping, infrastructure inspection) should also compute [IoU thresholds](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) against a held-out labeled reference to quantify pre-label quality before human review begins.
 
 ```python
 import pytest
@@ -581,18 +614,18 @@ def validate_prelabel_output(output_path: Path, raster_meta: dict) -> None:
     print(f"Validation passed: {len(gdf)} pre-labels ready for annotation review.")
 ```
 
-Add these assertions as a `pytest` suite and run them as a CI gate using GitHub Actions or as a DVC `check` stage. Teams producing training data for safety-critical applications (flood mapping, infrastructure inspection) should also compute [IoU thresholds](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) against a held-out labeled reference to quantify pre-label quality before human review begins.
+Add these assertions as a `pytest` suite and run them as a CI gate using GitHub Actions or as a DVC `check` stage.
 
 ---
 
-## Production Hardening Checklist
+## Production Readiness Checklist
 
 - [ ] CRS validated and EPSG resolved before tile generation begins
 - [ ] Affine transform bundled with each tile task in multiprocessing pool
 - [ ] `make_valid` called immediately after contour-to-polygon conversion
 - [ ] Per-tile GeoParquet checkpoints written before next tile starts (idempotent resume)
-- [ ] Confidence threshold calibrated against ≥ 200 manually labeled validation tiles
-- [ ] Spatial NMS run with `sindex` for datasets > 100,000 predictions
+- [ ] Confidence threshold calibrated against at least 200 manually labeled validation tiles
+- [ ] Spatial NMS run with `sindex` for datasets with more than 100,000 predictions
 - [ ] `assert_geom_in_bounds` check passes on sample before full export
 - [ ] Required metadata schema validated with `pydantic` or assertion block
 - [ ] Export CRS matches target annotation platform expectations (`EPSG:4326` for Label Studio)
@@ -606,7 +639,6 @@ Add these assertions as a `pytest` suite and run them as a CI gate using GitHub 
 - [Converting Label Studio Exports to YOLOv8 Format](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/) — format-conversion workflow for the downstream training step
 - [Human-in-the-Loop Validation Cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — how to structure the review queue, track edit distance, and feed corrections back into the model
 - [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — platform setup, S3/GCS storage sync, and per-annotator quality scoring
-- [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — desktop review environment for high-precision polygon correction
 - [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version the raw tiles, pre-labels, and corrected annotations as a reproducible pipeline
 
 This workflow is one component of the broader [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) pipeline.

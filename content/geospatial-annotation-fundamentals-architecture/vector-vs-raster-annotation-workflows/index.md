@@ -8,68 +8,77 @@ datePublished: "2025-11-10"
 dateModified: "2026-06-24"
 ---
 
-```json
-[
-  {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    "headline": "Vector vs Raster Annotation Workflows for Geospatial ML",
-    "description": "A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers.",
-    "datePublished": "2025-11-10",
-    "dateModified": "2026-06-24",
-    "author": {"@type": "Organization", "name": "Geospatial Annotation"}
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-      {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-      {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"}
-    ]
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "HowTo",
-    "name": "How to Choose and Implement Vector or Raster Annotation Workflows",
-    "step": [
-      {"@type": "HowToStep", "position": 1, "name": "Align prerequisites and toolchain"},
-      {"@type": "HowToStep", "position": 2, "name": "Validate source imagery CRS and tiling scheme"},
-      {"@type": "HowToStep", "position": 3, "name": "Implement vector delineation and topology enforcement"},
-      {"@type": "HowToStep", "position": 4, "name": "Rasterize annotations using exact affine transform"},
-      {"@type": "HowToStep", "position": 5, "name": "Validate masks against source extent"},
-      {"@type": "HowToStep", "position": 6, "name": "Hook validation into CI gates"}
-    ]
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    "mainEntity": [
-      {
-        "@type": "Question",
-        "name": "Should I store annotations as vector or raster for deep learning?",
-        "acceptedAnswer": {"@type": "Answer", "text": "Store as vector for maximum editability and disk efficiency; rasterize at the data-loader stage (lazy rasterization) to give deep learning frameworks pixel-aligned masks without duplicating storage."}
-      },
-      {
-        "@type": "Question",
-        "name": "What causes boundary artifacts in rasterized annotation masks?",
-        "acceptedAnswer": {"@type": "Answer", "text": "Mismatched affine transforms between the source imagery and the rasterization call, or using bilinear/cubic interpolation instead of nearest-neighbour. Always rasterize with the exact transform copied from the source GeoTIFF."}
-      },
-      {
-        "@type": "Question",
-        "name": "How do I validate that a GeoJSON annotation file is topology-safe?",
-        "acceptedAnswer": {"@type": "Answer", "text": "Use shapely.is_valid on every geometry; repair self-intersections with make_valid() or buffer(0). Run these checks as a pre-commit hook or CI step before the annotations are merged into the dataset."}
-      }
-    ]
-  }
-]
-```
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "Vector vs Raster Annotation Workflows for Geospatial ML",
+      "description": "A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers.",
+      "datePublished": "2025-11-10",
+      "dateModified": "2026-06-24",
+      "author": {"@type": "Organization", "name": "Geospatial Annotation"},
+      "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "How to Choose and Implement Vector or Raster Annotation Workflows",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Align prerequisites and toolchain", "text": "Pin geopandas, shapely, rasterio, and pyproj versions; verify GDAL and PROJ system libraries."},
+        {"@type": "HowToStep", "position": 2, "name": "Validate source imagery CRS and tiling scheme", "text": "Extract affine transform, shape, and CRS from every GeoTIFF tile; store in sidecar JSON."},
+        {"@type": "HowToStep", "position": 3, "name": "Implement vector delineation and topology enforcement", "text": "Load annotations, enforce CRS alignment, repair self-intersections with make_valid(), validate schema."},
+        {"@type": "HowToStep", "position": 4, "name": "Rasterize annotations using exact affine transform", "text": "Use rasterio.features.rasterize with the template GeoTIFF transform; write uint8 mask with lossless compression."},
+        {"@type": "HowToStep", "position": 5, "name": "Validate masks against source extent", "text": "Assert CRS match, affine transform identity, shape equality, and class-ID coverage before committing."},
+        {"@type": "HowToStep", "position": 6, "name": "Hook validation into CI gates", "text": "Register topology validation and rasterization as DVC pipeline stages; add a pre-commit hook on .geojson files."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Should I store annotations as vector or raster for deep learning?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Store as vector for maximum editability and disk efficiency; rasterize at the data-loader stage (lazy rasterization) to give deep learning frameworks pixel-aligned masks without duplicating storage."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What causes boundary artifacts in rasterized annotation masks?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mismatched affine transforms between the source imagery and the rasterization call, or using bilinear/cubic interpolation instead of nearest-neighbour. Always rasterize with the exact transform copied from the source GeoTIFF."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I validate that a GeoJSON annotation file is topology-safe?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Use shapely.is_valid on every geometry; repair self-intersections with make_valid() or buffer(0). Run these checks as a pre-commit hook or CI step before the annotations are merged into the dataset."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 
 # Vector vs Raster Annotation Workflows for Geospatial ML
 
-The choice between vector and raster annotation formats is an architectural decision that propagates through every stage of a geospatial ML pipeline: storage costs, preprocessing complexity, model architecture compatibility, and inference latency all depend on it. A poorly chosen format discovered mid-project means weeks of reprocessing. The failure scenario is concrete: a segmentation team annotates 50,000 tiles in raw PNG masks at full resolution, only to learn their object-detection model expects polygon-level instance IDs — every annotation must be re-exported, CRS realigned, and rasterized from scratch.
+The choice between vector and raster annotation formats is an architectural decision that propagates through every stage of a geospatial ML pipeline: storage costs, preprocessing complexity, model architecture compatibility, and inference latency all depend on it. A poorly chosen format discovered mid-project means weeks of reprocessing. The failure scenario is concrete: a segmentation team annotates 50,000 tiles in raw PNG masks at full resolution, only to learn their object-detection model expects polygon-level instance IDs — every annotation must be re-exported, [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) realigned, and rasterized from scratch.
 
-This page gives you the step-by-step implementation for both workflows, a decision matrix, and the spatial-specific gotchas that cause silent pipeline failures. For the foundational concepts that underpin both approaches, see the [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) pillar.
+This page gives you the step-by-step implementation for both workflows, a decision matrix, and the spatial-specific gotchas that cause silent pipeline failures. For the foundational concepts that underpin both approaches, see [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
 
 ---
 
@@ -91,7 +100,7 @@ Before choosing a format, confirm the following are locked in. Misaligned prereq
 
 1. **Source imagery metadata:** Verify GeoTIFF bit depth, band order, compression (LZW vs DEFLATE), and tile boundaries before annotation begins. Inconsistent tiling schemes produce boundary artifacts during rasterization and break spatial joins between adjacent tiles.
 2. **[Label taxonomy](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/):** Establish a controlled class vocabulary with mutually exclusive categories and explicit boundary rules before any annotation starts. A taxonomy revised mid-project requires back-annotating all existing labels.
-3. **[Coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (CRS) contract:** All annotation outputs must share the exact CRS as the source imagery. Sub-pixel misalignment from mixing `EPSG:4326` geographic coordinates with a projected CRS such as `EPSG:32618` (UTM zone 18N) distorts IoU calculations and breaks spatial indexing.
+3. **CRS contract:** All annotation outputs must share the exact CRS as the source imagery. Sub-pixel misalignment from mixing `EPSG:4326` geographic coordinates with a projected CRS such as `EPSG:32618` (UTM zone 18N) distorts IoU calculations and breaks spatial indexing.
 
 ---
 
@@ -99,49 +108,49 @@ Before choosing a format, confirm the following are locked in. Misaligned prereq
 
 The diagram below shows how vector annotations and raster masks fit into the same pipeline — the recommended hybrid stores vector annotations on disk and rasterizes lazily at the data-loader stage.
 
-<svg viewBox="0 0 780 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vector and raster annotation pipeline architecture" style="width:100%;max-width:780px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vector and raster annotation pipeline architecture" style="width:100%;max-width:800px;height:auto;display:block;margin:1.5rem auto;">
   <title>Vector and raster annotation pipeline architecture</title>
   <desc>Flowchart showing source imagery ingested into the annotation tool, producing vector annotations (GeoJSON/GeoPackage) that are validated and stored in version control. At training time, a data loader rasterizes vectors to pixel masks on the fly, feeding both object detection and segmentation model heads.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <marker id="arr-vr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
     </marker>
   </defs>
   <!-- Source imagery box -->
-  <rect x="10" y="130" width="140" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-  <text x="80" y="154" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Source Imagery</text>
-  <text x="80" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoTIFF / COG</text>
+  <rect x="10" y="142" width="145" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="82" y="166" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Source Imagery</text>
+  <text x="82" y="182" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoTIFF / COG</text>
   <!-- Annotation tool -->
-  <rect x="195" y="130" width="140" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-  <text x="265" y="154" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Annotation Tool</text>
-  <text x="265" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">QGIS / Label Studio</text>
+  <rect x="200" y="142" width="145" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="272" y="166" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Annotation Tool</text>
+  <text x="272" y="182" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">QGIS / Label Studio</text>
   <!-- Vector store -->
-  <rect x="385" y="60" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-  <text x="460" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Vector Annotations</text>
-  <text x="460" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoJSON / GeoPackage</text>
+  <rect x="394" y="64" width="160" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="474" y="88" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Vector Annotations</text>
+  <text x="474" y="104" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">GeoJSON / GeoPackage</text>
   <!-- Validation -->
-  <rect x="385" y="200" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-  <text x="460" y="224" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Validation Gate</text>
-  <text x="460" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">topology + CRS + schema</text>
+  <rect x="394" y="220" width="160" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="474" y="244" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Validation Gate</text>
+  <text x="474" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">topology + CRS + schema</text>
   <!-- Data loader -->
-  <rect x="580" y="130" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-  <text x="655" y="154" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Data Loader</text>
-  <text x="655" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">lazy rasterize → mask</text>
+  <rect x="604" y="142" width="160" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="684" y="166" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Data Loader</text>
+  <text x="684" y="182" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">lazy rasterize → mask</text>
   <!-- Model heads -->
-  <rect x="580" y="38" width="150" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
-  <text x="655" y="58" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Object Detection</text>
-  <text x="655" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">bounding box / polygon</text>
-  <rect x="580" y="242" width="150" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
-  <text x="655" y="262" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Segmentation</text>
-  <text x="655" y="278" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">pixel mask → CNN/ViT</text>
+  <rect x="604" y="40" width="160" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+  <text x="684" y="61" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Object Detection</text>
+  <text x="684" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">bounding box / polygon</text>
+  <rect x="604" y="252" width="160" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+  <text x="684" y="273" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Segmentation</text>
+  <text x="684" y="290" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">pixel mask → CNN/ViT</text>
   <!-- Arrows -->
-  <line x1="150" y1="158" x2="193" y2="158" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <line x1="335" y1="148" x2="383" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <line x1="335" y1="168" x2="383" y2="218" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <line x1="535" y1="88" x2="578" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <line x1="535" y1="228" x2="578" y2="168" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <line x1="730" y1="148" x2="730" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
-  <line x1="730" y1="186" x2="730" y2="242" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.7"/>
+  <line x1="155" y1="170" x2="198" y2="170" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-vr)" opacity="0.7"/>
+  <line x1="345" y1="155" x2="392" y2="105" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-vr)" opacity="0.7"/>
+  <line x1="345" y1="185" x2="392" y2="235" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-vr)" opacity="0.7"/>
+  <line x1="554" y1="92" x2="602" y2="152" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-vr)" opacity="0.7"/>
+  <line x1="554" y1="248" x2="602" y2="188" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-vr)" opacity="0.7"/>
+  <line x1="764" y1="142" x2="764" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-vr)" opacity="0.7"/>
+  <line x1="764" y1="198" x2="764" y2="252" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-vr)" opacity="0.7"/>
 </svg>
 
 ---
@@ -261,7 +270,6 @@ from rasterio.transform import Affine
 import numpy as np
 import geopandas as gpd
 import logging
-import json
 
 def generate_raster_mask(
     vector_path: str,
@@ -426,7 +434,8 @@ After annotation sessions, a webhook or post-export script should immediately ru
 
 ```python
 # label_studio_export_hook.py
-import subprocess, sys, json, pathlib
+import subprocess
+import sys
 
 def on_export_complete(export_path: str, target_epsg: int = 32618) -> None:
     """Called by Label Studio export webhook — validates before committing to dataset."""
@@ -443,7 +452,7 @@ For deeper [Label Studio integration](/labeling-workflows-toolchain-integration/
 
 ### DVC pipeline stage
 
-Register vector validation and rasterization as explicit DVC pipeline stages so dataset provenance is tracked end-to-end:
+Register vector validation and rasterization as explicit [DVC pipeline](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stages so dataset provenance is tracked end-to-end:
 
 ```yaml
 # dvc.yaml

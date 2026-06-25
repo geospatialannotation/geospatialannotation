@@ -9,7 +9,7 @@ breadcrumb:
   - label: "Preserving Metadata Across Dataset Versions"
     url: "/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/"
 datePublished: "2025-03-12"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -21,7 +21,7 @@ dateModified: "2026-06-24"
       "headline": "Preserving Metadata Across Dataset Versions",
       "description": "A production workflow for extracting, serializing, and versioning geospatial metadata — CRS, affine transforms, acquisition timestamps, and annotation provenance — so spatial context survives every pipeline iteration.",
       "datePublished": "2025-03-12",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": { "@type": "Organization", "name": "Geospatial Annotation" },
       "publisher": { "@type": "Organization", "name": "Geospatial Annotation" }
     },
@@ -72,58 +72,69 @@ dateModified: "2026-06-24"
 
 Geospatial ML pipelines fail silently when [coordinate reference systems](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving this metadata is not optional hygiene — it is a structural requirement for reproducible training, regulatory compliance, and model auditability.
 
-The failure scenario is routine: an annotation team delivers a new batch of GeoTIFF tiles. A data engineer runs a tiling script. PIL or OpenCV strips the GeoTIFF headers. Training ingests tiles that are now `EPSG:4326`-free pixel arrays. A downstream inference job applies `EPSG:32633` coordinates. IoU metrics collapse because every bounding box is offset by hundreds of meters. No exception is raised.
+The failure scenario is routine: an annotation team delivers a new batch of GeoTIFF tiles. A data engineer runs a tiling script. PIL or OpenCV strips the GeoTIFF headers. Training ingests tiles that are now `EPSG:4326`-free pixel arrays. A downstream inference job applies `EPSG:32633` UTM coordinates. IoU metrics collapse because every bounding box is offset by hundreds of meters. No exception is raised.
 
 This guide builds a production-ready workflow for extracting, serializing, and versioning geospatial metadata alongside training data so that scenario never reaches production.
 
-<svg viewBox="0 0 820 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Metadata preservation pipeline: raw spatial data flows through extraction, normalization, sidecar generation, hash manifest, and version commit stages" style="width:100%;max-width:820px;display:block;margin:2rem auto;">
+<svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Metadata preservation pipeline: raw spatial data flows through extraction, normalization, sidecar generation, hash manifest, and version commit stages" style="width:100%;max-width:820px;display:block;margin:2rem auto;">
   <title>Metadata Preservation Pipeline</title>
-  <desc>Five-stage pipeline showing how spatial metadata flows from raw files through extraction and normalization into YAML sidecars, SHA-256 manifests, and finally a versioned dataset commit.</desc>
+  <desc>Five-stage pipeline showing how spatial metadata flows from raw files through extraction and normalization into YAML sidecars, SHA-256 manifests, and finally a versioned dataset commit. Each stage is connected by arrows. Below the stages, a dashed line marks where spatial context is preserved across every step.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <marker id="arr-meta" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <rect x="10" y="80" width="130" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="75" y="118" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Raw Spatial</text>
-  <text x="75" y="133" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Data</text>
-  <text x="75" y="152" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">GeoTIFF · COG</text>
-  <text x="75" y="166" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">GeoJSON · GPKG</text>
-  <rect x="170" y="80" width="130" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="235" y="118" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Extract &amp;</text>
-  <text x="235" y="133" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Normalize</text>
-  <text x="235" y="152" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">CRS → EPSG/WKT2</text>
-  <text x="235" y="166" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">UTC timestamps</text>
-  <rect x="330" y="80" width="130" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="395" y="118" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">YAML Sidecar</text>
-  <text x="395" y="133" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Generation</text>
-  <text x="395" y="152" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">driver-agnostic</text>
-  <text x="395" y="166" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">human-readable</text>
-  <rect x="490" y="80" width="130" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="555" y="118" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">SHA-256</text>
-  <text x="555" y="133" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Manifest</text>
-  <text x="555" y="152" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">data + sidecar</text>
-  <text x="555" y="166" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">hashes paired</text>
-  <rect x="650" y="80" width="130" height="100" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <text x="715" y="118" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Versioned</text>
-  <text x="715" y="133" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Commit</text>
-  <text x="715" y="152" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">DVC + Git</text>
-  <text x="715" y="166" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">CI validation gate</text>
-  <!-- Arrows -->
-  <line x1="142" y1="130" x2="168" y2="130" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="302" y1="130" x2="328" y2="130" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="462" y1="130" x2="488" y2="130" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="622" y1="130" x2="648" y2="130" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
   <!-- Stage labels -->
-  <text x="75" y="72" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 1</text>
-  <text x="235" y="72" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 2</text>
-  <text x="395" y="72" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 3</text>
-  <text x="555" y="72" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 4</text>
-  <text x="715" y="72" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 5</text>
+  <text x="75" y="22" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 1</text>
+  <text x="235" y="22" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 2</text>
+  <text x="395" y="22" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 3</text>
+  <text x="555" y="22" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 4</text>
+  <text x="715" y="22" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.5" letter-spacing="0.5">STAGE 5</text>
+  <!-- Stage boxes -->
+  <rect x="10" y="32" width="130" height="108" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
+  <text x="75" y="64" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Raw Spatial</text>
+  <text x="75" y="80" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Data</text>
+  <text x="75" y="102" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">GeoTIFF · COG</text>
+  <text x="75" y="118" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">GeoJSON · GPKG</text>
+  <rect x="170" y="32" width="130" height="108" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
+  <text x="235" y="64" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Extract &amp;</text>
+  <text x="235" y="80" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Normalize</text>
+  <text x="235" y="102" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">CRS → EPSG/WKT2</text>
+  <text x="235" y="118" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">UTC timestamps</text>
+  <rect x="330" y="32" width="130" height="108" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
+  <text x="395" y="64" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">YAML Sidecar</text>
+  <text x="395" y="80" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Generation</text>
+  <text x="395" y="102" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">driver-agnostic</text>
+  <text x="395" y="118" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">human-readable</text>
+  <rect x="490" y="32" width="130" height="108" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
+  <text x="555" y="64" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">SHA-256</text>
+  <text x="555" y="80" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Manifest</text>
+  <text x="555" y="102" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">data + sidecar</text>
+  <text x="555" y="118" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">hashes paired</text>
+  <rect x="650" y="32" width="130" height="108" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
+  <text x="715" y="64" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Versioned</text>
+  <text x="715" y="80" text-anchor="middle" font-size="11" font-family="inherit" fill="currentColor" font-weight="600">Commit</text>
+  <text x="715" y="102" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">DVC + Git</text>
+  <text x="715" y="118" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.7">CI validation gate</text>
+  <!-- Arrows -->
+  <line x1="142" y1="86" x2="168" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-meta)"/>
+  <line x1="302" y1="86" x2="328" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-meta)"/>
+  <line x1="462" y1="86" x2="488" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-meta)"/>
+  <line x1="622" y1="86" x2="648" y2="86" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-meta)"/>
   <!-- Metadata survival annotation -->
-  <line x1="170" y1="210" x2="620" y2="210" stroke="currentColor" stroke-width="1" opacity="0.3" stroke-dasharray="4,3"/>
-  <text x="395" y="228" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.55">spatial context preserved across every stage</text>
+  <line x1="170" y1="168" x2="620" y2="168" stroke="currentColor" stroke-width="1" opacity="0.3" stroke-dasharray="4,3"/>
+  <text x="395" y="188" text-anchor="middle" font-size="10" font-family="inherit" fill="currentColor" opacity="0.55">spatial context preserved across every stage</text>
+  <!-- Danger zone annotation -->
+  <rect x="10" y="210" width="640" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.15" stroke-dasharray="5,3"/>
+  <text x="330" y="233" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.45" letter-spacing="0.4">METADATA LOSS RISK ZONE</text>
+  <text x="75" y="258" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">PIL / CV2</text>
+  <text x="75" y="270" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">strips headers</text>
+  <text x="235" y="258" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">PROJ4 string</text>
+  <text x="235" y="270" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">ambiguity</text>
+  <text x="395" y="258" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">binary format</text>
+  <text x="395" y="270" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">driver limits</text>
+  <text x="555" y="258" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">partial write</text>
+  <text x="555" y="270" text-anchor="middle" font-size="9" font-family="inherit" fill="currentColor" opacity="0.4">crash desync</text>
 </svg>
 
 ## Prerequisites & Toolchain Alignment
@@ -163,7 +174,7 @@ The downstream impact is concrete:
 
 - **Projection mismatch:** a model trained on `EPSG:4326` coordinate space receives `EPSG:32633` UTM tiles during inference, causing spatial offsets of hundreds of meters
 - **Temporal drift:** acquisition timestamps are lost, breaking time-series models that depend on seasonal or diurnal patterns in multi-date stacks
-- **Annotation misalignment:** bounding boxes or polygon masks shift when affine transforms are applied during augmentation without updating the geotransform, causing the label geometry to disagree with the pixel geometry
+- **Annotation misalignment:** bounding boxes or polygon masks shift when affine transforms are applied during augmentation without updating the geotransform, causing the label geometry to disagree with the pixel geometry. This type of failure is closely related to the [annotation drift problems](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) that manifest across dataset versions
 - **Provenance gaps:** sensor ID, flight altitude, or annotation batch identifiers disappear, preventing post-hoc audits of model performance by data source
 
 Addressing these failures requires treating metadata as a first-class versioned artifact, not a byproduct stored in binary headers that survive only when the right driver flags are set.
@@ -400,9 +411,9 @@ def validate_sidecar_consistency(
 
 **Silent CRS override by GDAL defaults.** When a GeoTIFF has a missing or corrupt `GEOGCS` block, GDAL defaults to `EPSG:4326` without raising an error. The resulting CRS object is technically valid, but the coordinates are wrong. Mitigation: before processing any file, verify `src.crs is not None` and check `normalize_crs(src.crs)["epsg"] is not None`. Reject files that fail this guard.
 
-**Timestamp timezone drift.** GDAL's TIFFTAG_DATETIME stores local time without a UTC offset, and EXIF acquisition time is similarly ambiguous. If your sensor metadata reports `2024-08-14 06:30:00` without a timezone, you cannot know whether that is UTC, UTC+2, or local mission time. Mitigation: at ingest, require all timestamps to carry an explicit UTC offset; if missing, record them as `"unknown"` rather than assuming UTC.
+**Timestamp timezone drift.** GDAL's `TIFFTAG_DATETIME` stores local time without a UTC offset, and EXIF acquisition time is similarly ambiguous. If your sensor metadata reports `2024-08-14 06:30:00` without a timezone, you cannot know whether that is UTC, UTC+2, or local mission time. Mitigation: at ingest, require all timestamps to carry an explicit UTC offset; if missing, record them as `"unknown"` rather than assuming UTC.
 
-**Affine transform corruption during augmentation.** Random rotation augmentations applied at the pixel level without updating the affine transform produce annotation files whose polygon coordinates no longer align with the rotated image. This is the most common source of IoU collapse in augmented geospatial datasets. Mitigation: apply `rasterio.transform.AffineTransformer` or `pyproj.Transformer` to every annotation geometry after any spatial augmentation.
+**Affine transform corruption during augmentation.** Random rotation augmentations applied at the pixel level without updating the affine transform produce annotation files whose polygon coordinates no longer align with the rotated image. This is the most common source of IoU collapse in augmented geospatial datasets. Mitigation: apply `rasterio.transform.AffineTransformer` or `pyproj.Transformer` to every annotation geometry after any spatial augmentation. When evaluating how labels shift against detection windows, use the [IoU threshold guidelines for geospatial object detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) to set acceptance criteria.
 
 **Sidecar-data desync from partial commits.** A batch job that writes the raster but crashes before writing the sidecar leaves the manifest in a half-updated state. The next run will find a data SHA that has no matching sidecar SHA, which the validation step correctly rejects — but only if `validate_sidecar_consistency` is called before the training job starts. Wire this check into the CI gate, not just the ingestion script.
 
@@ -414,7 +425,7 @@ def validate_sidecar_consistency(
 
 ### DVC Integration
 
-Track the `metadata/` directory alongside data files so every `dvc repro` run captures sidecar state:
+Track the `metadata/` directory alongside data files so every `dvc repro` run captures sidecar state. The [DVC pipeline configuration for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) covers remote storage setup and caching strategies that complement this metadata tracking approach.
 
 ```yaml
 # dvc.yaml
@@ -481,7 +492,7 @@ jobs:
 
 ### Label Studio Provenance Injection
 
-When exporting annotated tasks from Label Studio, inject the dataset version tag and sidecar hash into each annotation's `meta` field so the training pipeline can trace every label back to its source version:
+When exporting annotated tasks from [Label Studio integrated with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/), inject the dataset version tag and sidecar hash into each annotation's `meta` field so the training pipeline can trace every label back to its source version:
 
 ```python
 import json
@@ -582,4 +593,5 @@ This workflow is one component of the broader [Dataset Versioning & Spatial Data
 - [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — storage orchestration and remote caching that consumes these metadata sidecars
 - [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — manifest-based drift detection for annotation files, complementing the raster metadata approach here
 - [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — what to do when metadata validation catches a version with silent CRS corruption
+- [Debugging Annotation Drift Across Dataset Versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — diagnosing the label shift that surfaces when affine transforms are not updated after augmentation
 - [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts underlying the normalization steps in this workflow

@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -284,7 +284,7 @@
       "headline": "How to Version Control Large Satellite Imagery Datasets",
       "description": "Step-by-step guide to versioning multi-gigabyte satellite imagery with DVC and Cloud-Optimized GeoTIFF: decouple binary rasters from Git, configure S3/GCS remotes, and maintain full dataset lineage for reproducible ML training.",
       "datePublished": "2025-03-12",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
     {
@@ -340,37 +340,46 @@
 <p>To version control large satellite imagery datasets, decouple binary rasters from your Git repository. Store code, configuration, and lightweight annotation exports in Git, and use <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Data Version Control (DVC)</a> to track multi-gigabyte raster files via cryptographic pointers. Convert raw scenes to Cloud-Optimized GeoTIFF (COG) or Zarr format before tracking so that remote storage supports HTTP range requests and chunked access. This keeps the repository lean, preserves full dataset lineage, and enables any team member or CI runner to reproduce a training snapshot exactly.</p>
 <hr>
 <!-- Inline SVG: architecture diagram showing Git + DVC + Cloud Storage layers -->
-<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram: Git tracks pointer files, DVC orchestrates transfers, cloud storage holds binary rasters" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram: Git tracks pointer files, DVC orchestrates transfers, cloud storage holds binary rasters" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Git + DVC + Cloud Storage versioning architecture for satellite imagery</title>
-  <desc>Three horizontal layers: Git repository holding .dvc pointer files and code at the top; DVC orchestration layer in the middle managing push, pull and checksums; Cloud object storage holding COG and Zarr rasters at the bottom. Arrows show bidirectional data flow between layers.</desc>
+  <desc>Three horizontal layers stacked vertically: Git repository at the top holding .dvc pointer files and code; DVC orchestration layer in the middle managing push, pull and checksums; Cloud object storage at the bottom holding COG and Zarr rasters. Labelled arrows on the left show commit/checkout going down and dvc pull going up between layers.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <marker id="arr-down" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+    <marker id="arr-up" markerWidth="8" markerHeight="8" refX="2" refY="3" orient="auto">
+      <path d="M8,0 L8,6 L0,3 z" fill="currentColor"/>
     </marker>
   </defs>
   <!-- Git layer -->
-  <rect x="20" y="20" width="680" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="36" y="46" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">Git Repository</text>
-  <text x="36" y="64" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">training_scripts/   dvc.yaml   data/imagery.dvc   annotations/*.geojson   .gitignore</text>
+  <rect x="80" y="16" width="580" height="68" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="96" y="42" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">Git Repository</text>
+  <text x="96" y="60" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">training_scripts/   dvc.yaml   data/imagery.dvc   annotations/*.geojson</text>
+  <!-- Arrow column: Git ↔ DVC -->
+  <line x1="40" y1="84" x2="40" y2="112" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-down)"/>
+  <text x="44" y="102" font-size="10" fill="currentColor" font-family="inherit" opacity="0.75">commit</text>
+  <line x1="36" y1="112" x2="36" y2="84" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-up)" stroke-dasharray="4 2"/>
+  <text x="44" y="122" font-size="10" fill="currentColor" font-family="inherit" opacity="0.75">checkout</text>
   <!-- DVC layer -->
-  <rect x="20" y="108" width="680" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
-  <text x="36" y="134" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">DVC Orchestration Layer</text>
-  <text x="36" y="152" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">SHA-256 checksums   dvc push / dvc pull   dvc repro (pipeline stages)   multipart transfer</text>
+  <rect x="80" y="116" width="580" height="68" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="96" y="142" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">DVC Orchestration Layer</text>
+  <text x="96" y="160" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">SHA-256 checksums   dvc push / dvc pull   dvc repro (pipeline stages)   multipart transfer</text>
+  <!-- Arrow column: DVC ↔ Cloud -->
+  <line x1="40" y1="184" x2="40" y2="212" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-down)"/>
+  <text x="44" y="202" font-size="10" fill="currentColor" font-family="inherit" opacity="0.75">push</text>
+  <line x1="36" y1="212" x2="36" y2="184" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-up)" stroke-dasharray="4 2"/>
+  <text x="44" y="222" font-size="10" fill="currentColor" font-family="inherit" opacity="0.75">pull</text>
   <!-- Cloud storage layer -->
-  <rect x="20" y="196" width="680" height="48" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="36" y="220" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">Cloud Object Storage</text>
-  <text x="36" y="236" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">s3://bucket/geodata/   scene_v1_cog.tif   scene_v2_cog.tif   timeseries.zarr/</text>
-  <!-- Arrows -->
-  <line x1="360" y1="84" x2="360" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="360" y1="108" x2="360" y2="84" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="4 2"/>
-  <line x1="360" y1="172" x2="360" y2="196" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="360" y1="196" x2="360" y2="172" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" stroke-dasharray="4 2"/>
-  <text x="370" y="100" font-size="10" fill="currentColor" font-family="inherit" opacity="0.65">commit / checkout</text>
-  <text x="370" y="188" font-size="10" fill="currentColor" font-family="inherit" opacity="0.65">push / pull</text>
+  <rect x="80" y="216" width="580" height="68" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="96" y="242" font-size="13" font-weight="600" fill="currentColor" font-family="inherit">Cloud Object Storage</text>
+  <text x="96" y="260" font-size="11" fill="currentColor" font-family="inherit" opacity="0.75">s3://bucket/geodata/   scene_v1_cog.tif   scene_v2_cog.tif   timeseries.zarr/</text>
 </svg>
 <h2 id="why-standard-git-breaks-on-satellite-imagery" tabindex="-1"><a class="header-anchor" href="#why-standard-git-breaks-on-satellite-imagery" aria-label="Permalink to section &quot;Why Standard Git Breaks on Satellite Imagery&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Standard Git Breaks on Satellite Imagery</h2>
 <p>Satellite scenes routinely exceed hundreds of gigabytes per acquisition. Git stores a full binary copy of every version of every committed file. Committing raw <code class="inline-code">.tif</code> or <code class="inline-code">.jp2</code> files causes repository size to compound linearly with dataset evolution, exhausts local disk space on developer machines, and makes CI/CD runners fail with out-of-memory errors during clone.</p>
 <p>Git LFS partially mitigates file size but introduces different problems for spatial workloads: it lacks native support for <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> metadata as a versioned entity, has no concept of chunked raster access, and can generate significant egress costs when pulling historical commits. DVC solves this by committing only a <code class="inline-code">.dvc</code> pointer file — a small YAML containing the file’s SHA-256 hash and storage path — while the binary lives in a scalable remote backend.</p>
+<h2 id="why-imagery-scale-makes-this-a-pipeline-bottleneck" tabindex="-1"><a class="header-anchor" href="#why-imagery-scale-makes-this-a-pipeline-bottleneck" aria-label="Permalink to section &quot;Why Imagery Scale Makes This a Pipeline Bottleneck&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Imagery Scale Makes This a Pipeline Bottleneck</h2>
+<p>At the scale typical in ML workflows — multi-temporal stacks for change detection, multi-sensor fusion campaigns, or high-resolution urban mapping — the naive approach of committing rasters to Git collapses in three predictable ways. First, repository clone time grows proportionally to total historical binary size, breaking CI/CD environment setup. Second, reproducing a past experiment requires reconstructing every dataset version from scratch because there is no content-addressable cache. Third, team members on bandwidth-constrained connections (field offices, overseas contractors) cannot participate in dataset pulls at all.</p>
+<p>The combination of DVC pointers in Git and COG-formatted rasters in object storage fixes all three problems: clones stay under a few megabytes regardless of dataset size, any historical version is reproducible by checking out the pointer file and running <code class="inline-code">dvc pull</code>, and remote caches mean that unchanged files are never re-transferred. This same mechanism also integrates cleanly with <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA-based annotation tracking</a> so that raster and vector versions stay in lockstep.</p>
 <h2 id="step-by-step-implementation" tabindex="-1"><a class="header-anchor" href="#step-by-step-implementation" aria-label="Permalink to section &quot;Step-by-Step Implementation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step Implementation</h2>
 <h3 id="step-1-convert-raw-imagery-to-cloud-optimized-geotiff" tabindex="-1"><a class="header-anchor" href="#step-1-convert-raw-imagery-to-cloud-optimized-geotiff" aria-label="Permalink to section &quot;Step 1: Convert Raw Imagery to Cloud-Optimized GeoTIFF&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1: Convert Raw Imagery to Cloud-Optimized GeoTIFF</h3>
 <p>Before tracking with DVC, convert each scene to COG format. COG files interleave tile overviews and data internally, so cloud storage can serve HTTP range requests against individual tiles without fetching the full file. The GDAL COG driver handles this:</p>
@@ -645,30 +654,30 @@ dvc pull
 <td>Saturates typical gigabit egress</td>
 </tr>
 <tr>
-<td><code class="inline-code">EPSG:4326</code></td>
-<td>Raw storage CRS</td>
+<td>Storage CRS</td>
+<td><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:4326</code></a></td>
 <td>Store native; reproject in a DVC pipeline stage</td>
 </tr>
 </tbody>
 </table>
-</div><p>The first time imagery in <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:4326</code></a> is ingested, record the source CRS explicitly in a <code class="inline-code">dataset_metadata.json</code> sidecar committed to Git. This prevents silent CRS drift when future contributors add scenes from different acquisition providers.</p>
+</div><p>The first time imagery is ingested, record the source CRS explicitly in a <code class="inline-code">dataset_metadata.json</code> sidecar committed to Git. This prevents silent CRS drift when future contributors add scenes from different acquisition providers. See <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> for a schema that captures acquisition timestamp, sensor type, and spatial resolution alongside the CRS.</p>
 <h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common Errors and Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors and Fixes</h2>
-<p><strong><code class="inline-code">dvc push</code> hangs or times out on large files</strong>
+<p><code class="inline-code">dvc push</code> hangs or times out on large files
 : Root cause: default single-threaded upload. Fix: <code class="inline-code">dvc remote modify geospatial-remote jobs 8</code> to enable parallel multipart transfer.</p>
-<p><strong><code class="inline-code">rasterio.errors.NotGeoreferencedWarning</code> during COG validation</strong>
+<p><code class="inline-code">rasterio.errors.NotGeoreferencedWarning</code> during COG validation
 : Root cause: the input file lacks a geotransform — the file has no embedded CRS. Fix: run <code class="inline-code">gdal_edit.py -a_srs EPSG:4326 input.tif</code> to embed the projection before conversion.</p>
-<p><strong><code class="inline-code">.dvc</code> pointer file shows <code class="inline-code">md5: null</code></strong>
+<p><code class="inline-code">.dvc</code> pointer file shows <code class="inline-code">md5: null</code>
 : Root cause: <code class="inline-code">dvc add</code> was run before <code class="inline-code">dvc init</code> completed or the <code class="inline-code">.dvc/</code> directory is missing. Fix: confirm <code class="inline-code">git status</code> shows <code class="inline-code">.dvc/config</code> tracked, delete the broken <code class="inline-code">.dvc</code> file, and re-run <code class="inline-code">dvc add</code>.</p>
-<p><strong><code class="inline-code">git commit</code> includes gigabyte-scale files instead of pointer</strong>
+<p><code class="inline-code">git commit</code> includes gigabyte-scale files instead of pointer
 : Root cause: <code class="inline-code">.gitignore</code> was not updated by <code class="inline-code">dvc add</code> (possible permissions issue). Fix: manually verify that the imagery directory path appears in <code class="inline-code">.gitignore</code>, then re-stage and commit.</p>
 <hr>
-<p>This workflow is one component of the broader <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> pipeline, which covers multi-stage <code class="inline-code">dvc.yaml</code> orchestration, preprocessing locks, and experiment reproduction at scale.</p>
+<p>This workflow is one component of the broader <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> guide, which covers multi-stage <code class="inline-code">dvc.yaml</code> orchestration, preprocessing locks, and experiment reproduction at scale.</p>
 <p><strong>Related</strong></p>
 <ul>
-<li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> — parent cluster: DVC pipeline stages, remote auth, and <code class="inline-code">dvc repro</code> patterns</li>
+<li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> — parent guide: DVC pipeline stages, remote auth, and <code class="inline-code">dvc repro</code> patterns</li>
 <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> — keep CRS, geotransform, and acquisition timestamp in sync with binary snapshots</li>
 <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — extend content-addressable hashing to GeoJSON and COCO annotation exports</li>
-<li><a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> — pillar overview covering the full versioning architecture</li>
+<li><a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> — section overview covering the full versioning architecture</li>
 </ul>
 
 

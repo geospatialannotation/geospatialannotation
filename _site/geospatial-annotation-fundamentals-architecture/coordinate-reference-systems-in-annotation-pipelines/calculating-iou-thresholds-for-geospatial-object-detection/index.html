@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -284,7 +284,7 @@
       "headline": "Calculating IoU Thresholds for Geospatial Object Detection",
       "description": "How to compute projection-aware Intersection over Union (IoU) for aerial and satellite pipelines: CRS transformation with pyproj, topology validation with shapely, and GSD-calibrated threshold selection.",
       "datePublished": "2025-06-01",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -337,49 +337,33 @@
 }
 </script>
 <h1>Calculating IoU Thresholds for Geospatial Object Detection</h1>
-<p>Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits do not provide out of the box: reprojection from angular coordinates to a local metric <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a>, topology validation before any area computation, and threshold values calibrated to ground sample distance (GSD) and mission type. Transform all geometries to a UTM or state-plane CRS using <code class="inline-code">pyproj</code> 3.6+, validate with <code class="inline-code">shapely</code> 2.0+ <code class="inline-code">make_valid()</code>, then apply adaptive cutoffs in the 0.35–0.75 range rather than a fixed 0.50. Skipping any of these steps introduces projection-induced bias that silently corrupts precision/recall curves.</p>
+<p>Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits omit: reprojection from angular coordinates to a <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">local metric coordinate reference system</a> before any area computation, topology validation with <code class="inline-code">shapely</code> 2.0+ <code class="inline-code">make_valid()</code>, and threshold values calibrated to ground sample distance (GSD) and mission type. Reproject all geometries to a UTM or state-plane CRS using <code class="inline-code">pyproj</code> 3.6+, then apply adaptive cutoffs in the 0.35–0.75 range rather than a fixed 0.50. Skipping any of these steps introduces projection-induced bias that silently corrupts precision/recall curves.</p>
 <h2 id="why-unprojected-iou-breaks-aerial-pipelines" tabindex="-1"><a class="header-anchor" href="#why-unprojected-iou-breaks-aerial-pipelines" aria-label="Permalink to section &quot;Why Unprojected IoU Breaks Aerial Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Unprojected IoU Breaks Aerial Pipelines</h2>
-<p><code class="inline-code">EPSG:4326</code> (WGS84) stores coordinates as decimal degrees. A degree of longitude spans roughly 111 km at the equator but shrinks to near zero at high latitudes. When you compute intersection area directly in degree-squared units, a building in Helsinki occupies a smaller angular footprint than an identical building in Nairobi — even though both are the same physical size on the ground. The result is artificially suppressed IoU scores, false negatives during evaluation, and precision/recall curves that shift as your dataset spans different latitudes.</p>
-<p>Varying GSD compounds the problem. An annotation tolerance of ±2 pixels at 10 cm/pixel represents ±20 cm on the ground; at 50 cm/pixel the same pixel tolerance is ±100 cm. A 0.50 threshold that passes valid detections at high resolution will reject them at coarser resolution purely because boundary pixelation widens the mismatch — not because the model performed worse.</p>
-<svg viewBox="0 0 760 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing IoU pipeline: WGS84 input, reproject to metric CRS, validate topology, compute intersection/union in square metres, apply GSD-calibrated threshold" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
-  <title>Projection-aware IoU calculation pipeline</title>
-  <desc>Five sequential stages: WGS84 coordinates enter, are reprojected to a metric CRS, validated for topology, used to compute intersection and union in square metres, and finally matched against a GSD-calibrated IoU threshold.</desc>
-  <defs>
-    <marker id="arr" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
-    </marker>
-  </defs>
-  <!-- Stage boxes -->
-  <rect x="10" y="90" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="70" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Input coords</text>
-  <text x="70" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">EPSG:4326</text>
-  <rect x="160" y="90" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="225" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Reproject</text>
-  <text x="225" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">pyproj → UTM</text>
-  <rect x="320" y="90" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="385" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Validate</text>
-  <text x="385" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">make_valid()</text>
-  <rect x="480" y="90" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="545" y="109" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Compute IoU</text>
-  <text x="545" y="125" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">∩ / ∪ (m²)</text>
-  <text x="545" y="140" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif"> </text>
-  <rect x="640" y="90" width="108" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="694" y="113" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Threshold</text>
-  <text x="694" y="129" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">GSD-calibrated</text>
-  <!-- Arrows -->
-  <line x1="130" y1="118" x2="158" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="290" y1="118" x2="318" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="450" y1="118" x2="478" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <line x1="610" y1="118" x2="638" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr)"/>
-  <!-- Labels below -->
-  <text x="70" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">lat/lon pairs</text>
-  <text x="225" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">always_xy=True</text>
-  <text x="385" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">fix rings + self-∩</text>
-  <text x="545" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">exact area ratio</text>
-  <text x="694" y="170" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">0.35 – 0.75</text>
+<p><code class="inline-code">EPSG:4326</code> (WGS84) stores coordinates as decimal degrees; a degree of longitude spans roughly 111 km at the equator but shrinks near zero at high latitudes, so intersection area computed in degree-squared units is geographically meaningless and produces artificially suppressed IoU scores that shift as your dataset spans different latitudes. Varying GSD compounds the problem: an annotation tolerance of ±2 pixels at 10 cm/pixel is ±20 cm on the ground, but at 50 cm/pixel that same pixel tolerance is ±100 cm — a fixed 0.50 threshold that passes valid detections at high resolution will reject them at coarser resolution purely because boundary pixelation widens the mismatch, not because the model degraded.</p>
+<svg viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Geometric illustration of IoU: two overlapping polygons with intersection area shaded, labelled with the IoU formula" style="width:100%;max-width:520px;display:block;margin:1.5rem auto;">
+  <title>IoU geometric definition for geospatial polygons</title>
+  <desc>Two overlapping quadrilaterals representing a ground-truth annotation and a model prediction. The overlapping region is shaded and labelled Intersection. The combined area is labelled Union. The IoU formula IoU = Intersection divided by Union appears below.</desc>
+  <!-- Ground-truth polygon -->
+  <polygon points="60,60 240,50 260,190 50,200" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="2" stroke-opacity="0.7"/>
+  <!-- Prediction polygon -->
+  <polygon points="160,80 340,70 360,210 150,220" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3" stroke-opacity="0.7"/>
+  <!-- Intersection region (approximated as overlapping area) -->
+  <polygon points="160,80 240,50 260,190 150,220" fill="currentColor" opacity="0.25"/>
+  <!-- Labels -->
+  <text x="100" y="140" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.75" font-family="sans-serif">Ground truth</text>
+  <text x="320" y="120" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.75" font-family="sans-serif">Prediction</text>
+  <text x="205" y="148" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.95" font-family="sans-serif" font-weight="bold">∩</text>
+  <!-- Legend -->
+  <rect x="60" y="230" width="14" height="14" fill="currentColor" opacity="0.10" stroke="currentColor" stroke-width="1.5"/>
+  <text x="80" y="242" font-size="11" fill="currentColor" opacity="0.7" font-family="sans-serif">Union (∪) area</text>
+  <rect x="200" y="230" width="14" height="14" fill="currentColor" opacity="0.25"/>
+  <text x="220" y="242" font-size="11" fill="currentColor" opacity="0.7" font-family="sans-serif">Intersection (∩) area</text>
+  <!-- Formula -->
+  <text x="430" y="150" text-anchor="middle" font-size="13" fill="currentColor" opacity="0.85" font-family="sans-serif" font-weight="bold">IoU = ∩ / ∪</text>
+  <text x="430" y="169" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">compute in m², not degrees²</text>
 </svg>
 <h2 id="step-by-step-implementation" tabindex="-1"><a class="header-anchor" href="#step-by-step-implementation" aria-label="Permalink to section &quot;Step-by-Step Implementation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step Implementation</h2>
-<p>Each step below is a self-contained, runnable block. Install the required packages once:</p>
+<p>Install the required packages once:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">bash</span>
@@ -394,7 +378,7 @@
 </code></pre>
 </div>
 <h3 id="step-1-reproject-all-geometries-to-a-metric-crs" tabindex="-1"><a class="header-anchor" href="#step-1-reproject-all-geometries-to-a-metric-crs" aria-label="Permalink to section &quot;Step 1 — Reproject All Geometries to a Metric CRS&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Reproject All Geometries to a Metric CRS</h3>
-<p>Choose a UTM zone that covers your tile’s centroid. For a dataset at longitude 13.4°E (central Europe), <code class="inline-code">EPSG:32633</code> (UTM Zone 33N) is appropriate. Use <code class="inline-code">always_xy=True</code> to force (longitude, latitude) input order regardless of the CRS authority definition:</p>
+<p>Choose a UTM zone that covers your tile’s centroid. For a dataset at longitude 13.4°E (central Europe), <code class="inline-code">EPSG:32633</code> (UTM Zone 33N) is appropriate. Pass <code class="inline-code">always_xy=True</code> to force <code class="inline-code">(longitude, latitude)</code> input order regardless of CRS authority axis definitions:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -413,7 +397,7 @@
     <span class="token keyword">return</span> Transformer<span class="token punctuation">.</span>from_crs<span class="token punctuation">(</span>source_crs<span class="token punctuation">,</span> target_crs<span class="token punctuation">,</span> always_xy<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
 </code></pre>
 </div>
-<p>For global datasets spanning multiple UTM zones, derive the zone from the centroid longitude:</p>
+<p>For global datasets spanning multiple UTM zones, derive the zone automatically from each annotation’s centroid longitude:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -431,7 +415,7 @@
 </code></pre>
 </div>
 <h3 id="step-2-validate-topology-before-computing-area" tabindex="-1"><a class="header-anchor" href="#step-2-validate-topology-before-computing-area" aria-label="Permalink to section &quot;Step 2 — Validate Topology Before Computing Area&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Validate Topology Before Computing Area</h3>
-<p><code class="inline-code">shapely</code>’s <code class="inline-code">make_valid()</code> repairs self-intersecting rings and unclosed exteriors. Call it on every geometry — prediction and ground-truth — before any set operation:</p>
+<p><code class="inline-code">shapely</code>’s <code class="inline-code">make_valid()</code> repairs self-intersecting rings and unclosed exteriors. Call it on every geometry — prediction and ground-truth alike — before any set operation:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -460,7 +444,7 @@
 </code></pre>
 </div>
 <h3 id="step-3-compute-iou-in-metric-space" tabindex="-1"><a class="header-anchor" href="#step-3-compute-iou-in-metric-space" aria-label="Permalink to section &quot;Step 3 — Compute IoU in Metric Space&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Compute IoU in Metric Space</h3>
-<p>After reprojection and validation, the intersection and union areas are in square metres:</p>
+<p>After reprojection and validation, intersection and union areas are in square metres. Assign <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> alongside the IoU value when building evaluation logs — they let you weight borderline matches rather than applying a hard binary cut:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -497,7 +481,7 @@
 </code></pre>
 </div>
 <h3 id="step-4-apply-a-gsd-calibrated-threshold" tabindex="-1"><a class="header-anchor" href="#step-4-apply-a-gsd-calibrated-threshold" aria-label="Permalink to section &quot;Step 4 — Apply a GSD-Calibrated Threshold&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Apply a GSD-Calibrated Threshold</h3>
-<p>Wrap steps 1–3 in a single evaluation function that accepts explicit CRS and threshold parameters:</p>
+<p>Wrap steps 1–3 in a single evaluation function that accepts explicit CRS and threshold parameters. Consult the reference table in the next section to choose <code class="inline-code">iou_threshold</code>:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -536,7 +520,7 @@
 </code></pre>
 </div>
 <h3 id="step-5-size-stratified-batch-evaluation" tabindex="-1"><a class="header-anchor" href="#step-5-size-stratified-batch-evaluation" aria-label="Permalink to section &quot;Step 5 — Size-Stratified Batch Evaluation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5 — Size-Stratified Batch Evaluation</h3>
-<p>Aggregate IoU scores mask scale-dependent failure modes. Bin predictions by projected area and compute per-bin mean Average Precision after transformation:</p>
+<p>Aggregate IoU scores mask scale-dependent failure modes. Bin predictions by projected area — the same approach used in <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/">polygon vs. bounding-box annotation</a> quality assessment — and compute per-bin match rates after transformation:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -577,13 +561,54 @@
     <span class="token keyword">return</span> summary
 </code></pre>
 </div>
-<h2 id="spatial-parameters-and-threshold-reference" tabindex="-1"><a class="header-anchor" href="#spatial-parameters-and-threshold-reference" aria-label="Permalink to section &quot;Spatial Parameters and Threshold Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial Parameters and Threshold Reference</h2>
+<h2 id="threshold-and-crs-reference" tabindex="-1"><a class="header-anchor" href="#threshold-and-crs-reference" aria-label="Permalink to section &quot;Threshold and CRS Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Threshold and CRS Reference</h2>
+<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline diagram showing the five stages of projection-aware IoU calculation" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Projection-aware IoU calculation pipeline</title>
+  <desc>Five sequential stages: WGS84 input coordinates are reprojected via pyproj to a UTM CRS, validated with make_valid, used to compute intersection and union in square metres, then compared against a GSD-calibrated IoU threshold.</desc>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- Stage 1 -->
+  <rect x="8" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="64" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Input coords</text>
+  <text x="64" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">EPSG:4326</text>
+  <!-- Stage 2 -->
+  <rect x="148" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="204" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Reproject</text>
+  <text x="204" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">pyproj → UTM</text>
+  <!-- Stage 3 -->
+  <rect x="288" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="344" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Validate</text>
+  <text x="344" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">make_valid()</text>
+  <!-- Stage 4 -->
+  <rect x="428" y="68" width="112" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="484" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Compute IoU</text>
+  <text x="484" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">∩ / ∪  (m²)</text>
+  <!-- Stage 5 -->
+  <rect x="568" y="68" width="122" height="54" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="629" y="91" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif">Threshold</text>
+  <text x="629" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.55" font-family="sans-serif">GSD-calibrated</text>
+  <!-- Arrows -->
+  <line x1="120" y1="95" x2="146" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <line x1="260" y1="95" x2="286" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <line x1="400" y1="95" x2="426" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <line x1="540" y1="95" x2="566" y2="95" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arrowhead)"/>
+  <!-- Sub-labels -->
+  <text x="64" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">lat/lon pairs</text>
+  <text x="204" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">always_xy=True</text>
+  <text x="344" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">fix rings + self-∩</text>
+  <text x="484" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">exact area ratio</text>
+  <text x="629" y="138" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="sans-serif">0.35 – 0.75</text>
+</svg>
+<p><strong>IoU threshold by mission type:</strong></p>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
-<th>Mission Type</th>
-<th>Typical Object Scale</th>
-<th>Recommended IoU Cutoff</th>
+<th>Mission type</th>
+<th>Typical object scale</th>
+<th>Recommended IoU cutoff</th>
 <th>Rationale</th>
 </tr>
 </thead>
@@ -614,54 +639,36 @@
 </tr>
 </tbody>
 </table>
-</div><p><strong>GSD scaling rule:</strong> lower the threshold by ~0.05 per 10 cm/pixel increase in GSD above 20 cm/pixel. At 50 cm/pixel, sub-pixel annotation disagreement between labellers spans the equivalent of 25–50 cm on the ground — more than enough to drop IoU below a fixed 0.50 for a correctly localised detection. When embedding <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> alongside IoU during evaluation, use the confidence value to weight borderline matches rather than applying a hard binary cut.</p>
+</div><p><strong>GSD scaling rule:</strong> lower the threshold by approximately 0.05 per 10 cm/pixel increase in GSD above 20 cm/pixel. At 50 cm/pixel, sub-pixel annotation disagreement between labellers spans 25–50 cm on the ground — more than enough to drop IoU below a fixed 0.50 for a correctly localised detection.</p>
 <p><strong>EPSG quick reference:</strong></p>
 <ul>
 <li><code class="inline-code">EPSG:4326</code> — WGS84, angular degrees, input format only</li>
 <li><code class="inline-code">EPSG:32633</code> — UTM Zone 33N, metric (central Europe / Africa)</li>
 <li><code class="inline-code">EPSG:32737</code> — UTM Zone 37S, metric (East Africa / Madagascar)</li>
-<li><code class="inline-code">EPSG:3857</code> — Web Mercator, metric fallback for multi-zone datasets (distortion acceptable for tile-level area ratios)</li>
+<li><code class="inline-code">EPSG:3857</code> — Web Mercator, metric fallback for multi-zone datasets (distortion acceptable for tile-level area ratios under ~50 km wide)</li>
 </ul>
-<h2 id="common-errors-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-fixes" aria-label="Permalink to section &quot;Common Errors &amp; Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors &amp; Fixes</h2>
-<div class="table-scroll" tabindex="0"><table>
-<thead>
-<tr>
-<th>Error / Symptom</th>
-<th>Root Cause</th>
-<th>Fix</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code class="inline-code">TopologicalError: The operation &#39;GEOSIntersection_r&#39; produced a null geometry</code></td>
-<td>Self-intersecting polygon (bowtie ring) passed to <code class="inline-code">.intersection()</code></td>
-<td>Call <code class="inline-code">make_valid(geom)</code> on both operands before intersection</td>
-</tr>
-<tr>
-<td>IoU is always 0.0 for visually overlapping boxes</td>
-<td>Input coordinates in <code class="inline-code">(lat, lon)</code> order passed to a transformer expecting <code class="inline-code">(lon, lat)</code></td>
-<td>Add <code class="inline-code">always_xy=True</code> to <code class="inline-code">Transformer.from_crs()</code></td>
-</tr>
-<tr>
-<td>IoU scores drop sharply for tiles above 55°N</td>
-<td>Area computed in degree-squared units (<code class="inline-code">EPSG:4326</code> never reprojected)</td>
-<td>Ensure <code class="inline-code">to_valid_polygon</code> receives metric coordinates after <code class="inline-code">transform(project, geom)</code></td>
-</tr>
-<tr>
-<td><code class="inline-code">ShapelyDeprecationWarning: The array interface is deprecated</code> / wrong area returned</td>
-<td>shapely 1.x geometry passed to shapely 2.x function</td>
-<td>Upgrade to <code class="inline-code">shapely==2.0.6</code>; re-create all geometry objects from coordinates rather than pickling from 1.x</td>
-</tr>
-</tbody>
-</table>
-</div><h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
+<p>Ensure the CRS and GSD metadata needed for threshold selection travels with every dataset export — <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">preserving metadata across dataset versions</a> covers the mechanics of attaching that context to each versioned snapshot.</p>
+<h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common Errors and Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors and Fixes</h2>
+<p><strong><code class="inline-code">TopologicalError: The operation &#39;GEOSIntersection_r&#39; produced a null geometry</code></strong>
+Root cause: self-intersecting polygon (bowtie ring) passed to <code class="inline-code">.intersection()</code>.
+Fix: call <code class="inline-code">make_valid(geom)</code> on both operands before the intersection call.</p>
+<p><strong>IoU is always 0.0 for visually overlapping boxes</strong>
+Root cause: input coordinates in <code class="inline-code">(lat, lon)</code> order passed to a transformer expecting <code class="inline-code">(lon, lat)</code>.
+Fix: add <code class="inline-code">always_xy=True</code> to <code class="inline-code">Transformer.from_crs()</code>.</p>
+<p><strong>IoU scores drop sharply for tiles above 55°N</strong>
+Root cause: area computed in degree-squared units — <code class="inline-code">EPSG:4326</code> was never reprojected.
+Fix: ensure <code class="inline-code">to_valid_polygon</code> receives metric coordinates after <code class="inline-code">transform(project, geom)</code> has been applied.</p>
+<p><strong><code class="inline-code">ShapelyDeprecationWarning: The array interface is deprecated</code> / wrong area returned</strong>
+Root cause: shapely 1.x geometry object passed to a shapely 2.x function.
+Fix: upgrade to <code class="inline-code">shapely==2.0.6</code> and re-create all geometry objects from raw coordinates rather than unpickling from 1.x.</p>
+<h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
 <ul>
 <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — parent page covering CRS contracts, datum management, and reprojection patterns across an entire annotation pipeline</li>
 <li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a> — assign per-annotation uncertainty values that complement IoU during model evaluation and active-learning triage</li>
-<li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/">Best Practices for Polygon vs Bounding Box Annotation</a> — annotation geometry choices upstream that directly determine how tight IoU scores can realistically be</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/">Best Practices for Polygon vs Bounding Box Annotation</a> — annotation geometry choices that determine how tight IoU scores can realistically be</li>
 <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> — ensure the CRS and GSD metadata needed for threshold selection travel with every dataset export</li>
 </ul>
-<p>This page covers one specialised calculation within the broader <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> cluster, which is itself part of <a href="/geospatial-annotation-fundamentals-architecture/">Geospatial Annotation Fundamentals &amp; Architecture</a>.</p>
+<p>This page covers one specialised calculation within <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a>, which is itself part of <a href="/geospatial-annotation-fundamentals-architecture/">Geospatial Annotation Fundamentals &amp; Architecture</a>.</p>
 
 
       

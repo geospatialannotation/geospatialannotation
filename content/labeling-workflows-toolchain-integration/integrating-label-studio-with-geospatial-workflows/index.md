@@ -9,7 +9,7 @@ breadcrumb:
   - label: "Integrating Label Studio with Geospatial Workflows"
     url: /labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/
 datePublished: "2024-11-15"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -21,7 +21,7 @@ dateModified: "2026-06-24"
       "headline": "Integrating Label Studio with Geospatial Workflows",
       "description": "Production guide for connecting Label Studio to spatially aware annotation pipelines: CRS alignment, tile-based imagery ingestion, topology validation, and GeoJSON export with full coordinate reconstruction.",
       "datePublished": "2024-11-15",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": { "@type": "Organization", "name": "Geospatial Annotation" },
       "publisher": { "@type": "Organization", "name": "Geospatial Annotation" }
     },
@@ -81,7 +81,7 @@ dateModified: "2026-06-24"
 
 # Integrating Label Studio with Geospatial Workflows
 
-Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don't exist in standard CV workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on polygon exports, and no concept of coordinate reference system (CRS) propagation across the labeling→export boundary.
+[Label Studio](https://labelstud.io/) is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don't exist in standard computer vision workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on polygon exports, and no concept of [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (CRS) propagation across the labeling→export boundary.
 
 The concrete failure scenario looks like this: an annotator draws a precise polygon outline of a building footprint in the Label Studio UI; the export JSON contains normalized `[0.42, 0.17]`-style coordinates that map correctly to the displayed tile — but not to the Earth. Without a deliberate coordinate reconstruction step, every annotation silently loses its spatial meaning, and IoU computed against ground-truth GeoJSON will collapse to near-zero.
 
@@ -122,46 +122,48 @@ For foundational context on building labeling infrastructure, see the [Labeling 
 
 ---
 
-<svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio geospatial pipeline: GeoTIFF → Tile Server → Label Studio UI → Webhook Validator → GeoJSON Export" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio geospatial pipeline: GeoTIFF to Tile Server to Label Studio UI to Webhook Validator to GeoJSON Export" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>Label Studio Geospatial Annotation Pipeline</title>
   <desc>Five-stage pipeline showing GeoTIFF source converted to tile pyramid, served to Label Studio, annotations validated via webhook middleware, then exported as GeoJSON with reconstructed geographic coordinates.</desc>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+    <marker id="ls-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
   <!-- Stage boxes -->
-  <rect x="8" y="60" width="116" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="66" y="92" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">GeoTIFF</text>
-  <text x="66" y="108" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Source Raster</text>
-  <text x="66" y="123" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">+ CRS metadata</text>
-  <rect x="154" y="60" width="116" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="212" y="92" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Tile Server</text>
-  <text x="212" y="108" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">gdal2tiles /</text>
-  <text x="212" y="123" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">TileServer GL</text>
-  <rect x="300" y="60" width="120" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="360" y="92" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Label Studio</text>
-  <text x="360" y="108" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Polygon / BBox /</text>
-  <text x="360" y="123" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Point annotation</text>
-  <rect x="450" y="60" width="120" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="510" y="92" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Webhook</text>
-  <text x="510" y="108" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Topology +</text>
-  <text x="510" y="123" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">CRS validation</text>
-  <rect x="600" y="60" width="112" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="656" y="92" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">GeoJSON</text>
-  <text x="656" y="108" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">EPSG:4326</text>
-  <text x="656" y="123" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">training-ready</text>
+  <rect x="8" y="30" width="128" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="72" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">GeoTIFF</text>
+  <text x="72" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Source Raster</text>
+  <text x="72" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">+ CRS metadata</text>
+  <rect x="162" y="30" width="128" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="226" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Tile Server</text>
+  <text x="226" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">gdal2tiles /</text>
+  <text x="226" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">TileServer GL</text>
+  <rect x="316" y="30" width="128" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="380" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Label Studio</text>
+  <text x="380" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Polygon / BBox /</text>
+  <text x="380" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Point annotation</text>
+  <rect x="470" y="30" width="128" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="534" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Webhook</text>
+  <text x="534" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">Topology +</text>
+  <text x="534" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">CRS validation</text>
+  <rect x="624" y="30" width="128" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="688" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">GeoJSON</text>
+  <text x="688" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">EPSG:4326</text>
+  <text x="688" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.75">training-ready</text>
   <!-- Arrows -->
-  <line x1="124" y1="100" x2="150" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
-  <line x1="270" y1="100" x2="296" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
-  <line x1="420" y1="100" x2="446" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
-  <line x1="570" y1="100" x2="596" y2="100" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
-  <!-- Stage labels -->
-  <text x="66" y="158" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 1</text>
-  <text x="212" y="158" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 2</text>
-  <text x="360" y="158" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 3</text>
-  <text x="510" y="158" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 4</text>
-  <text x="656" y="158" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 5</text>
+  <line x1="136" y1="70" x2="158" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arrow)" opacity="0.6"/>
+  <line x1="290" y1="70" x2="312" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arrow)" opacity="0.6"/>
+  <line x1="444" y1="70" x2="466" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arrow)" opacity="0.6"/>
+  <line x1="598" y1="70" x2="620" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arrow)" opacity="0.6"/>
+  <!-- Stage labels below boxes -->
+  <text x="72" y="128" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 1</text>
+  <text x="226" y="128" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 2</text>
+  <text x="380" y="128" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 3</text>
+  <text x="534" y="128" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 4</text>
+  <text x="688" y="128" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.5">Stage 5</text>
+  <!-- Key spatial concern note -->
+  <text x="380" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.55" font-style="italic">Annotations exit as normalized pixel coords — geographic reconstruction required at Stage 5</text>
 </svg>
 
 ---
@@ -432,6 +434,56 @@ For teams that require desktop-grade topology enforcement — snapping to shared
 
 Label Studio exports polygon annotations as normalized coordinates in the range `[0, 100]` (percentages of image width/height), not pixel or geographic coordinates. Reconstruction requires the tile bounding box stored in task metadata.
 
+The y-axis inversion is the most commonly missed detail: Label Studio measures `y_pct` from the top of the image (screen convention), while geographic coordinates increase upward (map convention). Swapping these produces polygons mirrored across the horizontal axis — an error that IoU-based QA can miss entirely if ground-truth labels were authored with the same tool.
+
+<svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coordinate reconstruction diagram: Label Studio pixel space versus geographic space, showing y-axis inversion" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
+  <title>Label Studio Coordinate Reconstruction — Y-Axis Inversion</title>
+  <desc>Two side-by-side coordinate systems. Left: Label Studio image space with y=0 at top-left, increasing downward. Right: Geographic space with y=min at bottom-left, increasing upward. Arrows show the mapping formula applied to convert between them.</desc>
+  <defs>
+    <marker id="ls-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
+    </marker>
+  </defs>
+  <!-- Left panel: Label Studio space -->
+  <rect x="20" y="20" width="280" height="200" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+  <text x="160" y="14" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600" opacity="0.9">Label Studio pixel space</text>
+  <!-- origin top-left -->
+  <circle cx="40" cy="40" r="3" fill="currentColor" opacity="0.7"/>
+  <text x="46" y="38" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">(x=0, y=0)</text>
+  <!-- x axis -->
+  <line x1="40" y1="195" x2="280" y2="195" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#ls-arrow)"/>
+  <text x="200" y="210" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">x_pct →</text>
+  <!-- y axis (downward) -->
+  <line x1="40" y1="40" x2="40" y2="190" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#ls-arrow)"/>
+  <text x="46" y="60" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">y_pct ↓ (100)</text>
+  <!-- sample point in LS space -->
+  <circle cx="170" cy="120" r="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="178" y="118" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.8">(x%=45, y%=40)</text>
+  <!-- Right panel: Geographic space -->
+  <rect x="380" y="20" width="280" height="200" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+  <text x="520" y="14" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600" opacity="0.9">Geographic space (EPSG:3857)</text>
+  <!-- origin bottom-left -->
+  <circle cx="400" cy="200" r="3" fill="currentColor" opacity="0.7"/>
+  <text x="406" y="215" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">(min_x, min_y)</text>
+  <!-- x axis -->
+  <line x1="400" y1="200" x2="636" y2="200" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#ls-arrow)"/>
+  <text x="560" y="215" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">→ E</text>
+  <!-- y axis (upward) -->
+  <line x1="400" y1="200" x2="400" y2="44" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#ls-arrow)"/>
+  <text x="406" y="56" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">↑ N (max_y)</text>
+  <!-- sample point in geo space (y is flipped) -->
+  <circle cx="504" cy="118" r="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="512" y="116" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.8">(tile_x, tile_y)</text>
+  <!-- Conversion formula in centre -->
+  <text x="340" y="88" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.55">tile_x =</text>
+  <text x="340" y="100" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.55">min_x + (x%/100)·Δx</text>
+  <text x="340" y="118" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.55">tile_y =</text>
+  <text x="340" y="130" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.55">max_y − (y%/100)·Δy</text>
+  <text x="340" y="148" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.45" font-style="italic">↑ inversion</text>
+  <!-- connecting arrow -->
+  <line x1="310" y1="120" x2="370" y2="120" stroke="currentColor" stroke-width="1.2" marker-end="url(#ls-arrow)" opacity="0.5"/>
+</svg>
+
 ```python
 import pyproj
 import geojson as geojson_lib
@@ -529,7 +581,6 @@ Webhooks eliminate the manual export bottleneck and enforce a "validate-before-p
 
 ```python
 from flask import Flask, request, jsonify
-import json
 import logging
 
 app = Flask(__name__)
@@ -604,7 +655,7 @@ def handle_annotation_webhook():
 
 ### DVC Pipeline Integration
 
-Version annotation exports alongside model training runs to enable reproducible experiments:
+Version annotation exports alongside model training runs to enable reproducible experiments. Embed the Label Studio project ID and tile CRS in your DVC params so that any replay of the pipeline can reconstruct the exact export:
 
 ```yaml
 # dvc.yaml
@@ -742,7 +793,7 @@ For annotation change tracking and SHA-based integrity checks across dataset ver
 
 ---
 
-This workflow is one component of the broader [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) pipeline, which covers CVAT setup, QGIS plugin workflows, foundation model pre-labeling, and human-in-the-loop validation cycles.
+This workflow is one component of the broader [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) pipeline, which covers CVAT setup, QGIS plugin workflows, foundation model pre-labeling, and [human-in-the-loop validation cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/).
 
 **Related**
 

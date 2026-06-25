@@ -82,6 +82,99 @@
     document.head.appendChild(s);
   }
 
+  // ----- FAQ accordions -----
+  // Authored FAQs ship as plain markup under a "Frequently Asked Questions" <h2>:
+  // a question paragraph `<p><strong>Q?</strong> …</p>` (answer may continue in the
+  // same <p> or follow in one or more sibling <p>/list elements until the next
+  // question). This rewrites each Q/A pair into a styled <details> accordion the
+  // site CSS targets (.faq / .faq-item / .faq-item__q / .faq-item__chev / .faq-item__a).
+  // The question is wrapped in a single <span> so the flex `space-between` summary
+  // keeps the whole question as one item (inline <code>/<em> can't fragment the row).
+  function initFAQAccordions() {
+    const norm = (s) => (s || "").replace(/\s+/g, " ").trim();
+    const cleanQ = (s) => norm(s).replace(/[\s#¶]+$/, "");
+    const isFaqHead = (h) => {
+      if (h.tagName !== "H2") return false;
+      const t = cleanQ(h.textContent).toLowerCase().replace(/^[\s#¶]+/, "");
+      return /^frequently asked questions?$/.test(t);
+    };
+    // A question paragraph: <p> whose first element child is <strong> ending in "?".
+    const questionStrong = (el) => {
+      if (!el || el.tagName !== "P") return null;
+      const strong = el.firstElementChild;
+      if (!strong || strong.tagName !== "STRONG") return null;
+      return cleanQ(strong.textContent).endsWith("?") ? strong : null;
+    };
+
+    const heads = [...document.querySelectorAll("h2")].filter(isFaqHead);
+    heads.forEach((head) => {
+      // Collect the FAQ region: every sibling up to the next <h2> or <hr>.
+      const region = [];
+      let el = head.nextElementSibling;
+      while (el && el.tagName !== "H2" && el.tagName !== "HR") {
+        region.push(el);
+        el = el.nextElementSibling;
+      }
+      // Group into [questionStrong, [answer nodes…]] items.
+      const items = [];
+      let current = null;
+      for (const node of region) {
+        const strong = questionStrong(node);
+        if (strong) {
+          current = { strong, qPara: node, answers: [] };
+          items.push(current);
+        } else if (current) {
+          current.answers.push(node);
+        }
+      }
+      if (!items.length) return;
+
+      const faq = document.createElement("div");
+      faq.className = "faq";
+
+      items.forEach((item) => {
+        const details = document.createElement("details");
+        details.className = "faq-item";
+
+        const summary = document.createElement("summary");
+        summary.className = "faq-item__q";
+        const qSpan = document.createElement("span");
+        qSpan.className = "faq-item__q-text";
+        // Move the question's inline content (everything inside <strong>) into the span.
+        while (item.strong.firstChild) qSpan.appendChild(item.strong.firstChild);
+        const chev = document.createElement("span");
+        chev.className = "faq-item__chev";
+        chev.setAttribute("aria-hidden", "true");
+        chev.textContent = "+";
+        summary.appendChild(qSpan);
+        summary.appendChild(chev);
+        details.appendChild(summary);
+
+        const answer = document.createElement("div");
+        answer.className = "faq-item__a";
+        // Same-paragraph answer: whatever remains in the question <p> after the <strong>.
+        // (Separate-paragraph FAQs leave the <p> empty once the question moves out — drop it.)
+        item.strong.remove();
+        if (norm(item.qPara.textContent).length) {
+          answer.appendChild(item.qPara);
+        } else {
+          item.qPara.remove();
+        }
+        // Sibling answer nodes.
+        item.answers.forEach((n) => answer.appendChild(n));
+        details.appendChild(answer);
+
+        faq.appendChild(details);
+      });
+
+      // Insert the accordion immediately after the FAQ heading. The consumed
+      // question/answer nodes were moved into `faq`, so nothing is duplicated; any
+      // node we didn't consume (e.g. a trailing <hr>) stays where it was.
+      head.parentNode.insertBefore(faq, head.nextSibling);
+    });
+  }
+  initFAQAccordions();
+
   // ----- Build right-rail TOC from h2/h3 in the article -----
   const toc = document.querySelector(".toc");
   const article = document.querySelector(".article");

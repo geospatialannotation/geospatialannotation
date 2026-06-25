@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -326,6 +326,14 @@
             "@type": "Answer",
             "text": "Add an acquisition_season field to each annotation and define class-specific seasonal decision rules (e.g., deciduous_canopy is only valid for leaf-on imagery). Store the acquisition date in annotation metadata and validate it against the class definition during schema validation."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you fix self-intersecting polygons from manual digitizing?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Annotators drawing freehand polygons in web tools frequently produce bowtie or figure-eight geometries. shapely.is_valid returns False for these; explain_validity() identifies the crossing point. Fix with shapely.make_valid() and re-validate, but always log auto-corrections for annotator feedback."
+          }
         }
       ]
     }
@@ -379,49 +387,46 @@ rasterio==1.3.10
 <p><strong>Domain prerequisite:</strong> a preliminary class hierarchy aligned with project objectives before opening the annotation interface — retrofitting taxonomy structure onto existing annotations is expensive and error-prone.</p>
 <h2 id="taxonomy-architecture-from-ontology-to-schema" tabindex="-1"><a class="header-anchor" href="#taxonomy-architecture-from-ontology-to-schema" aria-label="Permalink to section &quot;Taxonomy Architecture: From Ontology to Schema&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Taxonomy Architecture: From Ontology to Schema</h2>
 <p>The diagram below shows how a domain ontology flows through hierarchy design, schema enforcement, and CI validation into a training-ready dataset.</p>
-<svg viewBox="0 0 760 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROI taxonomy pipeline: domain ontology flows through hierarchy design, Pydantic schema validation, and CI gates into a training-ready GeoJSON dataset" style="width:100%;max-width:760px;display:block;font-family:inherit">
+<svg viewBox="0 0 760 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROI taxonomy pipeline: domain ontology flows through hierarchy design, Pydantic schema validation, and CI gates into a training-ready GeoJSON dataset" style="width:100%;max-width:760px;display:block;font-family:inherit">
   <title>ROI Label Taxonomy Pipeline</title>
   <desc>Domain ontology maps to a class hierarchy, which is encoded in a versioned taxonomy JSON. Pydantic validators and shapely geometry checks run on every annotation commit via CI, producing a validated GeoJSON training dataset.</desc>
-  <!-- Background -->
-  <rect width="760" height="320" rx="8" fill="none"/>
-  <!-- Stage boxes -->
-  <rect x="10" y="120" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="70" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Domain</text>
-  <text x="70" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Ontology</text>
-  <text x="70" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">objectives → classes</text>
-  <rect x="175" y="120" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="240" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Hierarchy</text>
-  <text x="240" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Design</text>
-  <text x="240" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">parent → child tree</text>
-  <rect x="350" y="120" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="415" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Schema</text>
-  <text x="415" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Validation</text>
-  <text x="415" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Pydantic + shapely</text>
-  <rect x="525" y="120" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="585" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">CI Gate</text>
-  <text x="585" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">(pre-commit)</text>
-  <text x="585" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">fail on schema error</text>
-  <rect x="660" y="120" width="88" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="704" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Training</text>
-  <text x="704" y="159" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Dataset</text>
-  <text x="704" y="174" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">GeoJSON / Parquet</text>
-  <!-- Arrows -->
-  <line x1="130" y1="148" x2="173" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="305" y1="148" x2="348" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="480" y1="148" x2="523" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <line x1="645" y1="148" x2="658" y2="148" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- Reject feedback loop -->
-  <path d="M585 176 Q585 260 415 260 Q245 260 240 178" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr)"/>
-  <text x="415" y="278" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">schema error → revise hierarchy</text>
-  <!-- Taxonomy JSON annotation -->
-  <text x="240" y="108" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">taxonomy.json (versioned)</text>
-  <line x1="240" y1="112" x2="240" y2="120" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2"/>
-  <!-- Arrowhead marker -->
   <defs>
     <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
       <path d="M0,0 L7,3.5 L0,7 Z" fill="currentColor"/>
     </marker>
   </defs>
+  <!-- Stage boxes -->
+  <rect x="10" y="110" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="70" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Domain</text>
+  <text x="70" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Ontology</text>
+  <text x="70" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">objectives → classes</text>
+  <rect x="175" y="110" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="240" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Hierarchy</text>
+  <text x="240" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Design</text>
+  <text x="240" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">parent → child tree</text>
+  <rect x="350" y="110" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="415" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Schema</text>
+  <text x="415" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Validation</text>
+  <text x="415" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Pydantic + shapely</text>
+  <rect x="525" y="110" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="585" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">CI Gate</text>
+  <text x="585" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">(pre-commit)</text>
+  <text x="585" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">fail on schema error</text>
+  <rect x="660" y="110" width="88" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="704" y="134" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Training</text>
+  <text x="704" y="149" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600">Dataset</text>
+  <text x="704" y="163" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">GeoJSON / Parquet</text>
+  <!-- Arrows -->
+  <line x1="130" y1="138" x2="173" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="305" y1="138" x2="348" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="480" y1="138" x2="523" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="645" y1="138" x2="658" y2="138" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Reject feedback loop -->
+  <path d="M585 166 Q585 250 415 250 Q245 250 240 168" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+  <text x="415" y="268" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">schema error → revise hierarchy</text>
+  <!-- Taxonomy JSON annotation -->
+  <text x="240" y="98" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">taxonomy.json (versioned)</text>
+  <line x1="240" y1="102" x2="240" y2="110" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2"/>
 </svg>
 <h2 id="core-workflow" tabindex="-1"><a class="header-anchor" href="#core-workflow" aria-label="Permalink to section &quot;Core Workflow&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Workflow</h2>
 <h3 id="step-1-map-domain-ontology-to-discrete-roi-classes" tabindex="-1"><a class="header-anchor" href="#step-1-map-domain-ontology-to-discrete-roi-classes" aria-label="Permalink to section &quot;Step 1 — Map Domain Ontology to Discrete ROI Classes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Map Domain Ontology to Discrete ROI Classes</h3>
@@ -462,36 +467,70 @@ rasterio==1.3.10
 </code></pre>
 </div>
 <h3 id="step-2-establish-a-hierarchical-label-structure" tabindex="-1"><a class="header-anchor" href="#step-2-establish-a-hierarchical-label-structure" aria-label="Permalink to section &quot;Step 2 — Establish a Hierarchical Label Structure&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Establish a Hierarchical Label Structure</h3>
-<p>A flat taxonomy rarely scales across complex aerial scenes. Implement a parent-child hierarchy that supports both coarse-grained scene classification and fine-grained object detection:</p>
-<div class="code-block">
-  <div class="code-block__head">
-    <span class="code-lang">code</span>
-    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
-      <span class="code-copy__icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-      </span>
-      <span class="code-copy__label">Copy</span>
-    </button>
-  </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code">land_use
-├── residential
-│   ├── single_family
-│   └── multi_unit
-├── commercial
-└── industrial
-    ├── manufacturing
-    └── logistics_hub
-
-land_cover
-├── vegetation_canopy
-│   ├── deciduous
-│   └── coniferous
-├── impervious_surface
-└── water
-    ├── standing
-    └── flowing
-</code></pre>
-</div>
+<p>A flat taxonomy rarely scales across complex aerial scenes. Implement a parent-child hierarchy that supports both coarse-grained scene classification and fine-grained object detection. The diagram below illustrates a two-domain hierarchy covering land use and land cover — the two root categories most aerial annotation projects require.</p>
+<svg viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two-domain label hierarchy: land_use and land_cover root classes each branch into parent and leaf subclasses" style="width:100%;max-width:680px;display:block;font-family:inherit">
+  <title>ROI Label Taxonomy Hierarchy</title>
+  <desc>Two root domains: land_use (residential → single_family, multi_unit; commercial; industrial → manufacturing, logistics_hub) and land_cover (vegetation_canopy → deciduous, coniferous; impervious_surface; water → standing, flowing).</desc>
+  <defs>
+    <marker id="htree" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- ── Left tree: land_use ── -->
+  <!-- Root -->
+  <rect x="10" y="140" width="110" height="32" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="65" y="161" text-anchor="middle" font-size="12" fill="currentColor" font-weight="700">land_use</text>
+  <!-- residential -->
+  <rect x="148" y="60" width="120" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="208" y="80" text-anchor="middle" font-size="11" fill="currentColor">residential</text>
+  <!-- commercial -->
+  <rect x="148" y="141" width="120" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="208" y="161" text-anchor="middle" font-size="11" fill="currentColor">commercial</text>
+  <!-- industrial -->
+  <rect x="148" y="222" width="120" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="208" y="242" text-anchor="middle" font-size="11" fill="currentColor">industrial</text>
+  <!-- root → level-1 connectors -->
+  <line x1="120" y1="156" x2="147" y2="75" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="120" y1="156" x2="147" y2="156" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="120" y1="156" x2="147" y2="237" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <!-- residential leaf classes -->
+  <rect x="298" y="42" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="60" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">single_family</text>
+  <rect x="298" y="75" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="93" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">multi_unit</text>
+  <line x1="268" y1="75" x2="297" y2="55" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <line x1="268" y1="75" x2="297" y2="88" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <!-- industrial leaf classes -->
+  <rect x="298" y="208" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="226" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">manufacturing</text>
+  <rect x="298" y="241" width="110" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity="0.75"/>
+  <text x="353" y="259" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85">logistics_hub</text>
+  <line x1="268" y1="237" x2="297" y2="221" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <line x1="268" y1="237" x2="297" y2="254" stroke="currentColor" stroke-width="0.8" opacity="0.4" marker-end="url(#htree)"/>
+  <!-- ── Divider ── -->
+  <line x1="430" y1="20" x2="430" y2="320" stroke="currentColor" stroke-width="0.6" stroke-dasharray="4 4" opacity="0.3"/>
+  <!-- ── Right tree: land_cover ── -->
+  <rect x="444" y="140" width="110" height="32" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="499" y="161" text-anchor="middle" font-size="12" fill="currentColor" font-weight="700">land_cover</text>
+  <!-- vegetation_canopy -->
+  <rect x="580" y="60" width="88" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="624" y="77" text-anchor="middle" font-size="10" fill="currentColor">vegetation</text>
+  <text x="624" y="89" text-anchor="middle" font-size="10" fill="currentColor">_canopy</text>
+  <!-- impervious_surface -->
+  <rect x="580" y="140" width="88" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="624" y="158" text-anchor="middle" font-size="10" fill="currentColor">impervious</text>
+  <text x="624" y="169" text-anchor="middle" font-size="10" fill="currentColor" display="none">_surface</text>
+  <!-- water -->
+  <rect x="580" y="220" width="88" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="624" y="240" text-anchor="middle" font-size="11" fill="currentColor">water</text>
+  <!-- root → level-1 connectors -->
+  <line x1="554" y1="156" x2="579" y2="75" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="554" y1="156" x2="579" y2="155" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <line x1="554" y1="156" x2="579" y2="235" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#htree)"/>
+  <!-- Domain labels at top -->
+  <text x="208" y="18" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600" opacity="0.6">Land Use Domain</text>
+  <text x="570" y="18" text-anchor="middle" font-size="11" fill="currentColor" font-weight="600" opacity="0.6">Land Cover Domain</text>
+</svg>
 <p>This structure enables multi-task learning architectures and allows models to predict at varying confidence thresholds. During inference, aggregate child-class probabilities to validate parent-class consistency — a useful automated sanity check for label quality.</p>
 <p>When deciding which geometry type to attach to each hierarchy level, consult <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/">best practices for polygon vs bounding box annotation</a> to align annotation effort with model architecture requirements. Fine-grained subclasses typically require polygon outlines; coarse parent classes can use bounding boxes for faster annotation throughput.</p>
 <h3 id="step-3-standardize-attribute-and-metadata-payloads" tabindex="-1"><a class="header-anchor" href="#step-3-standardize-attribute-and-metadata-payloads" aria-label="Permalink to section &quot;Step 3 — Standardize Attribute and Metadata Payloads&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Standardize Attribute and Metadata Payloads</h3>
@@ -545,8 +584,9 @@ land_cover
 
 <span class="token comment"># Load versioned taxonomy at import time</span>
 <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"taxonomy.json"</span><span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
-    TAXONOMY <span class="token operator">=</span> <span class="token punctuation">{</span>c<span class="token punctuation">[</span><span class="token string">"class_name"</span><span class="token punctuation">]</span><span class="token punctuation">:</span> c <span class="token keyword">for</span> c <span class="token keyword">in</span> json<span class="token punctuation">.</span>load<span class="token punctuation">(</span>f<span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token string">"classes"</span><span class="token punctuation">]</span><span class="token punctuation">}</span>
-    VALID_CLASS_IDS <span class="token operator">=</span> <span class="token punctuation">{</span>c<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span><span class="token punctuation">:</span> c<span class="token punctuation">[</span><span class="token string">"class_name"</span><span class="token punctuation">]</span> <span class="token keyword">for</span> c <span class="token keyword">in</span> json<span class="token punctuation">.</span>load<span class="token punctuation">(</span><span class="token builtin">open</span><span class="token punctuation">(</span><span class="token string">"taxonomy.json"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token string">"classes"</span><span class="token punctuation">]</span><span class="token punctuation">}</span>
+    _raw <span class="token operator">=</span> json<span class="token punctuation">.</span>load<span class="token punctuation">(</span>f<span class="token punctuation">)</span>
+    TAXONOMY <span class="token operator">=</span> <span class="token punctuation">{</span>c<span class="token punctuation">[</span><span class="token string">"class_name"</span><span class="token punctuation">]</span><span class="token punctuation">:</span> c <span class="token keyword">for</span> c <span class="token keyword">in</span> _raw<span class="token punctuation">[</span><span class="token string">"classes"</span><span class="token punctuation">]</span><span class="token punctuation">}</span>
+    VALID_CLASS_IDS <span class="token operator">=</span> <span class="token punctuation">{</span>c<span class="token punctuation">[</span><span class="token string">"class_id"</span><span class="token punctuation">]</span><span class="token punctuation">:</span> c<span class="token punctuation">[</span><span class="token string">"class_name"</span><span class="token punctuation">]</span> <span class="token keyword">for</span> c <span class="token keyword">in</span> _raw<span class="token punctuation">[</span><span class="token string">"classes"</span><span class="token punctuation">]</span><span class="token punctuation">}</span>
 
 <span class="token keyword">class</span> <span class="token class-name">ROIProperties</span><span class="token punctuation">(</span>BaseModel<span class="token punctuation">)</span><span class="token punctuation">:</span>
     annotation_id<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> Field<span class="token punctuation">(</span>default_factory<span class="token operator">=</span><span class="token keyword">lambda</span><span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">(</span>uuid<span class="token punctuation">.</span>uuid4<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
@@ -609,7 +649,7 @@ land_cover
 
 <span class="token keyword">def</span> <span class="token function">validate_annotation_file</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Validate all features in a GeoJSON file. Returns list of error strings."""</span>
-    errors <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    errors<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
     <span class="token keyword">with</span> <span class="token builtin">open</span><span class="token punctuation">(</span>path<span class="token punctuation">)</span> <span class="token keyword">as</span> f<span class="token punctuation">:</span>
         fc <span class="token operator">=</span> json<span class="token punctuation">.</span>load<span class="token punctuation">(</span>f<span class="token punctuation">)</span>
     <span class="token keyword">for</span> i<span class="token punctuation">,</span> feature <span class="token keyword">in</span> <span class="token builtin">enumerate</span><span class="token punctuation">(</span>fc<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"features"</span><span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
@@ -820,7 +860,11 @@ EOF</span>
   </div>
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
 
-<span class="token keyword">def</span> <span class="token function">validate_min_area</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span> min_area_m2<span class="token punctuation">:</span> <span class="token builtin">float</span><span class="token punctuation">,</span> metric_crs<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> <span class="token string">"EPSG:32633"</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
+<span class="token keyword">def</span> <span class="token function">validate_min_area</span><span class="token punctuation">(</span>
+    gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span>
+    min_area_m2<span class="token punctuation">:</span> <span class="token builtin">float</span><span class="token punctuation">,</span>
+    metric_crs<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">=</span> <span class="token string">"EPSG:32633"</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
     projected <span class="token operator">=</span> gdf<span class="token punctuation">.</span>to_crs<span class="token punctuation">(</span>metric_crs<span class="token punctuation">)</span>
     too_small <span class="token operator">=</span> projected<span class="token punctuation">[</span>projected<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>area <span class="token operator">&lt;</span> min_area_m2<span class="token punctuation">]</span>
     <span class="token keyword">if</span> <span class="token keyword">not</span> too_small<span class="token punctuation">.</span>empty<span class="token punctuation">:</span>
@@ -829,7 +873,7 @@ EOF</span>
 </code></pre>
 </div>
 <h2 id="integration-automation-hooks" tabindex="-1"><a class="header-anchor" href="#integration-automation-hooks" aria-label="Permalink to section &quot;Integration &amp; Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Integration &amp; Automation Hooks</h2>
-<p><strong>Label Studio integration.</strong> Export taxonomy classes as a Label Studio XML config block. Use Label Studio’s pre-annotation API to push taxonomy-validated predictions back into the review queue, reducing cold-annotation throughput:</p>
+<p><strong><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Label Studio</a> integration.</strong> Export taxonomy classes as a Label Studio XML config block. Use Label Studio’s pre-annotation API to push taxonomy-validated predictions back into the review queue, reducing cold-annotation throughput:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -858,7 +902,7 @@ project<span class="token punctuation">.</span>create_prediction<span class="tok
 <span class="token punctuation">)</span>
 </code></pre>
 </div>
-<p><strong>QGIS plugin hook.</strong> Store <code class="inline-code">taxonomy.json</code> on a shared network path and load it into the QGIS annotation form at session start. Use a QGIS Python plugin to enforce dropdown class selection — preventing free-text entry that bypasses schema validation.</p>
+<p><strong><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS plugin</a> hook.</strong> Store <code class="inline-code">taxonomy.json</code> on a shared network path and load it into the QGIS annotation form at session start. Use a QGIS Python plugin to enforce dropdown class selection — preventing free-text entry that bypasses schema validation.</p>
 <p><strong>DVC pipeline snapshot.</strong> Lock annotation state at each taxonomy version with a DVC stage. Any taxonomy version bump triggers a full re-validation run:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -901,7 +945,7 @@ project<span class="token punctuation">.</span>create_prediction<span class="tok
 
 <span class="token keyword">class</span> <span class="token class-name">TestROITaxonomyValidation</span><span class="token punctuation">:</span>
 
-    <span class="token keyword">def</span> <span class="token function">test_valid_annotation_passes</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">test_valid_annotation_passes</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
         polygon <span class="token operator">=</span> Polygon<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0.001</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0.001</span><span class="token punctuation">,</span> <span class="token number">0.001</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0.001</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
         feature <span class="token operator">=</span> <span class="token punctuation">{</span>
             <span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"Feature"</span><span class="token punctuation">,</span>
@@ -917,7 +961,7 @@ project<span class="token punctuation">.</span>create_prediction<span class="tok
         result <span class="token operator">=</span> ROIAnnotation<span class="token punctuation">.</span>model_validate<span class="token punctuation">(</span>feature<span class="token punctuation">)</span>
         <span class="token keyword">assert</span> result<span class="token punctuation">.</span>properties<span class="token punctuation">.</span>class_name <span class="token operator">==</span> <span class="token string">"residential"</span>
 
-    <span class="token keyword">def</span> <span class="token function">test_class_id_mismatch_raises</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">test_class_id_mismatch_raises</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
         polygon <span class="token operator">=</span> Polygon<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0.001</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0.001</span><span class="token punctuation">,</span> <span class="token number">0.001</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0.001</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
         feature <span class="token operator">=</span> <span class="token punctuation">{</span>
             <span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"Feature"</span><span class="token punctuation">,</span>
@@ -933,7 +977,7 @@ project<span class="token punctuation">.</span>create_prediction<span class="tok
         <span class="token keyword">with</span> pytest<span class="token punctuation">.</span>raises<span class="token punctuation">(</span>Exception<span class="token punctuation">,</span> <span class="token keyword">match</span><span class="token operator">=</span><span class="token string">"class_id"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
             ROIAnnotation<span class="token punctuation">.</span>model_validate<span class="token punctuation">(</span>feature<span class="token punctuation">)</span>
 
-    <span class="token keyword">def</span> <span class="token function">test_out_of_range_confidence_raises</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token keyword">def</span> <span class="token function">test_out_of_range_confidence_raises</span><span class="token punctuation">(</span>self<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
         polygon <span class="token operator">=</span> Polygon<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0.001</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0.001</span><span class="token punctuation">,</span> <span class="token number">0.001</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0.001</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
         feature <span class="token operator">=</span> <span class="token punctuation">{</span>
             <span class="token string">"type"</span><span class="token punctuation">:</span> <span class="token string">"Feature"</span><span class="token punctuation">,</span>
@@ -954,7 +998,7 @@ project<span class="token punctuation">.</span>create_prediction<span class="tok
 <h2 id="statistical-quality-gates" tabindex="-1"><a class="header-anchor" href="#statistical-quality-gates" aria-label="Permalink to section &quot;Statistical Quality Gates&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Statistical Quality Gates</h2>
 <p>Beyond structural validation, implement statistical gates to monitor annotation consistency across batches. These transform taxonomy management from a static documentation exercise into a dynamic feedback loop:</p>
 <p><strong>Inter-Annotator Agreement (IAA).</strong> Calculate Cohen’s Kappa for overlapping ROI assignments using <code class="inline-code">sklearn.metrics.cohen_kappa_score</code>. Values below 0.75 indicate ambiguous class definitions requiring ontology refinement. Trigger an alert and open an ontology review when IAA drops below this threshold across any two annotators.</p>
-<p><strong>Class distribution monitoring.</strong> Track ROI counts per class across batches. Sudden spikes or drops signal annotator confusion or imagery bias. Alert when any class falls below 5% or exceeds 40% of the total ROI count in a batch, as these imbalances propagate directly to model precision/recall on underrepresented classes.</p>
+<p><strong>Class distribution monitoring.</strong> Track ROI counts per class across batches. Sudden spikes or drops signal annotator confusion or imagery bias. Alert when any class falls below 5% or exceeds 40% of the total ROI count in a batch, as these imbalances propagate directly to model precision/recall on underrepresented classes. Pair this with the <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA-based annotation change tracking</a> to audit which specific commits shifted the distribution.</p>
 <p><strong>Spatial consistency checks.</strong> Validate that adjacent ROIs do not overlap unless explicitly permitted by the taxonomy (e.g., multi-layer <code class="inline-code">vegetation_canopy</code> over <code class="inline-code">impervious_surface</code>). Use <code class="inline-code">geopandas.overlay()</code> to detect illegal intersections:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -968,7 +1012,10 @@ project<span class="token punctuation">.</span>create_prediction<span class="tok
   </div>
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
 
-<span class="token keyword">def</span> <span class="token function">check_illegal_overlaps</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span> permitted_pairs<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">tuple</span><span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
+<span class="token keyword">def</span> <span class="token function">check_illegal_overlaps</span><span class="token punctuation">(</span>
+    gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span>
+    permitted_pairs<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span><span class="token builtin">tuple</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> <span class="token builtin">str</span><span class="token punctuation">]</span><span class="token punctuation">]</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Returns GeoDataFrame of overlapping features that violate taxonomy rules."""</span>
     overlaps <span class="token operator">=</span> gpd<span class="token punctuation">.</span>overlay<span class="token punctuation">(</span>gdf<span class="token punctuation">,</span> gdf<span class="token punctuation">,</span> how<span class="token operator">=</span><span class="token string">"intersection"</span><span class="token punctuation">)</span>
     <span class="token comment"># Exclude self-intersections and permitted class pairs</span>
@@ -1014,7 +1061,7 @@ project<span class="token punctuation">.</span>create_prediction<span class="tok
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">
               <div class="title">Confidence Scoring for Geospatial Labels</div>
-              <div class="desc">Confidence scoring transforms raw annotation outputs into quantifiable training signals that directly control model convergence, active learning prioritization, and QA routing. In spatial machine learning pipelines, not all labeled polygons, bounding boxes, or raster masks carry equal reliability: annotator fatigue, am</div>
+              <div class="desc">When a pre-labeling model trained on Sentinel-2 imagery is applied to a new SAR dataset, its raw softmax outputs appear confident — but those probabilities are miscalibrated for the new sensor modality. If your pipeline treats every model output above 0.5 as a valid training label, the resulting dataset is silently con</div>
             </a>
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">

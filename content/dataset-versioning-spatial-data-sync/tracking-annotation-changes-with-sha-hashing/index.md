@@ -5,7 +5,7 @@ slug: "tracking-annotation-changes-with-sha-hashing"
 type: "cluster"
 breadcrumb: "Dataset Versioning & Spatial Data Sync"
 datePublished: "2025-03-10"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -17,7 +17,7 @@ dateModified: "2026-06-24"
       "headline": "Tracking Annotation Changes with SHA Hashing",
       "description": "Implement deterministic SHA-256 hashing to detect silent annotation drift in geospatial ML datasets—covering normalization, manifest generation, spatial edge cases, and CI/CD integration.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -35,6 +35,7 @@ dateModified: "2026-06-24"
       "description": "Build a deterministic annotation integrity pipeline using SHA-256 digests, version manifests, and CI/CD validation gates.",
       "step": [
         {"@type": "HowToStep", "name": "Normalize annotation payloads", "text": "Strip volatile metadata fields and enforce consistent JSON key ordering and coordinate precision."},
+        {"@type": "HowToStep", "name": "Canonicalize spatial geometry", "text": "Round coordinates to 6 decimal places in EPSG:4326 and enforce RFC 7946 winding order on polygon rings."},
         {"@type": "HowToStep", "name": "Compute SHA-256 digests", "text": "Serialize normalized annotations to canonical UTF-8 bytes and hash with hashlib.sha256."},
         {"@type": "HowToStep", "name": "Generate version manifests", "text": "Build a JSON registry mapping every annotation file to its digest, feature count, and timestamp."},
         {"@type": "HowToStep", "name": "Validate against baseline", "text": "Compare the current manifest to a stored baseline before every training run to gate on integrity."},
@@ -67,6 +68,14 @@ dateModified: "2026-06-24"
             "@type": "Answer",
             "text": "Rotate each ring's coordinate list so it starts at the lexicographically smallest (longitude, latitude) pair, then enforce a consistent winding order (counter-clockwise exterior rings per RFC 7946). Apply this canonicalization before serialization so geometrically identical polygons always produce the same hash regardless of the tool that generated them."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "When should I hash in a projected CRS versus WGS84?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Always hash in a single consistent CRS chosen before the manifest is first generated for a dataset. For datasets where absolute coordinates matter (e.g. comparing annotations from multiple sources), normalize to EPSG:4326 first. For object detection workflows where metric distances or IoU thresholds are validated, normalize to a local projected CRS, compute any spatial checks, then hash. Never change the target CRS between manifest versions—it will invalidate every existing baseline hash."
+          }
         }
       ]
     }
@@ -76,7 +85,7 @@ dateModified: "2026-06-24"
 
 # Tracking Annotation Changes with SHA Hashing
 
-Geospatial ML pipelines fail silently in ways that are difficult to detect after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file's modification timestamp or byte count. Training proceeds, metrics change, and the root cause is invisible. **SHA-256 hashing applied to normalized annotation payloads** is the only reliable mechanism to catch all of these mutations deterministically, because it reduces the entire semantic state of an annotation to a 64-character hexadecimal string that changes if and only if the training-relevant content changes.
+Geospatial ML pipelines fail silently in ways that are difficult to catch after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file's modification timestamp or byte count. Training proceeds, metrics shift, and the root cause is invisible. **SHA-256 hashing applied to normalized annotation payloads** is the only reliable mechanism to catch all of these mutations deterministically, because it reduces the entire semantic state of an annotation to a 64-character hexadecimal string that changes if and only if the training-relevant content changes.
 
 This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) pipeline, where annotation integrity feeds directly into reproducible model checkpoints and rollback capability.
 
@@ -95,7 +104,7 @@ orjson==3.10.3   # optional high-throughput JSON parsing for large datasets
 
 **System requirements:** GDAL 3.8+ and PROJ 9.3+ installed at the system level. Python 3.10+ with explicit type hints throughout.
 
-**Spatial knowledge prerequisites:** Understanding of [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) is essential—hashing must occur after CRS normalization, not before. Annotations stored in mixed projections that are hashed before transformation produce manifests that cannot be compared across ingestion sources.
+**Spatial knowledge prerequisites:** Understanding of [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) is essential — hashing must occur after CRS normalization, not before. Annotations stored in mixed projections that are hashed before transformation produce manifests that cannot be compared across ingestion sources.
 
 For foundational context on the broader pipeline these hashes live within, see the parent [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) overview, which covers DVC integration, metadata preservation, and rollback architecture.
 
@@ -103,47 +112,54 @@ For foundational context on the broader pipeline these hashes live within, see t
 
 The pipeline follows five deterministic stages. Every stage either transforms the annotation data into a more canonical form or uses the canonical form to make a binary pass/fail decision.
 
-<svg viewBox="0 0 760 170" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 780 200" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
   <title>SHA-256 Annotation Hashing Pipeline</title>
-  <desc>Five sequential pipeline stages: Raw Annotation, Normalize Payload, Compute SHA-256, Build Manifest, and Validation Gate, connected by arrows.</desc>
+  <desc>Five sequential pipeline stages connected by arrows: Raw Annotation (GeoJSON or COCO input), Normalize Payload (strip volatile keys, sort, round coordinates), Compute SHA-256 (hashlib.sha256), Build Manifest (version registry JSON), and Validation Gate (pass or halt training).</desc>
   <defs>
-    <marker id="arrow-sha" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
-      <path d="M0,0 L8,3.5 L0,7 Z" fill="currentColor" opacity="0.5"/>
+    <marker id="arr-sha" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>
     </marker>
   </defs>
-  <!-- Stage boxes — height 66 gives 14px below the last baseline at y=109 -->
-  <rect x="4" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="64" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Raw</text>
-  <text x="64" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Annotation</text>
-  <text x="64" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">GeoJSON / COCO</text>
-  <rect x="152" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="212" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Normalize</text>
-  <text x="212" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Payload</text>
-  <text x="212" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">strip volatile keys</text>
-  <rect x="300" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="360" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Compute</text>
-  <text x="360" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">SHA-256</text>
-  <text x="360" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">hashlib.sha256</text>
-  <rect x="448" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="508" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Build</text>
-  <text x="508" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Manifest</text>
-  <text x="508" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">version registry</text>
-  <rect x="596" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="656" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Validation</text>
-  <text x="656" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Gate</text>
-  <text x="656" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">pass / halt training</text>
-  <!-- Connecting arrows -->
-  <line x1="124" y1="81" x2="149" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
-  <line x1="272" y1="81" x2="297" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
-  <line x1="420" y1="81" x2="445" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
-  <line x1="568" y1="81" x2="593" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
+  <!-- Stage 1 -->
+  <rect x="6" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="69" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Raw</text>
+  <text x="69" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Annotation</text>
+  <text x="69" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">GeoJSON / COCO</text>
+  <!-- Arrow 1→2 -->
+  <line x1="133" y1="94" x2="152" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 2 -->
+  <rect x="154" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="217" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Normalize</text>
+  <text x="217" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Payload</text>
+  <text x="217" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">strip volatile keys</text>
+  <!-- Arrow 2→3 -->
+  <line x1="281" y1="94" x2="300" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 3 -->
+  <rect x="302" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="365" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Compute</text>
+  <text x="365" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">SHA-256</text>
+  <text x="365" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">hashlib.sha256</text>
+  <!-- Arrow 3→4 -->
+  <line x1="429" y1="94" x2="448" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 4 -->
+  <rect x="450" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="513" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Build</text>
+  <text x="513" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Manifest</text>
+  <text x="513" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">version registry</text>
+  <!-- Arrow 4→5 -->
+  <line x1="577" y1="94" x2="596" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 5 -->
+  <rect x="598" y="56" width="176" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="686" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Validation Gate</text>
+  <text x="686" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">pass / halt</text>
+  <text x="686" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">compare to baseline</text>
 </svg>
 
 ## Core Workflow
 
 ### Step 1: Normalize Annotation Payloads
 
-Annotation files always carry volatile fields that change on every save—`created_at`, `updated_at`, `annotator_id`, `review_status`, `session_id`—but carry no information about the geometry or class label. Including them in a hash makes every routine file touch look like a semantic change. Normalization strips these fields and enforces strict key ordering so that two JSON objects representing the same spatial feature always serialize to the same byte stream.
+Annotation files always carry volatile fields that change on every save — `created_at`, `updated_at`, `annotator_id`, `review_status`, `session_id` — but carry no information about the geometry or class label. Including them in a hash makes every routine file touch look like a semantic change. Normalization strips these fields and enforces strict key ordering so that two JSON objects representing the same spatial feature always serialize to the same byte stream.
 
 ```python
 import json
@@ -181,16 +197,17 @@ The round-trip through `json.dumps`/`json.loads` with `sort_keys=True` collapses
 
 ### Step 2: Canonicalize Spatial Geometry
 
-Generic normalization is not sufficient for geospatial annotations. Two sources of hash divergence are unique to spatial data and must be addressed before serialization:
+Generic normalization is not sufficient for geospatial annotations. Two sources of hash divergence are unique to spatial data and must be addressed before serialization.
 
-**Coordinate precision:** Different GIS tools serialize WGS84 coordinates to different decimal place counts. A coordinate written as `12.300000000000001` by QGIS and `12.3` by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (≈0.11 m at the equator—well within sub-meter imagery resolution) before hashing.
+**Coordinate precision:** Different GIS tools serialize `EPSG:4326` coordinates to different decimal place counts — see the full projection decision matrix on the [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page. A coordinate written as `12.300000000000001` by QGIS and `12.3` by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (approximately 0.11 m at the equator, well within sub-meter imagery resolution) before hashing.
 
-**Polygon vertex ordering:** GeoJSON polygons can be written starting at any vertex and traversing either clockwise or counter-clockwise. [IETF RFC 7946](https://datatracker.ietf.org/doc/html/rfc7946) mandates counter-clockwise exterior rings, but many tools ignore this. Two annotators drawing the same field boundary will produce geometrically identical but byte-level different polygons. Canonicalize by rotating each ring to start at its lexicographically smallest coordinate pair and enforcing RFC 7946 winding order.
+**Polygon vertex ordering:** GeoJSON polygons can be written starting at any vertex and traversing either clockwise or counter-clockwise. IETF RFC 7946 mandates counter-clockwise exterior rings, but many tools ignore this. Two annotators drawing the same field boundary will produce geometrically identical but byte-level different polygons. Canonicalize by rotating each ring to start at its lexicographically smallest coordinate pair and enforcing RFC 7946 winding order.
 
 ```python
-from shapely.geometry import shape, mapping
-from shapely.ops import transform as shapely_transform
-import pyproj
+import shapely
+from shapely.geometry import shape, mapping as geom_to_dict
+from shapely.validation import make_valid
+from typing import Any
 
 COORD_PRECISION = 6  # 0.11 m at equator in EPSG:4326
 
@@ -203,22 +220,17 @@ def round_coords(coords: list | tuple, precision: int = COORD_PRECISION) -> list
 def canonical_geojson_geometry(geometry: dict[str, Any]) -> dict[str, Any]:
     """Return a geometry dict with rounded, winding-order-normalised coordinates."""
     geom = shape(geometry)
-    # buffer(0) repairs self-intersections; orient enforces RFC 7946 winding
-    from shapely.validation import make_valid
-    from shapely.geometry import mapping as geom_to_dict
-    import shapely
-
     geom = make_valid(geom)
-    # shapely.ops.orient enforces CCW exterior / CW holes (RFC 7946)
+    # shapely.normalize enforces canonical vertex ordering (CCW exterior / CW holes)
     if geom.geom_type in ("Polygon", "MultiPolygon"):
-        geom = shapely.normalize(geom)  # canonical vertex ordering
+        geom = shapely.normalize(geom)
 
     raw = geom_to_dict(geom)
     raw["coordinates"] = round_coords(raw["coordinates"])
     return raw
 ```
 
-Pair this with a CRS check: hashing must occur after all annotations have been projected to a consistent reference system. For training datasets that mix imagery from different UTM zones, normalize to `EPSG:4326` before this step. For object detection workflows where distances matter, normalize to a local metric CRS first, then hash. Cross-linking to the [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page gives the full projection decision matrix.
+Pair this with a CRS check: hashing must occur after all annotations have been projected to a consistent reference system. For datasets that mix imagery from different UTM zones, normalize to `EPSG:4326` before this step. For object detection workflows where metric distances matter, normalize to a local metric CRS first, compute any spatial checks, then hash.
 
 ### Step 3: Compute Deterministic SHA-256 Digests
 
@@ -245,7 +257,7 @@ def compute_annotation_hash(annotation: dict[str, Any]) -> str:
     return hashlib.sha256(canonical_bytes).hexdigest()
 ```
 
-The `ensure_ascii=False` flag is important for datasets with non-Latin class labels (Arabic, Chinese, Cyrillic script in regional projects)—forcing ASCII escape sequences would produce different byte sequences for the same string depending on Python version and platform.
+The `ensure_ascii=False` flag is important for datasets with non-Latin class labels (Arabic, Chinese, Cyrillic script in regional projects) — forcing ASCII escape sequences would produce different byte sequences for the same string depending on Python version and platform.
 
 ### Step 4: Generate Version Manifests
 
@@ -301,11 +313,50 @@ def build_manifest(
     return manifest
 ```
 
-When you integrate this with [DVC for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), the manifest file itself becomes a tracked DVC artifact—a lightweight JSON sidecar that lets you reproduce any dataset state by checking out a Git commit without pulling the full imagery or annotation files.
+When you integrate this with [DVC for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), the manifest file itself becomes a tracked DVC artifact — a lightweight JSON sidecar that lets you reproduce any dataset state by checking out a Git commit without pulling the full imagery or annotation files.
 
 ### Step 5: Validate Against Baseline
 
 The manifest is only valuable if it gates downstream processes. Run validation before every training trigger and halt execution on any divergence.
+
+<svg viewBox="0 0 680 260" role="img" aria-label="Manifest validation flow: current manifest compared against baseline, branching to pass or fail paths" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
+  <title>Annotation Manifest Baseline Comparison</title>
+  <desc>Flowchart showing current manifest and baseline manifest feeding into a comparison step. If hashes match the training run proceeds (pass path). If hashes differ, errors are logged and training is halted (fail path), with an optional rollback to the last known-good state.</desc>
+  <defs>
+    <marker id="arr-val" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>
+    </marker>
+  </defs>
+  <!-- Current manifest box -->
+  <rect x="20" y="20" width="150" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="95" y="41" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Current Manifest</text>
+  <text x="95" y="58" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">build_manifest()</text>
+  <!-- Baseline manifest box -->
+  <rect x="510" y="20" width="150" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="585" y="41" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Baseline Manifest</text>
+  <text x="585" y="58" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">stored in git / DVC</text>
+  <!-- Arrows into compare -->
+  <line x1="95" y1="70" x2="95" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <line x1="95" y1="115" x2="300" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <line x1="585" y1="70" x2="585" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <line x1="585" y1="115" x2="380" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <!-- Compare diamond -->
+  <polygon points="340,100 420,130 340,160 260,130" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="340" y="127" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Compare</text>
+  <text x="340" y="143" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">hashes equal?</text>
+  <!-- Pass path (right) -->
+  <line x1="420" y1="130" x2="530" y2="130" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <text x="475" y="122" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">yes</text>
+  <rect x="530" y="108" width="130" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="595" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Training</text>
+  <text x="595" y="143" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">proceeds</text>
+  <!-- Fail path (down) -->
+  <line x1="340" y1="160" x2="340" y2="198" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <text x="354" y="183" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">no</text>
+  <rect x="220" y="200" width="240" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="340" y="220" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Log errors + halt training</text>
+  <text x="340" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">trigger rollback if configured</text>
+</svg>
 
 ```python
 def validate_against_baseline(
@@ -339,7 +390,10 @@ def validate_against_baseline(
         cur_hash = current_manifest["annotations"][rel_path]["sha256"]
         base_hash = baseline["annotations"][rel_path]["sha256"]
         if cur_hash != base_hash:
-            errors.append(f"Integrity failure: {rel_path} (expected {base_hash[:12]}…, got {cur_hash[:12]}…)")
+            errors.append(
+                f"Integrity failure: {rel_path} "
+                f"(expected {base_hash[:12]}…, got {cur_hash[:12]}…)"
+            )
 
     return len(errors) == 0, errors
 ```
@@ -360,7 +414,7 @@ When validation fails, the [rollback strategies for corrupted spatial datasets](
 
 ## Edge Cases & Spatial Gotchas
 
-**Datum shifts masquerading as coordinate drift.** If annotations are ingested from a source using NAD83 (`EPSG:4269`) and compared against a WGS84 baseline, coordinate values will differ by up to 2 m even for identical features—enough to change every hash. Always reproject to a single CRS before normalization. The datum transformation must use a grid shift file (NADCON5 for North America, NTv2 for Europe); a simple parameter-based transformation is insufficiently accurate.
+**Datum shifts masquerading as coordinate drift.** If annotations are ingested from a source using NAD83 (`EPSG:4269`) and compared against a WGS84 baseline, coordinate values will differ by up to 2 m even for identical features — enough to change every hash. Always reproject to a single CRS before normalization. The datum transformation must use a grid shift file (NADCON5 for North America, NTv2 for Europe); a simple parameter-based transformation is insufficiently accurate.
 
 **Self-intersecting polygons producing inconsistent canonical forms.** `shapely.normalize()` and winding-order enforcement both assume valid geometry. A self-intersecting polygon (butterfly polygon) will produce different `make_valid()` outputs depending on the Shapely/GEOS version. Pin `shapely==2.0.6` and `GEOS>=3.12` to lock this behavior. Log a warning and flag any feature where `make_valid()` changes the geometry type (e.g., Polygon → MultiPolygon) before including it in the manifest.
 
@@ -368,7 +422,9 @@ When validation fails, the [rollback strategies for corrupted spatial datasets](
 
 **Floating-point round-trip through projection libraries.** A coordinate projected from UTM to WGS84 and back may not round-trip exactly due to PROJ's internal floating-point arithmetic. Always hash in the target CRS, not in an intermediate representation, and never hash a coordinate that has been projected more than once.
 
-**Multi-temporal annotation misalignment.** Annotations covering the same geographic extent but generated from imagery at different acquisition dates may hash identically if the geometry and labels are the same—even if the underlying scene has changed. Include the imagery acquisition date as a non-volatile metadata field in the canonical payload (distinct from `created_at`, which tracks the annotation session).
+**Multi-temporal annotation misalignment.** Annotations covering the same geographic extent but generated from imagery at different acquisition dates may hash identically if the geometry and labels are the same — even if the underlying scene has changed. Include the imagery acquisition date as a non-volatile metadata field in the canonical payload (distinct from `created_at`, which tracks the annotation session, not the imagery).
+
+**[Confidence score](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) fields and hashing.** Per-feature confidence scores assigned during [human-in-the-loop validation](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) should be treated as training-relevant content — do not strip them as volatile metadata. If confidence scores change because a reviewer upgraded a borderline annotation, the hash should change so the training gate catches the update.
 
 ## Integration & Automation Hooks
 
@@ -376,7 +432,7 @@ When validation fails, the [rollback strategies for corrupted spatial datasets](
 
 Store the manifest alongside `.dvc` tracking files so that `dvc repro` automatically regenerates and validates hashes as part of the training pipeline. See [using DVC pipelines for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) for the full `dvc.yaml` stage definition.
 
-```python
+```yaml
 # dvc.yaml integration snippet
 stages:
   build_annotation_manifest:
@@ -399,7 +455,9 @@ Attach the normalization and hashing step directly to Label Studio's export webh
 
 ```python
 from flask import Flask, request, jsonify
-import pathlib, json
+import hashlib
+import pathlib
+import json
 
 app = Flask(__name__)
 
@@ -441,11 +499,11 @@ jobs:
         run: python scripts/validate_manifest.py --current manifests/current.json --baseline manifests/baseline.json
 ```
 
-This gate runs on every pull request that touches the `annotations/` directory. A hash mismatch fails the check and blocks the merge, making annotation drift visible in code review before it reaches a training run. For [confidence scoring for geospatial labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/), combine this gate with a per-feature score check so low-confidence annotations surface alongside integrity failures.
+This gate runs on every pull request that touches the `annotations/` directory. A hash mismatch fails the check and blocks the merge, making annotation drift visible in code review before it reaches a training run. Pair this gate with a per-feature [confidence score](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) check so low-confidence annotations surface alongside integrity failures.
 
 ## Validation & Testing
 
-Verify the entire pipeline with a determinism test suite—run the same annotations through the pipeline twice with a random sleep in between and assert identical manifests, then introduce a one-pixel coordinate shift and assert different hashes.
+Verify the entire pipeline with a determinism test suite — run the same annotations through the pipeline twice with a random sleep in between and assert identical manifests, then introduce a one-pixel coordinate shift and assert different hashes.
 
 ```python
 import pytest
@@ -498,17 +556,48 @@ def test_volatile_metadata_change_does_not_change_hash():
     norm_a["geometry"] = canonical_geojson_geometry(norm_a["geometry"])
     norm_b["geometry"] = canonical_geojson_geometry(norm_b["geometry"])
     assert compute_annotation_hash(norm_a) == compute_annotation_hash(norm_b)
+
+def test_sub_precision_coordinate_noise_ignored():
+    """Floating-point noise below 6 d.p. must not change the hash."""
+    a = copy.deepcopy(SAMPLE_FEATURE)
+    b = copy.deepcopy(SAMPLE_FEATURE)
+    # Add noise at the 9th decimal place (~0.1 mm) — below COORD_PRECISION threshold
+    b["geometry"]["coordinates"][0][0][0] += 0.000000001
+    norm_a = normalize_annotation(a)
+    norm_b = normalize_annotation(b)
+    norm_a["geometry"] = canonical_geojson_geometry(norm_a["geometry"])
+    norm_b["geometry"] = canonical_geojson_geometry(norm_b["geometry"])
+    assert compute_annotation_hash(norm_a) == compute_annotation_hash(norm_b)
 ```
 
-Run these tests in CI before the manifest build step—they verify the pipeline's correctness assumptions rather than a specific dataset's state.
+Run these tests in CI before the manifest build step — they verify the pipeline's correctness assumptions rather than a specific dataset's state.
+
+## Production Checklist
+
+Use this checklist before treating annotation hashing as a production integrity gate:
+
+- [ ] All annotation sources normalized to `EPSG:4326` (or an agreed projected CRS) before hashing
+- [ ] `VOLATILE_KEYS` list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio `reviewed_by`, CVAT `z_order`)
+- [ ] Shapely and GEOS versions pinned (`shapely==2.0.6`, `GEOS>=3.12`) and locked in `requirements.txt`
+- [ ] `make_valid()` geometry-type changes logged and flagged; features that change type are quarantined before manifest inclusion
+- [ ] COCO feature lists sorted by `(image_id, category_id, bbox[0], bbox[1])` before hashing, not by raw `id`
+- [ ] Imagery acquisition date included as a non-volatile field to distinguish multi-temporal annotation sets
+- [ ] Baseline manifest stored in append-only object storage (S3/GCS/R2) with versioning enabled; semantic version incremented on every intentional update
+- [ ] Validation gate wired into CI and training trigger; a manifest mismatch halts the run before any GPU cost is incurred
+- [ ] Perceptual hash (`imagehash.phash`) added to manifest for raster tile sidecars alongside the SHA-256 digest
+- [ ] Audit log receives manifest diffs with annotator-ID attribution for drift frequency tracking per tool
 
 ## Production Best Practices
 
-1. **Pre-commit hooks for local drift detection.** Run a lightweight hash check with `pre-commit` on every commit to the annotation repository. Use `--fast` mode that only hashes modified files rather than rebuilding the full manifest.
-2. **Immutable manifest storage.** Store manifests in append-only object storage (S3, GCS, R2) with versioning enabled. Never overwrite a baseline manifest; increment semantic versions instead (`v1.2.0` → `v1.3.0`). The baseline manifest for a model checkpoint is a permanent record.
-3. **Batch parallelism for large datasets.** For datasets exceeding 100 k features, parallelize with `concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count())`. I/O is the dominant bottleneck; use `orjson` for 3–5x faster JSON parsing on large GeoJSON files.
-4. **Hybrid perceptual hashing for raster sidecars.** SHA-256 detects byte-level changes. For raster tiles paired with vector annotations, add a perceptual hash (e.g., `imagehash.phash`) to detect visually equivalent images that have undergone format conversion or lossy recompression. Store both in the manifest under `sha256` and `phash` keys.
-5. **Audit log integration.** Pipe manifest diffs to a centralized logging system. Track hash mismatch frequency per annotator ID (recovered from the pre-normalization payload) to identify tools or workflows that consistently introduce drift.
+**Pre-commit hooks for local drift detection.** Run a lightweight hash check with `pre-commit` on every commit to the annotation repository. Use fast mode that only hashes modified files rather than rebuilding the full manifest.
+
+**Immutable manifest storage.** Store manifests in append-only object storage (S3, GCS, R2) with versioning enabled. Never overwrite a baseline manifest; increment semantic versions instead (`v1.2.0` → `v1.3.0`). The baseline manifest for a model checkpoint is a permanent record.
+
+**Batch parallelism for large datasets.** For datasets exceeding 100 k features, parallelize with `concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count())`. I/O is the dominant bottleneck; use `orjson` for 3–5x faster JSON parsing on large GeoJSON files.
+
+**Hybrid perceptual hashing for raster sidecars.** SHA-256 detects byte-level changes. For raster tiles paired with vector annotations, add a perceptual hash (e.g., `imagehash.phash`) to detect visually equivalent images that have undergone format conversion or lossy recompression. Store both in the manifest under `sha256` and `phash` keys.
+
+**Audit log integration.** Pipe manifest diffs to a centralized logging system. Track hash mismatch frequency per annotator ID (recovered from the pre-normalization payload) to identify tools or workflows that consistently introduce drift.
 
 ---
 
@@ -521,3 +610,4 @@ This workflow is one component of the broader [Dataset Versioning & Spatial Data
 - [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep COCO/GeoJSON schema fields consistent across manifest versions
 - [Using DVC Pipelines for Automated Dataset Snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) — chain manifest generation with training triggers in `dvc.yaml`
 - [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — project all geometries to a consistent CRS before hashing
+- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — treat per-feature scores as non-volatile training signal in manifests

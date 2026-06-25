@@ -5,7 +5,7 @@ slug: "geospatial-annotation-fundamentals-architecture"
 type: "pillar"
 breadcrumb: "Geospatial Annotation Fundamentals"
 datePublished: "2024-01-15"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 schema:
   - Article
   - BreadcrumbList
@@ -22,7 +22,7 @@ schema:
       "headline": "Geospatial Annotation Fundamentals & Architecture",
       "description": "A complete guide to geospatial annotation architecture for spatial ML practitioners: data modalities, CRS governance, label taxonomies, pipeline stages, failure modes, and CI/CD integration.",
       "datePublished": "2024-01-15",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "geospatialannotation.com"},
       "publisher": {"@type": "Organization", "name": "geospatialannotation.com"}
     },
@@ -76,11 +76,11 @@ Geospatial AI has crossed from experimental research into enterprise deployment,
 
 ## Core Data Modalities & Spatial Primitives
 
-Geospatial machine learning operates across fundamentally different data structures, and the choice between raster and vector workflows dictates tooling, storage formats, and downstream model architecture. Misalignment between data modality and labeling paradigm is a leading cause of pipeline failure, often surfacing only during model evaluation when spatial metrics collapse unexpectedly.
+Geospatial machine learning operates across fundamentally different data structures, and the choice between [vector vs. raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) dictates tooling, storage formats, and downstream model architecture. Misalignment between data modality and labeling paradigm is a leading cause of pipeline failure, often surfacing only during model evaluation when spatial metrics collapse unexpectedly.
 
 **Raster data**—orthomosaics, multispectral band stacks, synthetic aperture radar (SAR), and digital elevation models—stores continuous spatial fields at fixed grid resolution. Annotation of raster data centers on pixel-level segmentation masks, instance masks, and patch-based classification. Every annotation operation must account for spectral resolution (GSD), bit-depth constraints, and the source geotransform matrix that anchors the pixel grid to geographic coordinates.
 
-**Vector data**—cadastral boundaries, road networks, building footprints, parcel polygons—is represented as topologically valid polygons, linestrings, and point features with explicit attribute schemas. Vector annotation tools export to GeoJSON, Shapefile, GeoPackage, or GeoParquet. Understanding which modality applies at each pipeline stage prevents costly rework. Detailed implementation patterns for [vector vs. raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) outline how to structure labeling interfaces, export formats, and validation rules per modality.
+**Vector data**—cadastral boundaries, road networks, building footprints, parcel polygons—is represented as topologically valid polygons, linestrings, and point features with explicit attribute schemas. Vector annotation tools export to GeoJSON, Shapefile, GeoPackage, or GeoParquet. Understanding which modality applies at each pipeline stage prevents costly rework.
 
 **Point clouds and 3D meshes** introduce volumetric annotation through voxel grids, 3D bounding boxes, or projected 2D representations. Regardless of dimensionality, the architecture must enforce geometric validity: no self-intersecting polygons, consistent ring orientation, and explicit handling of void regions. Adhering to the [OGC Simple Features standard](https://www.ogc.org/standard/sfa/) guarantees interoperability across GIS platforms and ML frameworks.
 
@@ -100,40 +100,47 @@ The table below summarizes modality-to-format mappings that govern annotation to
 
 A production-grade geospatial annotation system is an orchestrated sequence of ingestion, normalization, labeling, validation, export, and feedback stages—not a single tool. The diagram below shows the canonical data flow.
 
-<svg viewBox="0 0 820 320" role="img" aria-label="Geospatial annotation pipeline: five stages from raw data ingestion through training feedback loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 820 340" role="img" aria-label="Geospatial annotation pipeline: five stages from raw data ingestion through training feedback loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;height:auto;display:block;margin:1.5rem auto;">
   <title>Geospatial Annotation Pipeline Architecture</title>
-  <desc>Five-stage pipeline: Raw Imagery Ingestion flows to CRS Normalization and Tiling, then to Annotation Interface, then to Geometry and QA Validation, then to Export and Format Translation, then to ML Training, with an Active Learning Feedback arrow returning from ML Training to Annotation Interface.</desc>
+  <desc>Five-stage pipeline: Raw Imagery Ingestion flows to CRS Normalization and Tiling, then to Annotation Interface, then to Geometry and QA Validation, then to Export and ML Training, with an Active Learning Feedback arrow returning from Export and ML Training back to Annotation Interface.</desc>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+    <marker id="arrow-pipe" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
     </marker>
   </defs>
-  <!-- Stage boxes -->
-  <rect x="10" y="120" width="130" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="75" y="147" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">Raw Imagery</text>
-  <text x="75" y="163" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">Ingestion</text>
-  <rect x="170" y="120" width="130" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="235" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">CRS Normalize</text>
-  <text x="235" y="158" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">&amp; Tile</text>
-  <text x="235" y="174" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">(512 × 512 px)</text>
-  <rect x="330" y="120" width="130" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="395" y="147" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">Annotation</text>
-  <text x="395" y="163" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">Interface</text>
-  <rect x="490" y="120" width="130" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="555" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">Geometry &amp;</text>
-  <text x="555" y="158" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">QA Validation</text>
-  <text x="555" y="174" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">(topology + CRS)</text>
-  <rect x="650" y="120" width="130" height="64" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="715" y="147" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">Export &amp;</text>
-  <text x="715" y="163" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">ML Training</text>
+  <!-- Stage 1 -->
+  <rect x="10" y="110" width="130" height="70" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="75" y="136" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Raw Imagery</text>
+  <text x="75" y="153" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">Ingestion</text>
+  <text x="75" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">GeoTIFF / LAZ</text>
+  <!-- Stage 2 -->
+  <rect x="170" y="110" width="130" height="70" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="235" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">CRS Normalize</text>
+  <text x="235" y="153" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">&amp; Tile</text>
+  <text x="235" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">512 × 512 px</text>
+  <!-- Stage 3 -->
+  <rect x="330" y="110" width="130" height="70" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="395" y="136" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Annotation</text>
+  <text x="395" y="153" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">Interface</text>
+  <text x="395" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">Label Studio / QGIS</text>
+  <!-- Stage 4 -->
+  <rect x="490" y="110" width="130" height="70" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="555" y="131" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Geometry &amp;</text>
+  <text x="555" y="148" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">QA Validation</text>
+  <text x="555" y="165" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">topology + CRS</text>
+  <!-- Stage 5 -->
+  <rect x="650" y="110" width="130" height="70" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="715" y="136" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Export &amp;</text>
+  <text x="715" y="153" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">ML Training</text>
+  <text x="715" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">COCO / GeoTIFF</text>
   <!-- Forward arrows -->
-  <line x1="140" y1="152" x2="168" y2="152" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <line x1="300" y1="152" x2="328" y2="152" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <line x1="460" y1="152" x2="488" y2="152" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
-  <line x1="620" y1="152" x2="648" y2="152" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="140" y1="145" x2="168" y2="145" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow-pipe)"/>
+  <line x1="300" y1="145" x2="328" y2="145" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow-pipe)"/>
+  <line x1="460" y1="145" x2="488" y2="145" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow-pipe)"/>
+  <line x1="620" y1="145" x2="648" y2="145" stroke="currentColor" stroke-width="1.5" marker-end="url(#arrow-pipe)"/>
   <!-- Active learning feedback arc -->
-  <path d="M715,184 Q715,270 395,270 Q200,270 75,230" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrow)"/>
-  <text x="395" y="292" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">Active Learning Feedback Loop</text>
+  <path d="M715,180 Q715,280 395,280 Q235,280 140,220" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6,4" marker-end="url(#arrow-pipe)"/>
+  <text x="430" y="310" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">Active Learning Feedback Loop</text>
 </svg>
 
 ### Stage 1 — Ingestion & Preprocessing
@@ -142,7 +149,7 @@ Raw imagery enters through a standardized gateway that enforces format contracts
 
 - Cloud masking and atmospheric correction for satellite data
 - Orthorectification and DEM alignment for aerial and drone captures
-- [CRS normalization](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) to the project's canonical projection (`EPSG:32610` for UTM-based workflows; `EPSG:4326` for global datasets)
+- CRS normalization to the project's canonical projection (`EPSG:32610` for UTM-based workflows; `EPSG:4326` for global datasets) — full [coordinate reference system governance](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) details are covered in the dedicated cluster
 - Tiling into ML-friendly chunks (512×512 or 1024×1024 pixels) with spatial index generation using GeoHash, H3, or QuadTree
 
 ```python
@@ -183,7 +190,7 @@ Web-based or desktop annotation tools communicate via REST or gRPC APIs. Robust 
 - Offline capability with deterministic conflict resolution on sync
 - Real-time validation feedback: snapping to existing road network edges, enforcing minimum polygon area, alerting on self-intersections as they are drawn
 
-[Integrating Label Studio with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) demonstrates how to wire a geospatial-aware labeling backend to these state requirements.
+[Integrating Label Studio with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) demonstrates how to wire a geospatial-aware labeling backend to these state requirements. Teams using QGIS for desktop digitizing can consult the [QGIS plugin ecosystem for annotation teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) for plugin selection and automation hooks.
 
 ### Stage 3 — Geometry & QA Validation
 
@@ -192,7 +199,6 @@ Validation is a first-class pipeline stage, not an afterthought. Every annotatio
 ```python
 import geopandas as gpd
 from shapely.validation import make_valid
-from shapely.geometry import MultiPolygon
 
 def validate_and_repair(gdf: gpd.GeoDataFrame, min_area_m2: float = 5.0) -> gpd.GeoDataFrame:
     """Repair invalid geometries and drop slivers below minimum area threshold."""
@@ -210,11 +216,11 @@ def validate_and_repair(gdf: gpd.GeoDataFrame, min_area_m2: float = 5.0) -> gpd.
     return gdf
 ```
 
-[Confidence scoring for geospatial labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) extends this validation layer with probabilistic per-annotation scores that drive active learning routing and loss-weighting during model training.
+Assigning [confidence scores for geospatial labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) at this stage extends the validation layer with probabilistic per-annotation quality signals that drive active learning routing and loss-weighting during model training.
 
 ### Stage 4 — Export & Format Translation
 
-Training frameworks rarely consume raw GIS formats natively. Export pipelines translate annotations into framework-ready structures while preserving spatial metadata:
+Training frameworks rarely consume raw GIS formats natively. Export pipelines translate annotations into framework-ready structures while [preserving spatial metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/):
 
 | Target Format | Use Case | Key Spatial Metadata |
 |---|---|---|
@@ -224,7 +230,7 @@ Training frameworks rarely consume raw GIS formats natively. Export pipelines tr
 | Mask GeoTIFF | Semantic segmentation | Full geotransform, nodata value |
 | YOLOv8 TXT | Lightweight bounding box training | Normalised `[cx, cy, w, h]` |
 
-[Preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) covers how to embed geotransform metadata into COCO and YOLO exports so that spatial context survives format translation.
+The [how to structure GeoJSON for ML training datasets](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) guide provides production-ready schema templates and explains which fields are mandatory for spatial model training.
 
 ### Stage 5 — Active Learning & Feedback
 
@@ -232,8 +238,10 @@ The final stage closes the loop between model predictions and the annotation que
 
 - Score unlabeled patches for uncertainty (entropy, MC Dropout variance) or spatial diversity
 - Route high-uncertainty samples to senior annotators, bypassing standard review queues
-- Pre-fill annotation canvases with model predictions for human correction
+- Pre-fill annotation canvases with model predictions for human correction — [automating pre-labeling with foundation models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) covers SAM-based and vision-language pre-labeling strategies
 - Track correction rates per annotator and per class to detect annotator drift over time
+
+[Human-in-the-loop validation cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) provides implementation patterns for routing uncertain samples, managing review queues, and measuring annotator agreement across spatial domains.
 
 ---
 
@@ -248,7 +256,7 @@ Production annotation systems must enforce a strict CRS governance model:
 3. Preserve original CRS metadata in export payloads for auditability
 4. Apply on-the-fly reprojection only for visualization, never for ground-truth storage
 
-When working across regional boundaries or global datasets, datum transformations (e.g., NAD83 to WGS84) require grid-based correction files to maintain centimeter-level accuracy. Comprehensive guidance on [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) covers projection selection, transformation hooks, and metadata preservation strategies. For authoritative CRS definitions and transformation matrices, the [EPSG Geodetic Parameter Dataset](https://epsg.org/) remains the industry standard.
+When working across regional boundaries or global datasets, datum transformations (e.g., NAD83 to WGS84) require grid-based correction files to maintain centimeter-level accuracy. For authoritative CRS definitions and transformation matrices, the [EPSG Geodetic Parameter Dataset](https://epsg.org/) remains the industry standard.
 
 ---
 
@@ -259,8 +267,62 @@ A well-designed label taxonomy is the foundation of model interpretability and c
 Effective taxonomy design follows three principles:
 
 - **Mutual exclusivity:** Classes must not overlap unless explicitly modeled as multi-label scenarios. Overlapping classes without a defined precedence rule produce contradictory training signals.
-- **Hierarchical structure:** Parent-child relationships (e.g., `land_cover > vegetation > forest > coniferous`) enable flexible model training and post-processing aggregation without re-labeling.
+- **Hierarchical structure:** Parent-child relationships enable flexible model training and post-processing aggregation without re-labeling.
 - **Attribute-rich schemas:** Beyond class IDs, capture per-annotation metadata: confidence thresholds, occlusion flags, temporal acquisition state, and sensor resolution.
+
+The diagram below illustrates a hierarchical taxonomy structure for land-cover classification, where leaf nodes map directly to model output classes:
+
+<svg viewBox="0 0 720 280" role="img" aria-label="Hierarchical label taxonomy for land-cover geospatial annotation showing parent and child class relationships" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;height:auto;display:block;margin:1.5rem auto;">
+  <title>Hierarchical Label Taxonomy for Land-Cover Annotation</title>
+  <desc>Three-level taxonomy tree. Root: land_cover. Level 2 children: vegetation, built_environment, water. Under vegetation: forest (coniferous, deciduous), cropland, grassland. Under built_environment: buildings, roads, infrastructure. Under water: open_water, wetland, seasonal_flood.</desc>
+  <defs>
+    <marker id="arrow-tax" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L6,3 z" fill="currentColor" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- Root -->
+  <rect x="285" y="10" width="150" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="33" text-anchor="middle" font-size="13" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">land_cover</text>
+  <!-- Level 2 -->
+  <rect x="30" y="80" width="150" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="105" y="103" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">vegetation</text>
+  <rect x="285" y="80" width="150" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="99" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif">built_environment</text>
+  <rect x="540" y="80" width="150" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="615" y="103" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif">water</text>
+  <!-- Connectors root to L2 -->
+  <line x1="360" y1="46" x2="105" y2="80" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#arrow-tax)"/>
+  <line x1="360" y1="46" x2="360" y2="80" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#arrow-tax)"/>
+  <line x1="360" y1="46" x2="615" y2="80" stroke="currentColor" stroke-width="1" opacity="0.5" marker-end="url(#arrow-tax)"/>
+  <!-- Level 3 — vegetation children -->
+  <rect x="10" y="160" width="110" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="65" y="177" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">forest</text>
+  <text x="65" y="190" text-anchor="middle" font-size="9" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">conif / decid</text>
+  <rect x="130" y="160" width="90" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="175" y="181" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">cropland</text>
+  <!-- Connectors veg to L3 -->
+  <line x1="105" y1="116" x2="65" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#arrow-tax)"/>
+  <line x1="105" y1="116" x2="175" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#arrow-tax)"/>
+  <!-- Level 3 — built_environment children -->
+  <rect x="250" y="160" width="100" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="300" y="181" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">buildings</text>
+  <rect x="360" y="160" width="90" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="405" y="181" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">roads</text>
+  <!-- Connectors built to L3 -->
+  <line x1="360" y1="116" x2="300" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#arrow-tax)"/>
+  <line x1="360" y1="116" x2="405" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#arrow-tax)"/>
+  <!-- Level 3 — water children -->
+  <rect x="465" y="160" width="100" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="515" y="181" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">open_water</text>
+  <rect x="575" y="160" width="100" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1"/>
+  <text x="625" y="177" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">wetland /</text>
+  <text x="625" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif">seasonal</text>
+  <!-- Connectors water to L3 -->
+  <line x1="615" y1="116" x2="515" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#arrow-tax)"/>
+  <line x1="615" y1="116" x2="625" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4" marker-end="url(#arrow-tax)"/>
+  <!-- Legend -->
+  <text x="360" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">Leaf nodes map directly to model output classes; parent nodes aggregate for reporting</text>
+</svg>
 
 When defining ROI boundaries for aerial or satellite imagery, sensor resolution dictates minimum viable feature sizes. A 30 cm/pixel drone orthomosaic can distinguish individual vehicles; 10 m Sentinel-2 data requires aggregated land-use classifications. [Defining ROI label taxonomies for aerial imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) provides structured templates for class hierarchies, attribute schemas, and resolution-aware labeling guidelines—including a decision matrix for [polygon vs. bounding box annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) that accounts for both annotation cost and downstream model architecture.
 
@@ -288,13 +350,13 @@ The following failure patterns are endemic to geospatial annotation pipelines an
 
 **Topology corruption from coordinate rounding.** Serializing geometries to JSON with insufficient decimal precision (fewer than 7 decimal places for `EPSG:4326`) rounds coordinates and can collapse thin polygons into self-intersections. Use at least 8 decimal places for geographic coordinates and 3 for projected metre coordinates.
 
-**Class imbalance amplified by spatial autocorrelation.** Geospatial datasets exhibit strong spatial autocorrelation—nearby pixels or polygons belong to the same class. Naive random train/validation splits place spatially adjacent samples in both sets, inflating validation accuracy by up to 15–20 IoU points. Always split on spatial grid tiles or geographic regions, not on individual features.
+**Class imbalance amplified by spatial autocorrelation.** Geospatial datasets exhibit strong spatial autocorrelation—nearby pixels or polygons belong to the same class. Naive random train/validation splits place spatially adjacent samples in both sets, inflating validation accuracy by up to 15–20 IoU points. Always split on spatial grid tiles or geographic regions, not on individual features. [Calculating IoU thresholds for geospatial object detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) covers how projection choice affects IoU computation and what thresholds are appropriate per sensor type.
 
 **Multi-temporal misalignment from orthorectification differences.** Imagery from different acquisition dates may use different DEM versions or orthorectification algorithms, introducing sub-pixel misalignment. A building annotated on 2022 imagery may be offset by 1–3 pixels from the same building in 2024 imagery at the same nominal resolution. Run co-registration checks before labeling time-series datasets.
 
 **Sliver polygons from automated digitizing.** Automated or semi-automated labeling tools frequently generate sliver polygons at class boundaries. These slivers train the model to expect a spurious narrow class transition that does not exist in reality. Enforce a minimum area threshold (project-appropriate—5 m² for urban parcel work, 100 m² for land cover) in the validation layer.
 
-**Annotator disagreement on spectral edge cases.** Low-contrast regions—shallow water over bright sand, shadow-filled valleys, burned areas—produce high inter-annotator disagreement. Without explicit uncertainty flags, these samples are treated as high-confidence training data. Compute IoU between annotator pairs on overlapping regions to identify and route ambiguous samples to adjudication rather than the main training pool.
+**Annotator disagreement on spectral edge cases.** Low-contrast regions—shallow water over bright sand, shadow-filled valleys, burned areas—produce high inter-annotator disagreement. Without explicit uncertainty flags, these samples are treated as high-confidence training data. Compute IoU between annotator pairs on overlapping regions to identify and route ambiguous samples to adjudication rather than the main training pool. [Debugging annotation drift across dataset versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) covers how to detect systematic annotator drift and quarantine affected batches before they contaminate the training corpus.
 
 ---
 

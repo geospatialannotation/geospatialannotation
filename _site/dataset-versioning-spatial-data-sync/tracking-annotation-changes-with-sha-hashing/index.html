@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -275,7 +275,7 @@
       "headline": "Tracking Annotation Changes with SHA Hashing",
       "description": "Implement deterministic SHA-256 hashing to detect silent annotation drift in geospatial ML datasets—covering normalization, manifest generation, spatial edge cases, and CI/CD integration.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -293,6 +293,7 @@
       "description": "Build a deterministic annotation integrity pipeline using SHA-256 digests, version manifests, and CI/CD validation gates.",
       "step": [
         {"@type": "HowToStep", "name": "Normalize annotation payloads", "text": "Strip volatile metadata fields and enforce consistent JSON key ordering and coordinate precision."},
+        {"@type": "HowToStep", "name": "Canonicalize spatial geometry", "text": "Round coordinates to 6 decimal places in EPSG:4326 and enforce RFC 7946 winding order on polygon rings."},
         {"@type": "HowToStep", "name": "Compute SHA-256 digests", "text": "Serialize normalized annotations to canonical UTF-8 bytes and hash with hashlib.sha256."},
         {"@type": "HowToStep", "name": "Generate version manifests", "text": "Build a JSON registry mapping every annotation file to its digest, feature count, and timestamp."},
         {"@type": "HowToStep", "name": "Validate against baseline", "text": "Compare the current manifest to a stored baseline before every training run to gate on integrity."},
@@ -325,6 +326,14 @@
             "@type": "Answer",
             "text": "Rotate each ring's coordinate list so it starts at the lexicographically smallest (longitude, latitude) pair, then enforce a consistent winding order (counter-clockwise exterior rings per RFC 7946). Apply this canonicalization before serialization so geometrically identical polygons always produce the same hash regardless of the tool that generated them."
           }
+        },
+        {
+          "@type": "Question",
+          "name": "When should I hash in a projected CRS versus WGS84?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Always hash in a single consistent CRS chosen before the manifest is first generated for a dataset. For datasets where absolute coordinates matter (e.g. comparing annotations from multiple sources), normalize to EPSG:4326 first. For object detection workflows where metric distances or IoU thresholds are validated, normalize to a local projected CRS, compute any spatial checks, then hash. Never change the target CRS between manifest versions—it will invalidate every existing baseline hash."
+          }
         }
       ]
     }
@@ -332,7 +341,7 @@
 }
 </script>
 <h1>Tracking Annotation Changes with SHA Hashing</h1>
-<p>Geospatial ML pipelines fail silently in ways that are difficult to detect after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file’s modification timestamp or byte count. Training proceeds, metrics change, and the root cause is invisible. <strong>SHA-256 hashing applied to normalized annotation payloads</strong> is the only reliable mechanism to catch all of these mutations deterministically, because it reduces the entire semantic state of an annotation to a 64-character hexadecimal string that changes if and only if the training-relevant content changes.</p>
+<p>Geospatial ML pipelines fail silently in ways that are difficult to catch after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file’s modification timestamp or byte count. Training proceeds, metrics shift, and the root cause is invisible. <strong>SHA-256 hashing applied to normalized annotation payloads</strong> is the only reliable mechanism to catch all of these mutations deterministically, because it reduces the entire semantic state of an annotation to a 64-character hexadecimal string that changes if and only if the training-relevant content changes.</p>
 <p>This workflow is one component of the broader <a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> pipeline, where annotation integrity feeds directly into reproducible model checkpoints and rollback capability.</p>
 <h2 id="prerequisites-toolchain-alignment" tabindex="-1"><a class="header-anchor" href="#prerequisites-toolchain-alignment" aria-label="Permalink to section &quot;Prerequisites &amp; Toolchain Alignment&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Toolchain Alignment</h2>
 <p>Install the following packages before starting. The standard library <code class="inline-code">hashlib</code> and <code class="inline-code">json</code> modules are sufficient for core hashing; <code class="inline-code">shapely</code> and <code class="inline-code">pyproj</code> are needed for spatial canonicalization.</p>
@@ -355,48 +364,55 @@ orjson==3.10.3   # optional high-throughput JSON parsing for large datasets
 </code></pre>
 </div>
 <p><strong>System requirements:</strong> GDAL 3.8+ and PROJ 9.3+ installed at the system level. Python 3.10+ with explicit type hints throughout.</p>
-<p><strong>Spatial knowledge prerequisites:</strong> Understanding of <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> is essential—hashing must occur after CRS normalization, not before. Annotations stored in mixed projections that are hashed before transformation produce manifests that cannot be compared across ingestion sources.</p>
+<p><strong>Spatial knowledge prerequisites:</strong> Understanding of <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> is essential — hashing must occur after CRS normalization, not before. Annotations stored in mixed projections that are hashed before transformation produce manifests that cannot be compared across ingestion sources.</p>
 <p>For foundational context on the broader pipeline these hashes live within, see the parent <a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> overview, which covers DVC integration, metadata preservation, and rollback architecture.</p>
 <h2 id="sha-hashing-pipeline-architecture-overview" tabindex="-1"><a class="header-anchor" href="#sha-hashing-pipeline-architecture-overview" aria-label="Permalink to section &quot;SHA Hashing Pipeline: Architecture Overview&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> SHA Hashing Pipeline: Architecture Overview</h2>
 <p>The pipeline follows five deterministic stages. Every stage either transforms the annotation data into a more canonical form or uses the canonical form to make a binary pass/fail decision.</p>
-<svg viewBox="0 0 760 170" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 780 200" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
   <title>SHA-256 Annotation Hashing Pipeline</title>
-  <desc>Five sequential pipeline stages: Raw Annotation, Normalize Payload, Compute SHA-256, Build Manifest, and Validation Gate, connected by arrows.</desc>
+  <desc>Five sequential pipeline stages connected by arrows: Raw Annotation (GeoJSON or COCO input), Normalize Payload (strip volatile keys, sort, round coordinates), Compute SHA-256 (hashlib.sha256), Build Manifest (version registry JSON), and Validation Gate (pass or halt training).</desc>
   <defs>
-    <marker id="arrow-sha" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
-      <path d="M0,0 L8,3.5 L0,7 Z" fill="currentColor" opacity="0.5"/>
+    <marker id="arr-sha" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>
     </marker>
   </defs>
-  <!-- Stage boxes — height 66 gives 14px below the last baseline at y=109 -->
-  <rect x="4" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="64" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Raw</text>
-  <text x="64" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Annotation</text>
-  <text x="64" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">GeoJSON / COCO</text>
-  <rect x="152" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="212" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Normalize</text>
-  <text x="212" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Payload</text>
-  <text x="212" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">strip volatile keys</text>
-  <rect x="300" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="360" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Compute</text>
-  <text x="360" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">SHA-256</text>
-  <text x="360" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">hashlib.sha256</text>
-  <rect x="448" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="508" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Build</text>
-  <text x="508" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Manifest</text>
-  <text x="508" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">version registry</text>
-  <rect x="596" y="48" width="120" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
-  <text x="656" y="75" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Validation</text>
-  <text x="656" y="91" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="600">Gate</text>
-  <text x="656" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.65">pass / halt training</text>
-  <!-- Connecting arrows -->
-  <line x1="124" y1="81" x2="149" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
-  <line x1="272" y1="81" x2="297" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
-  <line x1="420" y1="81" x2="445" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
-  <line x1="568" y1="81" x2="593" y2="81" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arrow-sha)"/>
+  <!-- Stage 1 -->
+  <rect x="6" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="69" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Raw</text>
+  <text x="69" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Annotation</text>
+  <text x="69" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">GeoJSON / COCO</text>
+  <!-- Arrow 1→2 -->
+  <line x1="133" y1="94" x2="152" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 2 -->
+  <rect x="154" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="217" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Normalize</text>
+  <text x="217" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Payload</text>
+  <text x="217" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">strip volatile keys</text>
+  <!-- Arrow 2→3 -->
+  <line x1="281" y1="94" x2="300" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 3 -->
+  <rect x="302" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="365" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Compute</text>
+  <text x="365" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">SHA-256</text>
+  <text x="365" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">hashlib.sha256</text>
+  <!-- Arrow 3→4 -->
+  <line x1="429" y1="94" x2="448" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 4 -->
+  <rect x="450" y="56" width="126" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="513" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Build</text>
+  <text x="513" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Manifest</text>
+  <text x="513" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">version registry</text>
+  <!-- Arrow 4→5 -->
+  <line x1="577" y1="94" x2="596" y2="94" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#arr-sha)"/>
+  <!-- Stage 5 -->
+  <rect x="598" y="56" width="176" height="76" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="686" y="84" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Validation Gate</text>
+  <text x="686" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">pass / halt</text>
+  <text x="686" y="118" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">compare to baseline</text>
 </svg>
 <h2 id="core-workflow" tabindex="-1"><a class="header-anchor" href="#core-workflow" aria-label="Permalink to section &quot;Core Workflow&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Workflow</h2>
 <h3 id="step-1-normalize-annotation-payloads" tabindex="-1"><a class="header-anchor" href="#step-1-normalize-annotation-payloads" aria-label="Permalink to section &quot;Step 1: Normalize Annotation Payloads&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1: Normalize Annotation Payloads</h3>
-<p>Annotation files always carry volatile fields that change on every save—<code class="inline-code">created_at</code>, <code class="inline-code">updated_at</code>, <code class="inline-code">annotator_id</code>, <code class="inline-code">review_status</code>, <code class="inline-code">session_id</code>—but carry no information about the geometry or class label. Including them in a hash makes every routine file touch look like a semantic change. Normalization strips these fields and enforces strict key ordering so that two JSON objects representing the same spatial feature always serialize to the same byte stream.</p>
+<p>Annotation files always carry volatile fields that change on every save — <code class="inline-code">created_at</code>, <code class="inline-code">updated_at</code>, <code class="inline-code">annotator_id</code>, <code class="inline-code">review_status</code>, <code class="inline-code">session_id</code> — but carry no information about the geometry or class label. Including them in a hash makes every routine file touch look like a semantic change. Normalization strips these fields and enforces strict key ordering so that two JSON objects representing the same spatial feature always serialize to the same byte stream.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -440,9 +456,9 @@ VOLATILE_KEYS<span class="token punctuation">:</span> <span class="token builtin
 </div>
 <p>The round-trip through <code class="inline-code">json.dumps</code>/<code class="inline-code">json.loads</code> with <code class="inline-code">sort_keys=True</code> collapses any Python dict ordering variance into a single canonical form without requiring an external library.</p>
 <h3 id="step-2-canonicalize-spatial-geometry" tabindex="-1"><a class="header-anchor" href="#step-2-canonicalize-spatial-geometry" aria-label="Permalink to section &quot;Step 2: Canonicalize Spatial Geometry&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2: Canonicalize Spatial Geometry</h3>
-<p>Generic normalization is not sufficient for geospatial annotations. Two sources of hash divergence are unique to spatial data and must be addressed before serialization:</p>
-<p><strong>Coordinate precision:</strong> Different GIS tools serialize WGS84 coordinates to different decimal place counts. A coordinate written as <code class="inline-code">12.300000000000001</code> by QGIS and <code class="inline-code">12.3</code> by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (≈0.11 m at the equator—well within sub-meter imagery resolution) before hashing.</p>
-<p><strong>Polygon vertex ordering:</strong> GeoJSON polygons can be written starting at any vertex and traversing either clockwise or counter-clockwise. <a href="https://datatracker.ietf.org/doc/html/rfc7946">IETF RFC 7946</a> mandates counter-clockwise exterior rings, but many tools ignore this. Two annotators drawing the same field boundary will produce geometrically identical but byte-level different polygons. Canonicalize by rotating each ring to start at its lexicographically smallest coordinate pair and enforcing RFC 7946 winding order.</p>
+<p>Generic normalization is not sufficient for geospatial annotations. Two sources of hash divergence are unique to spatial data and must be addressed before serialization.</p>
+<p><strong>Coordinate precision:</strong> Different GIS tools serialize <code class="inline-code">EPSG:4326</code> coordinates to different decimal place counts — see the full projection decision matrix on the <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> page. A coordinate written as <code class="inline-code">12.300000000000001</code> by QGIS and <code class="inline-code">12.3</code> by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (approximately 0.11 m at the equator, well within sub-meter imagery resolution) before hashing.</p>
+<p><strong>Polygon vertex ordering:</strong> GeoJSON polygons can be written starting at any vertex and traversing either clockwise or counter-clockwise. IETF RFC 7946 mandates counter-clockwise exterior rings, but many tools ignore this. Two annotators drawing the same field boundary will produce geometrically identical but byte-level different polygons. Canonicalize by rotating each ring to start at its lexicographically smallest coordinate pair and enforcing RFC 7946 winding order.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -453,9 +469,10 @@ VOLATILE_KEYS<span class="token punctuation">:</span> <span class="token builtin
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> shape<span class="token punctuation">,</span> mapping
-<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>ops <span class="token keyword">import</span> transform <span class="token keyword">as</span> shapely_transform
-<span class="token keyword">import</span> pyproj
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> shapely
+<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> shape<span class="token punctuation">,</span> mapping <span class="token keyword">as</span> geom_to_dict
+<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> make_valid
+<span class="token keyword">from</span> typing <span class="token keyword">import</span> Any
 
 COORD_PRECISION <span class="token operator">=</span> <span class="token number">6</span>  <span class="token comment"># 0.11 m at equator in EPSG:4326</span>
 
@@ -468,22 +485,17 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
 <span class="token keyword">def</span> <span class="token function">canonical_geojson_geometry</span><span class="token punctuation">(</span>geometry<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span><span class="token punctuation">:</span>
     <span class="token triple-quoted-string string">"""Return a geometry dict with rounded, winding-order-normalised coordinates."""</span>
     geom <span class="token operator">=</span> shape<span class="token punctuation">(</span>geometry<span class="token punctuation">)</span>
-    <span class="token comment"># buffer(0) repairs self-intersections; orient enforces RFC 7946 winding</span>
-    <span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> make_valid
-    <span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> mapping <span class="token keyword">as</span> geom_to_dict
-    <span class="token keyword">import</span> shapely
-
     geom <span class="token operator">=</span> make_valid<span class="token punctuation">(</span>geom<span class="token punctuation">)</span>
-    <span class="token comment"># shapely.ops.orient enforces CCW exterior / CW holes (RFC 7946)</span>
+    <span class="token comment"># shapely.normalize enforces canonical vertex ordering (CCW exterior / CW holes)</span>
     <span class="token keyword">if</span> geom<span class="token punctuation">.</span>geom_type <span class="token keyword">in</span> <span class="token punctuation">(</span><span class="token string">"Polygon"</span><span class="token punctuation">,</span> <span class="token string">"MultiPolygon"</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
-        geom <span class="token operator">=</span> shapely<span class="token punctuation">.</span>normalize<span class="token punctuation">(</span>geom<span class="token punctuation">)</span>  <span class="token comment"># canonical vertex ordering</span>
+        geom <span class="token operator">=</span> shapely<span class="token punctuation">.</span>normalize<span class="token punctuation">(</span>geom<span class="token punctuation">)</span>
 
     raw <span class="token operator">=</span> geom_to_dict<span class="token punctuation">(</span>geom<span class="token punctuation">)</span>
     raw<span class="token punctuation">[</span><span class="token string">"coordinates"</span><span class="token punctuation">]</span> <span class="token operator">=</span> round_coords<span class="token punctuation">(</span>raw<span class="token punctuation">[</span><span class="token string">"coordinates"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
     <span class="token keyword">return</span> raw
 </code></pre>
 </div>
-<p>Pair this with a CRS check: hashing must occur after all annotations have been projected to a consistent reference system. For training datasets that mix imagery from different UTM zones, normalize to <code class="inline-code">EPSG:4326</code> before this step. For object detection workflows where distances matter, normalize to a local metric CRS first, then hash. Cross-linking to the <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> page gives the full projection decision matrix.</p>
+<p>Pair this with a CRS check: hashing must occur after all annotations have been projected to a consistent reference system. For datasets that mix imagery from different UTM zones, normalize to <code class="inline-code">EPSG:4326</code> before this step. For object detection workflows where metric distances matter, normalize to a local metric CRS first, compute any spatial checks, then hash.</p>
 <h3 id="step-3-compute-deterministic-sha-256-digests" tabindex="-1"><a class="header-anchor" href="#step-3-compute-deterministic-sha-256-digests" aria-label="Permalink to section &quot;Step 3: Compute Deterministic SHA-256 Digests&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3: Compute Deterministic SHA-256 Digests</h3>
 <p>Once the payload is normalized and geometries are canonical, serialize to compact UTF-8 bytes (no whitespace) and hash with SHA-256. SHA-256 is preferred over MD5 or SHA-1 because it is collision-resistant, FIPS 140-2 approved, and natively supported by DVC and most content-addressable storage systems.</p>
 <div class="code-block">
@@ -516,7 +528,7 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
     <span class="token keyword">return</span> hashlib<span class="token punctuation">.</span>sha256<span class="token punctuation">(</span>canonical_bytes<span class="token punctuation">)</span><span class="token punctuation">.</span>hexdigest<span class="token punctuation">(</span><span class="token punctuation">)</span>
 </code></pre>
 </div>
-<p>The <code class="inline-code">ensure_ascii=False</code> flag is important for datasets with non-Latin class labels (Arabic, Chinese, Cyrillic script in regional projects)—forcing ASCII escape sequences would produce different byte sequences for the same string depending on Python version and platform.</p>
+<p>The <code class="inline-code">ensure_ascii=False</code> flag is important for datasets with non-Latin class labels (Arabic, Chinese, Cyrillic script in regional projects) — forcing ASCII escape sequences would produce different byte sequences for the same string depending on Python version and platform.</p>
 <h3 id="step-4-generate-version-manifests" tabindex="-1"><a class="header-anchor" href="#step-4-generate-version-manifests" aria-label="Permalink to section &quot;Step 4: Generate Version Manifests&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4: Generate Version Manifests</h3>
 <p>Individual file hashes are only useful in aggregate. A version manifest maps every annotation file in a dataset to its digest, feature count, and format, creating a single document that represents the complete annotation state of a dataset version. This is the artifact you store, diff, and validate against.</p>
 <div class="code-block">
@@ -578,9 +590,47 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
     <span class="token keyword">return</span> manifest
 </code></pre>
 </div>
-<p>When you integrate this with <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">DVC for geospatial training data</a>, the manifest file itself becomes a tracked DVC artifact—a lightweight JSON sidecar that lets you reproduce any dataset state by checking out a Git commit without pulling the full imagery or annotation files.</p>
+<p>When you integrate this with <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">DVC for geospatial training data</a>, the manifest file itself becomes a tracked DVC artifact — a lightweight JSON sidecar that lets you reproduce any dataset state by checking out a Git commit without pulling the full imagery or annotation files.</p>
 <h3 id="step-5-validate-against-baseline" tabindex="-1"><a class="header-anchor" href="#step-5-validate-against-baseline" aria-label="Permalink to section &quot;Step 5: Validate Against Baseline&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5: Validate Against Baseline</h3>
 <p>The manifest is only valuable if it gates downstream processes. Run validation before every training trigger and halt execution on any divergence.</p>
+<svg viewBox="0 0 680 260" role="img" aria-label="Manifest validation flow: current manifest compared against baseline, branching to pass or fail paths" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
+  <title>Annotation Manifest Baseline Comparison</title>
+  <desc>Flowchart showing current manifest and baseline manifest feeding into a comparison step. If hashes match the training run proceeds (pass path). If hashes differ, errors are logged and training is halted (fail path), with an optional rollback to the last known-good state.</desc>
+  <defs>
+    <marker id="arr-val" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>
+    </marker>
+  </defs>
+  <!-- Current manifest box -->
+  <rect x="20" y="20" width="150" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="95" y="41" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Current Manifest</text>
+  <text x="95" y="58" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">build_manifest()</text>
+  <!-- Baseline manifest box -->
+  <rect x="510" y="20" width="150" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="585" y="41" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Baseline Manifest</text>
+  <text x="585" y="58" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">stored in git / DVC</text>
+  <!-- Arrows into compare -->
+  <line x1="95" y1="70" x2="95" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <line x1="95" y1="115" x2="300" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <line x1="585" y1="70" x2="585" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <line x1="585" y1="115" x2="380" y2="115" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <!-- Compare diamond -->
+  <polygon points="340,100 420,130 340,160 260,130" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="340" y="127" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Compare</text>
+  <text x="340" y="143" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">hashes equal?</text>
+  <!-- Pass path (right) -->
+  <line x1="420" y1="130" x2="530" y2="130" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <text x="475" y="122" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">yes</text>
+  <rect x="530" y="108" width="130" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="595" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Training</text>
+  <text x="595" y="143" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">proceeds</text>
+  <!-- Fail path (down) -->
+  <line x1="340" y1="160" x2="340" y2="198" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#arr-val)"/>
+  <text x="354" y="183" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.7">no</text>
+  <rect x="220" y="200" width="240" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.35"/>
+  <text x="340" y="220" text-anchor="middle" font-size="11" fill="currentColor" font-family="system-ui,sans-serif" font-weight="700">Log errors + halt training</text>
+  <text x="340" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">trigger rollback if configured</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -622,7 +672,10 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
         cur_hash <span class="token operator">=</span> current_manifest<span class="token punctuation">[</span><span class="token string">"annotations"</span><span class="token punctuation">]</span><span class="token punctuation">[</span>rel_path<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"sha256"</span><span class="token punctuation">]</span>
         base_hash <span class="token operator">=</span> baseline<span class="token punctuation">[</span><span class="token string">"annotations"</span><span class="token punctuation">]</span><span class="token punctuation">[</span>rel_path<span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"sha256"</span><span class="token punctuation">]</span>
         <span class="token keyword">if</span> cur_hash <span class="token operator">!=</span> base_hash<span class="token punctuation">:</span>
-            errors<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"Integrity failure: </span><span class="token interpolation"><span class="token punctuation">{</span>rel_path<span class="token punctuation">}</span></span><span class="token string"> (expected </span><span class="token interpolation"><span class="token punctuation">{</span>base_hash<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token format-spec">12]</span><span class="token punctuation">}</span></span><span class="token string">…, got </span><span class="token interpolation"><span class="token punctuation">{</span>cur_hash<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token format-spec">12]</span><span class="token punctuation">}</span></span><span class="token string">…)"</span></span><span class="token punctuation">)</span>
+            errors<span class="token punctuation">.</span>append<span class="token punctuation">(</span>
+                <span class="token string-interpolation"><span class="token string">f"Integrity failure: </span><span class="token interpolation"><span class="token punctuation">{</span>rel_path<span class="token punctuation">}</span></span><span class="token string"> "</span></span>
+                <span class="token string-interpolation"><span class="token string">f"(expected </span><span class="token interpolation"><span class="token punctuation">{</span>base_hash<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token format-spec">12]</span><span class="token punctuation">}</span></span><span class="token string">…, got </span><span class="token interpolation"><span class="token punctuation">{</span>cur_hash<span class="token punctuation">[</span><span class="token punctuation">:</span><span class="token format-spec">12]</span><span class="token punctuation">}</span></span><span class="token string">…)"</span></span>
+            <span class="token punctuation">)</span>
 
     <span class="token keyword">return</span> <span class="token builtin">len</span><span class="token punctuation">(</span>errors<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">,</span> errors
 </code></pre>
@@ -684,17 +737,18 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
 </tbody>
 </table>
 </div><h2 id="edge-cases-spatial-gotchas" tabindex="-1"><a class="header-anchor" href="#edge-cases-spatial-gotchas" aria-label="Permalink to section &quot;Edge Cases &amp; Spatial Gotchas&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases &amp; Spatial Gotchas</h2>
-<p><strong>Datum shifts masquerading as coordinate drift.</strong> If annotations are ingested from a source using NAD83 (<code class="inline-code">EPSG:4269</code>) and compared against a WGS84 baseline, coordinate values will differ by up to 2 m even for identical features—enough to change every hash. Always reproject to a single CRS before normalization. The datum transformation must use a grid shift file (NADCON5 for North America, NTv2 for Europe); a simple parameter-based transformation is insufficiently accurate.</p>
+<p><strong>Datum shifts masquerading as coordinate drift.</strong> If annotations are ingested from a source using NAD83 (<code class="inline-code">EPSG:4269</code>) and compared against a WGS84 baseline, coordinate values will differ by up to 2 m even for identical features — enough to change every hash. Always reproject to a single CRS before normalization. The datum transformation must use a grid shift file (NADCON5 for North America, NTv2 for Europe); a simple parameter-based transformation is insufficiently accurate.</p>
 <p><strong>Self-intersecting polygons producing inconsistent canonical forms.</strong> <code class="inline-code">shapely.normalize()</code> and winding-order enforcement both assume valid geometry. A self-intersecting polygon (butterfly polygon) will produce different <code class="inline-code">make_valid()</code> outputs depending on the Shapely/GEOS version. Pin <code class="inline-code">shapely==2.0.6</code> and <code class="inline-code">GEOS&gt;=3.12</code> to lock this behavior. Log a warning and flag any feature where <code class="inline-code">make_valid()</code> changes the geometry type (e.g., Polygon → MultiPolygon) before including it in the manifest.</p>
 <p><strong>COCO JSON feature ordering.</strong> COCO format stores annotations as a flat list with integer IDs. Sorting by <code class="inline-code">id</code> before hashing is not sufficient if IDs were reassigned during a re-export. Sort instead by <code class="inline-code">(image_id, category_id, bbox[0], bbox[1])</code> to achieve a stable ordering that survives ID reassignment. The <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">preserving metadata across dataset versions</a> page covers COCO metadata field handling in depth.</p>
 <p><strong>Floating-point round-trip through projection libraries.</strong> A coordinate projected from UTM to WGS84 and back may not round-trip exactly due to PROJ’s internal floating-point arithmetic. Always hash in the target CRS, not in an intermediate representation, and never hash a coordinate that has been projected more than once.</p>
-<p><strong>Multi-temporal annotation misalignment.</strong> Annotations covering the same geographic extent but generated from imagery at different acquisition dates may hash identically if the geometry and labels are the same—even if the underlying scene has changed. Include the imagery acquisition date as a non-volatile metadata field in the canonical payload (distinct from <code class="inline-code">created_at</code>, which tracks the annotation session).</p>
+<p><strong>Multi-temporal annotation misalignment.</strong> Annotations covering the same geographic extent but generated from imagery at different acquisition dates may hash identically if the geometry and labels are the same — even if the underlying scene has changed. Include the imagery acquisition date as a non-volatile metadata field in the canonical payload (distinct from <code class="inline-code">created_at</code>, which tracks the annotation session, not the imagery).</p>
+<p><strong><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence score</a> fields and hashing.</strong> Per-feature confidence scores assigned during <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">human-in-the-loop validation</a> should be treated as training-relevant content — do not strip them as volatile metadata. If confidence scores change because a reviewer upgraded a borderline annotation, the hash should change so the training gate catches the update.</p>
 <h2 id="integration-automation-hooks" tabindex="-1"><a class="header-anchor" href="#integration-automation-hooks" aria-label="Permalink to section &quot;Integration &amp; Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Integration &amp; Automation Hooks</h2>
 <h3 id="dvc-integration" tabindex="-1"><a class="header-anchor" href="#dvc-integration" aria-label="Permalink to section &quot;DVC Integration&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> DVC Integration</h3>
 <p>Store the manifest alongside <code class="inline-code">.dvc</code> tracking files so that <code class="inline-code">dvc repro</code> automatically regenerates and validates hashes as part of the training pipeline. See <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">using DVC pipelines for automated dataset snapshots</a> for the full <code class="inline-code">dvc.yaml</code> stage definition.</p>
 <div class="code-block">
   <div class="code-block__head">
-    <span class="code-lang">python</span>
+    <span class="code-lang">yaml</span>
     <button type="button" class="code-copy" aria-label="Copy code to clipboard">
       <span class="code-copy__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
@@ -702,20 +756,20 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token comment"># dvc.yaml integration snippet</span>
-stages<span class="token punctuation">:</span>
-  build_annotation_manifest<span class="token punctuation">:</span>
-    cmd<span class="token punctuation">:</span> python scripts<span class="token operator">/</span>build_manifest<span class="token punctuation">.</span>py <span class="token operator">-</span><span class="token operator">-</span><span class="token builtin">dir</span> annotations<span class="token operator">/</span> <span class="token operator">-</span><span class="token operator">-</span>label $<span class="token punctuation">{</span>version<span class="token punctuation">}</span> <span class="token operator">-</span><span class="token operator">-</span>out manifests<span class="token operator">/</span>current<span class="token punctuation">.</span>json
-    deps<span class="token punctuation">:</span>
-      <span class="token operator">-</span> annotations<span class="token operator">/</span>
-      <span class="token operator">-</span> scripts<span class="token operator">/</span>build_manifest<span class="token punctuation">.</span>py
-    outs<span class="token punctuation">:</span>
-      <span class="token operator">-</span> manifests<span class="token operator">/</span>current<span class="token punctuation">.</span>json
-  validate_annotation_integrity<span class="token punctuation">:</span>
-    cmd<span class="token punctuation">:</span> python scripts<span class="token operator">/</span>validate_manifest<span class="token punctuation">.</span>py <span class="token operator">-</span><span class="token operator">-</span>current manifests<span class="token operator">/</span>current<span class="token punctuation">.</span>json <span class="token operator">-</span><span class="token operator">-</span>baseline manifests<span class="token operator">/</span>baseline<span class="token punctuation">.</span>json
-    deps<span class="token punctuation">:</span>
-      <span class="token operator">-</span> manifests<span class="token operator">/</span>current<span class="token punctuation">.</span>json
-      <span class="token operator">-</span> manifests<span class="token operator">/</span>baseline<span class="token punctuation">.</span>json
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-yaml"><span class="token comment"># dvc.yaml integration snippet</span>
+<span class="token key atrule">stages</span><span class="token punctuation">:</span>
+  <span class="token key atrule">build_annotation_manifest</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cmd</span><span class="token punctuation">:</span> python scripts/build_manifest.py <span class="token punctuation">-</span><span class="token punctuation">-</span>dir annotations/ <span class="token punctuation">-</span><span class="token punctuation">-</span>label $<span class="token punctuation">{</span>version<span class="token punctuation">}</span> <span class="token punctuation">-</span><span class="token punctuation">-</span>out manifests/current.json
+    <span class="token key atrule">deps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> annotations/
+      <span class="token punctuation">-</span> scripts/build_manifest.py
+    <span class="token key atrule">outs</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> manifests/current.json
+  <span class="token key atrule">validate_annotation_integrity</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cmd</span><span class="token punctuation">:</span> python scripts/validate_manifest.py <span class="token punctuation">-</span><span class="token punctuation">-</span>current manifests/current.json <span class="token punctuation">-</span><span class="token punctuation">-</span>baseline manifests/baseline.json
+    <span class="token key atrule">deps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> manifests/current.json
+      <span class="token punctuation">-</span> manifests/baseline.json
 </code></pre>
 </div>
 <h3 id="label-studio-export-hook" tabindex="-1"><a class="header-anchor" href="#label-studio-export-hook" aria-label="Permalink to section &quot;Label Studio Export Hook&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Label Studio Export Hook</h3>
@@ -731,7 +785,9 @@ stages<span class="token punctuation">:</span>
     </button>
   </div>
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> flask <span class="token keyword">import</span> Flask<span class="token punctuation">,</span> request<span class="token punctuation">,</span> jsonify
-<span class="token keyword">import</span> pathlib<span class="token punctuation">,</span> json
+<span class="token keyword">import</span> hashlib
+<span class="token keyword">import</span> pathlib
+<span class="token keyword">import</span> json
 
 app <span class="token operator">=</span> Flask<span class="token punctuation">(</span>__name__<span class="token punctuation">)</span>
 
@@ -781,9 +837,9 @@ app <span class="token operator">=</span> Flask<span class="token punctuation">(
         <span class="token key atrule">run</span><span class="token punctuation">:</span> python scripts/validate_manifest.py <span class="token punctuation">-</span><span class="token punctuation">-</span>current manifests/current.json <span class="token punctuation">-</span><span class="token punctuation">-</span>baseline manifests/baseline.json
 </code></pre>
 </div>
-<p>This gate runs on every pull request that touches the <code class="inline-code">annotations/</code> directory. A hash mismatch fails the check and blocks the merge, making annotation drift visible in code review before it reaches a training run. For <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scoring for geospatial labels</a>, combine this gate with a per-feature score check so low-confidence annotations surface alongside integrity failures.</p>
+<p>This gate runs on every pull request that touches the <code class="inline-code">annotations/</code> directory. A hash mismatch fails the check and blocks the merge, making annotation drift visible in code review before it reaches a training run. Pair this gate with a per-feature <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence score</a> check so low-confidence annotations surface alongside integrity failures.</p>
 <h2 id="validation-testing" tabindex="-1"><a class="header-anchor" href="#validation-testing" aria-label="Permalink to section &quot;Validation &amp; Testing&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Validation &amp; Testing</h2>
-<p>Verify the entire pipeline with a determinism test suite—run the same annotations through the pipeline twice with a random sleep in between and assert identical manifests, then introduce a one-pixel coordinate shift and assert different hashes.</p>
+<p>Verify the entire pipeline with a determinism test suite — run the same annotations through the pipeline twice with a random sleep in between and assert identical manifests, then introduce a one-pixel coordinate shift and assert different hashes.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -844,17 +900,41 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
     norm_a<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> canonical_geojson_geometry<span class="token punctuation">(</span>norm_a<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
     norm_b<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> canonical_geojson_geometry<span class="token punctuation">(</span>norm_b<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
     <span class="token keyword">assert</span> compute_annotation_hash<span class="token punctuation">(</span>norm_a<span class="token punctuation">)</span> <span class="token operator">==</span> compute_annotation_hash<span class="token punctuation">(</span>norm_b<span class="token punctuation">)</span>
+
+<span class="token keyword">def</span> <span class="token function">test_sub_precision_coordinate_noise_ignored</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+    <span class="token triple-quoted-string string">"""Floating-point noise below 6 d.p. must not change the hash."""</span>
+    a <span class="token operator">=</span> copy<span class="token punctuation">.</span>deepcopy<span class="token punctuation">(</span>SAMPLE_FEATURE<span class="token punctuation">)</span>
+    b <span class="token operator">=</span> copy<span class="token punctuation">.</span>deepcopy<span class="token punctuation">(</span>SAMPLE_FEATURE<span class="token punctuation">)</span>
+    <span class="token comment"># Add noise at the 9th decimal place (~0.1 mm) — below COORD_PRECISION threshold</span>
+    b<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token string">"coordinates"</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span> <span class="token operator">+=</span> <span class="token number">0.000000001</span>
+    norm_a <span class="token operator">=</span> normalize_annotation<span class="token punctuation">(</span>a<span class="token punctuation">)</span>
+    norm_b <span class="token operator">=</span> normalize_annotation<span class="token punctuation">(</span>b<span class="token punctuation">)</span>
+    norm_a<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> canonical_geojson_geometry<span class="token punctuation">(</span>norm_a<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    norm_b<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> canonical_geojson_geometry<span class="token punctuation">(</span>norm_b<span class="token punctuation">[</span><span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    <span class="token keyword">assert</span> compute_annotation_hash<span class="token punctuation">(</span>norm_a<span class="token punctuation">)</span> <span class="token operator">==</span> compute_annotation_hash<span class="token punctuation">(</span>norm_b<span class="token punctuation">)</span>
 </code></pre>
 </div>
-<p>Run these tests in CI before the manifest build step—they verify the pipeline’s correctness assumptions rather than a specific dataset’s state.</p>
+<p>Run these tests in CI before the manifest build step — they verify the pipeline’s correctness assumptions rather than a specific dataset’s state.</p>
+<h2 id="production-checklist" tabindex="-1"><a class="header-anchor" href="#production-checklist" aria-label="Permalink to section &quot;Production Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Checklist</h2>
+<p>Use this checklist before treating annotation hashing as a production integrity gate:</p>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3065732"> All annotation sources normalized to <code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-3065732"> All annotation sources normalized to `EPSG:4326` (or an agreed projected CRS) before hashing</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6503090"> <code class="inline-code">VOLATILE_KEYS</code> list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio <code class="inline-code">reviewed_by</code>, CVAT <code class="inline-code">z_order</code><label class="task-list-item-label" for="task-item-6503090"> `VOLATILE_KEYS` list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio `reviewed_by`, CVAT `z_order`)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4242125"> Shapely and GEOS versions pinned (<code class="inline-code">shapely==2.0.6</code>, <code class="inline-code">GEOS&gt;=3.12</code>) and locked in <label class="task-list-item-label" for="task-item-4242125"> Shapely and GEOS versions pinned (`shapely==2.0.6`, `GEOS>=3.12`) and locked in `requirements.txt`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5837836"> <code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-5837836"> `make_valid()` geometry-type changes logged and flagged; features that change type are quarantined before manifest inclusion</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3178897"> COCO feature lists sorted by <code class="inline-code">(image_id, category_id, bbox[0], bbox[1])</code> before hashing, not by raw <label class="task-list-item-label" for="task-item-3178897"> COCO feature lists sorted by `(image_id, category_id, bbox[0], bbox[1])` before hashing, not by raw `id`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8946740"><label class="task-list-item-label" for="task-item-8946740"> Imagery acquisition date included as a non-volatile field to distinguish multi-temporal annotation sets</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7164188"><label class="task-list-item-label" for="task-item-7164188"> Baseline manifest stored in append-only object storage (S3/GCS/R2) with versioning enabled; semantic version incremented on every intentional update</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8398270"><label class="task-list-item-label" for="task-item-8398270"> Validation gate wired into CI and training trigger; a manifest mismatch halts the run before any GPU cost is incurred</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8577366"> Perceptual hash (<code class="inline-code">imagehash.phash</code><label class="task-list-item-label" for="task-item-8577366"> Perceptual hash (`imagehash.phash`) added to manifest for raster tile sidecars alongside the SHA-256 digest</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3190014"><label class="task-list-item-label" for="task-item-3190014"> Audit log receives manifest diffs with annotator-ID attribution for drift frequency tracking per tool</label></li>
+</ul>
 <h2 id="production-best-practices" tabindex="-1"><a class="header-anchor" href="#production-best-practices" aria-label="Permalink to section &quot;Production Best Practices&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Best Practices</h2>
-<ol>
-<li><strong>Pre-commit hooks for local drift detection.</strong> Run a lightweight hash check with <code class="inline-code">pre-commit</code> on every commit to the annotation repository. Use <code class="inline-code">--fast</code> mode that only hashes modified files rather than rebuilding the full manifest.</li>
-<li><strong>Immutable manifest storage.</strong> Store manifests in append-only object storage (S3, GCS, R2) with versioning enabled. Never overwrite a baseline manifest; increment semantic versions instead (<code class="inline-code">v1.2.0</code> → <code class="inline-code">v1.3.0</code>). The baseline manifest for a model checkpoint is a permanent record.</li>
-<li><strong>Batch parallelism for large datasets.</strong> For datasets exceeding 100 k features, parallelize with <code class="inline-code">concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count())</code>. I/O is the dominant bottleneck; use <code class="inline-code">orjson</code> for 3–5x faster JSON parsing on large GeoJSON files.</li>
-<li><strong>Hybrid perceptual hashing for raster sidecars.</strong> SHA-256 detects byte-level changes. For raster tiles paired with vector annotations, add a perceptual hash (e.g., <code class="inline-code">imagehash.phash</code>) to detect visually equivalent images that have undergone format conversion or lossy recompression. Store both in the manifest under <code class="inline-code">sha256</code> and <code class="inline-code">phash</code> keys.</li>
-<li><strong>Audit log integration.</strong> Pipe manifest diffs to a centralized logging system. Track hash mismatch frequency per annotator ID (recovered from the pre-normalization payload) to identify tools or workflows that consistently introduce drift.</li>
-</ol>
+<p><strong>Pre-commit hooks for local drift detection.</strong> Run a lightweight hash check with <code class="inline-code">pre-commit</code> on every commit to the annotation repository. Use fast mode that only hashes modified files rather than rebuilding the full manifest.</p>
+<p><strong>Immutable manifest storage.</strong> Store manifests in append-only object storage (S3, GCS, R2) with versioning enabled. Never overwrite a baseline manifest; increment semantic versions instead (<code class="inline-code">v1.2.0</code> → <code class="inline-code">v1.3.0</code>). The baseline manifest for a model checkpoint is a permanent record.</p>
+<p><strong>Batch parallelism for large datasets.</strong> For datasets exceeding 100 k features, parallelize with <code class="inline-code">concurrent.futures.ProcessPoolExecutor(max_workers=os.cpu_count())</code>. I/O is the dominant bottleneck; use <code class="inline-code">orjson</code> for 3–5x faster JSON parsing on large GeoJSON files.</p>
+<p><strong>Hybrid perceptual hashing for raster sidecars.</strong> SHA-256 detects byte-level changes. For raster tiles paired with vector annotations, add a perceptual hash (e.g., <code class="inline-code">imagehash.phash</code>) to detect visually equivalent images that have undergone format conversion or lossy recompression. Store both in the manifest under <code class="inline-code">sha256</code> and <code class="inline-code">phash</code> keys.</p>
+<p><strong>Audit log integration.</strong> Pipe manifest diffs to a centralized logging system. Track hash mismatch frequency per annotator ID (recovered from the pre-normalization payload) to identify tools or workflows that consistently introduce drift.</p>
 <hr>
 <p>This workflow is one component of the broader <a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> pipeline.</p>
 <p><strong>Related</strong></p>
@@ -864,6 +944,7 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
 <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> — keep COCO/GeoJSON schema fields consistent across manifest versions</li>
 <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">Using DVC Pipelines for Automated Dataset Snapshots</a> — chain manifest generation with training triggers in <code class="inline-code">dvc.yaml</code></li>
 <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — project all geometries to a consistent CRS before hashing</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a> — treat per-feature scores as non-volatile training signal in manifests</li>
 </ul>
 
 
@@ -874,7 +955,7 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">
               <div class="title">Using DVC Pipelines for Automated Dataset Snapshots</div>
-              <div class="desc">A declarative dvc.yaml pipeline turns annotation archival from a manual chore into a reproducible, hash-gated stage: DVC validates spatial integrity, computes SHA-256 checksums for every changed asset, and pushes only the modified chunks to remote storage. The precise coordinate geometry, coordinate reference system, a</div>
+              <div class="desc">A declarative dvc.yaml pipeline turns annotation archival from a manual chore into a reproducible, hash-gated stage. DVC normalises all inputs to a consistent coordinate reference system — by default EPSG:4326 — validates spatial integrity, computes SHA-256 checksums for every changed asset, then pushes only the modifi</div>
             </a>
           
         </div>

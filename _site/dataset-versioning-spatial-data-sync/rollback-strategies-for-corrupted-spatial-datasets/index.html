@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -275,7 +275,7 @@
       "headline": "Rollback Strategies for Corrupted Spatial Datasets",
       "description": "Production-tested rollback strategies for corrupted geospatial ML datasets: atomic restoration, SHA manifest verification, CRS drift detection, and DVC integration for deterministic pipeline recovery.",
       "datePublished": "2025-04-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -322,14 +322,14 @@
 }
 </script>
 <h1>Rollback Strategies for Corrupted Spatial Datasets</h1>
-<p>A corrupted geospatial training dataset rarely announces itself. A malformed <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation platform exporting incremental patches against a rolled-back tile set produces geometry joins that return empty matches. By the time model validation surfaces the problem, the corrupted version may already be the “latest” snapshot in your remote store.</p>
+<p>A corrupted geospatial training dataset rarely announces itself. A malformed <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation platform exporting incremental patches against a rolled-back tile set produces geometry joins that return empty matches or misaligned instance masks. By the time model validation surfaces the problem, the corrupted version may already be the “latest” snapshot in your remote store.</p>
 <p>This page covers the complete recovery workflow: pre-flight triage, distributed locking, atomic restoration, post-restore CRS verification, and the integration hooks that make the whole sequence repeatable inside a CI pipeline.</p>
 <hr>
-<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
+<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
   <title>Five-Phase Spatial Dataset Rollback Workflow</title>
-  <desc>A left-to-right flow diagram showing the five phases of a spatial dataset rollback: Detect &amp; Triage, Lock Registry, Stage Snapshot, Atomic Swap, and Verify &amp; Resume. Arrows connect each phase sequentially, with a failure path from Verify looping back to Revert.</desc>
+  <desc>A left-to-right flow diagram showing the five phases of a spatial dataset rollback: Detect and Triage, Lock Registry, Stage Snapshot, Atomic Swap, and Verify and Resume. Arrows connect each phase sequentially. A dashed arc below returns from the Verify phase back to Stage Snapshot to indicate automatic revert on failure.</desc>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+    <marker id="rb-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
     </marker>
   </defs>
@@ -355,13 +355,13 @@
   <text x="625" y="110" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">Resume</text>
   <text x="625" y="124" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.6">gdalinfo + unlock</text>
   <!-- Forward arrows -->
-  <line x1="120" y1="100" x2="148" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
-  <line x1="260" y1="100" x2="288" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
-  <line x1="400" y1="100" x2="428" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
-  <line x1="540" y1="100" x2="568" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#arrow)"/>
+  <line x1="120" y1="100" x2="148" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
+  <line x1="260" y1="100" x2="288" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
+  <line x1="400" y1="100" x2="428" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
+  <line x1="540" y1="100" x2="568" y2="100" stroke="currentColor" stroke-width="1.5" opacity="0.6" marker-end="url(#rb-arrow)"/>
   <!-- Failure revert arc: from Verify back down under Stage -->
-  <path d="M625,130 Q625,175 345,175 Q290,175 290,130" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,3" opacity="0.45" marker-end="url(#arrow)"/>
-  <text x="460" y="170" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.55">auto-revert on failure</text>
+  <path d="M625,130 Q625,180 345,180 Q290,180 290,130" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,3" opacity="0.45" marker-end="url(#rb-arrow)"/>
+  <text x="480" y="197" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.55">auto-revert on failure</text>
 </svg>
 <hr>
 <h2 id="prerequisites-toolchain-alignment" tabindex="-1"><a class="header-anchor" href="#prerequisites-toolchain-alignment" aria-label="Permalink to section &quot;Prerequisites &amp; Toolchain Alignment&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Toolchain Alignment</h2>
@@ -390,7 +390,7 @@ filelock==3.14.0     # cross-process distributed locking
 <hr>
 <h2 id="core-workflow" tabindex="-1"><a class="header-anchor" href="#core-workflow" aria-label="Permalink to section &quot;Core Workflow&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Workflow</h2>
 <h3 id="step-1-build-and-register-the-integrity-manifest" tabindex="-1"><a class="header-anchor" href="#step-1-build-and-register-the-integrity-manifest" aria-label="Permalink to section &quot;Step 1 — Build and Register the Integrity Manifest&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Build and Register the Integrity Manifest</h3>
-<p>Every dataset commit must generate a <code class="inline-code">manifest.json</code> mapping relative file paths to SHA-256 checksums, plus a <code class="inline-code">crs_registry.json</code> recording the EPSG code and WKT string for every spatial file. These two artefacts are the ground truth for all downstream validation.</p>
+<p>Every dataset commit must generate a <code class="inline-code">manifest.json</code> mapping relative file paths to SHA-256 checksums, plus a <code class="inline-code">crs_registry.json</code> recording the <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">EPSG code</a> and WKT string for every spatial file. These two artefacts are the ground truth for all downstream validation.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -641,7 +641,6 @@ EXPECTED_CRS <span class="token operator">=</span> CRS<span class="token punctua
         logger<span class="token punctuation">.</span>error<span class="token punctuation">(</span><span class="token string">"gdalinfo failed for %s: %s"</span><span class="token punctuation">,</span> raster_path<span class="token punctuation">,</span> result<span class="token punctuation">.</span>stderr<span class="token punctuation">)</span>
         <span class="token keyword">return</span> <span class="token boolean">False</span>
     info <span class="token operator">=</span> json<span class="token punctuation">.</span>loads<span class="token punctuation">(</span>result<span class="token punctuation">.</span>stdout<span class="token punctuation">)</span>
-    auth <span class="token operator">=</span> info<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"coordinateSystem"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"dataAxisToSRSAxisMapping"</span><span class="token punctuation">)</span>
     wkt <span class="token operator">=</span> info<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"coordinateSystem"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"wkt"</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">)</span>
     actual <span class="token operator">=</span> CRS<span class="token punctuation">.</span>from_wkt<span class="token punctuation">(</span>wkt<span class="token punctuation">)</span> <span class="token keyword">if</span> wkt <span class="token keyword">else</span> <span class="token boolean">None</span>
     <span class="token keyword">if</span> actual <span class="token keyword">is</span> <span class="token boolean">None</span> <span class="token keyword">or</span> <span class="token keyword">not</span> actual<span class="token punctuation">.</span>equals<span class="token punctuation">(</span>CRS<span class="token punctuation">.</span>from_epsg<span class="token punctuation">(</span>expected_epsg<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
@@ -896,9 +895,33 @@ EXPECTED_CRS <span class="token operator">=</span> CRS<span class="token punctua
 </div>
 <p>Run with <code class="inline-code">pytest -v tests/test_rollback.py</code>. For integration tests against real GeoTIFF fixtures, use a 256×256 <code class="inline-code">rasterio.MemoryFile</code> to avoid committing binary assets to the test repository.</p>
 <hr>
+<h2 id="production-readiness-checklist" tabindex="-1"><a class="header-anchor" href="#production-readiness-checklist" aria-label="Permalink to section &quot;Production Readiness Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Readiness Checklist</h2>
+<ul class="contains-task-list">
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6527715"> SHA-256 manifest and <code class="inline-code">crs_registry.json</code><label class="task-list-item-label" for="task-item-6527715"> SHA-256 manifest and `crs_registry.json` generated and committed for every dataset version</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8041741"><label class="task-list-item-label" for="task-item-8041741"> CRS conformance check validates WKT strings, not just authority codes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4630040"><label class="task-list-item-label" for="task-item-4630040"> Distributed lock acquired before any restoration attempt</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8773121"><label class="task-list-item-label" for="task-item-8773121"> Staging directory is on the same filesystem mount as the production directory</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3870557"> Atomic swap (<code class="inline-code">os.rename</code><label class="task-list-item-label" for="task-item-3870557"> Atomic swap (`os.rename`) used — no file-by-file copy into live path</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8901985"><label class="task-list-item-label" for="task-item-8901985"> Post-restore triage pass runs automatically after swap completes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5677802"><label class="task-list-item-label" for="task-item-5677802"> Failed post-restore verification triggers automatic revert to pre-rollback backup</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8808739"><label class="task-list-item-label" for="task-item-8808739"> At least two prior production-tagged versions retained in cold storage</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9153069"> All sidecar files (<code class="inline-code">.tfw</code>, <code class="inline-code">.prj</code>, <code class="inline-code">.shx</code>, <code class="inline-code">.aux.xml</code><label class="task-list-item-label" for="task-item-9153069"> All sidecar files (`.tfw`, `.prj`, `.shx`, `.aux.xml`) included in manifest and restored as a unit</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9511892"> <code class="inline-code">dvc commit --force</code><label class="task-list-item-label" for="task-item-9511892"> `dvc commit --force` run after any manual restoration to re-sync the run-cache</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-830491"><label class="task-list-item-label" for="task-item-830491"> Rollback telemetry logged to a persistent audit sink for recurrence analysis</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6929564"><label class="task-list-item-label" for="task-item-6929564"> GitHub Actions dataset integrity gate blocks training job dispatch on triage failure</label></li>
+</ul>
+<hr>
+<h2 id="frequently-asked-questions" tabindex="-1"><a class="header-anchor" href="#frequently-asked-questions" aria-label="Permalink to section &quot;Frequently Asked Questions&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Frequently Asked Questions</h2>
+<p><strong>What causes silent corruption in geospatial training datasets?</strong>
+The most common sources are CRS mismatches introduced during reprojection, partial writes from interrupted multipart uploads to cloud storage, sidecar file desynchronisation (<code class="inline-code">.tfw</code>, <code class="inline-code">.prj</code>, <code class="inline-code">.shx</code>), and annotation drift when labeling platforms export incremental patches rather than full manifests. None of these produce obvious errors at ingest time — they fail silently until downstream metrics degrade.</p>
+<p><strong>Is <code class="inline-code">os.rename()</code> atomic on network-mounted filesystems like NFS or S3FS?</strong>
+No. <code class="inline-code">os.rename()</code> atomicity guarantees apply only to POSIX-compliant local filesystems within the same mount. For cloud object storage use a manifest-swap pattern: write the new manifest last, after all data objects are confirmed present, and validate checksums before flipping the pointer. For S3-backed DVC remotes, verify <code class="inline-code">Content-Length</code> headers and ETag hashes after each pull.</p>
+<p><strong>How many previous versions should a retention policy preserve?</strong>
+Maintain at least two prior production-tagged versions in cold storage. Single-version retention is insufficient because gradual degradation — such as slow annotation drift — may not surface until several commits after the corruption event. Two prior versions ensure you can roll back past a corruption that survived one release cycle undetected.</p>
+<hr>
 <h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
 <ul>
-<li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/">Debugging Annotation Drift Across Dataset Versions</a> — deep-dive into the geometry delta analysis that catches gradual label corruption before checksums flag anything</li>
+<li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/">Debugging Annotation Drift Across Dataset Versions</a> — geometry delta analysis that catches gradual label corruption before checksums flag anything</li>
 <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — how per-annotation SHA hashes are generated and stored so rollback triage can pinpoint the labeling layer vs. the raster layer</li>
 <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> — remote cache configuration, <code class="inline-code">dvc checkout</code>, and run-cache synchronisation that underpin version-aware rollback</li>
 <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> — ensuring CRS records, bounding boxes, and schema versions survive across dataset commits and rollback events</li>
@@ -914,7 +937,7 @@ EXPECTED_CRS <span class="token operator">=</span> CRS<span class="token punctua
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/">
               <div class="title">Debugging Annotation Drift Across Dataset Versions</div>
-              <div class="desc">When two versions of a geospatial annotation dataset produce different model metrics without a deliberate data change, annotation drift is the most likely culprit. The fastest resolution path is computing deterministic spatial and semantic deltas between consecutive version snapshots — using geometry tolerance checks, </div>
+              <div class="desc">When two versions of a geospatial annotation dataset produce different model metrics without a deliberate data change, annotation drift is the most likely culprit. Resolve it by computing deterministic spatial and semantic deltas between consecutive version snapshots — using geometry tolerance checks in a shared metric</div>
             </a>
           
         </div>
@@ -938,7 +961,7 @@ EXPECTED_CRS <span class="token operator">=</span> CRS<span class="token punctua
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">
               <div class="title">Tracking Annotation Changes with SHA Hashing</div>
-              <div class="desc">Geospatial ML pipelines fail silently in ways that are difficult to detect after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file&#39;s modificati</div>
+              <div class="desc">Geospatial ML pipelines fail silently in ways that are difficult to catch after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file&#39;s modificatio</div>
             </a>
           
         </div>

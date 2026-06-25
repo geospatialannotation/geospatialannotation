@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -275,7 +275,7 @@
       "headline": "Implementing DVC for Geospatial Training Data",
       "description": "Step-by-step guide to configuring DVC for satellite imagery, LiDAR, and vector annotation datasets — covering remote storage setup, pipeline orchestration, rollback, and CI/CD integration for spatial ML workflows.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": { "@type": "Organization", "name": "Geospatial Annotation" },
       "publisher": { "@type": "Organization", "name": "Geospatial Annotation" }
     },
@@ -317,6 +317,16 @@
           "@type": "Question",
           "name": "Can DVC track GeoJSON annotation files with floating-point coordinate drift?",
           "acceptedAnswer": { "@type": "Answer", "text": "DVC tracks raw file hashes, not coordinate semantics. Pair DVC with SHA-256 manifests generated from the annotation coordinates to detect precision-level drift that changes model behavior without altering the hash." }
+        },
+        {
+          "@type": "Question",
+          "name": "What causes datum shift masquerading as model degradation?",
+          "acceptedAnswer": { "@type": "Answer", "text": "When raw scenes mix EPSG:4326 (WGS84) and EPSG:4269 (NAD83) without an explicit datum transformation grid, gdalwarp applies a zero-shift fallback that introduces up to 3-metre errors in North America. Always specify +towgs84 parameters or install PROJ datum grids before running CRS normalization stages." }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I handle cache size explosion from frequent raster modifications?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Every dvc add on a modified GeoTIFF creates a new cache object. Run dvc gc -w --all-commits weekly and configure cloud lifecycle policies to transition objects older than 90 days to infrequent-access storage tiers." }
         }
       ]
     }
@@ -327,8 +337,8 @@
 <p>Geospatial ML pipelines fail in ways that generic data science tooling cannot anticipate. A satellite scene reprojected to the wrong datum, a batch of annotation GeoJSON files silently truncated to five decimal places, or an interrupted multipart upload to object storage — any of these can corrupt a training run while leaving the Git history looking perfectly clean. Standard Git workflows cannot address these problems because the assets themselves — multi-gigabyte GeoTIFFs, LiDAR point clouds, drone orthomosaics, and vector annotations with embedded CRS contracts — far exceed repository size limits and carry spatial semantics that version numbers alone cannot capture.</p>
 <p>DVC (Data Version Control) bridges this gap by decoupling binary asset tracking from code versioning. Integrated into the broader <a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> architecture, DVC gives teams a content-addressable cache for terabyte-scale rasters, deterministic pipeline orchestration for preprocessing stages, and safe rollback paths when spatial assets degrade.</p>
 <hr>
-<h2 id="prerequisites-and-toolchain-alignment" tabindex="-1"><a class="header-anchor" href="#prerequisites-and-toolchain-alignment" aria-label="Permalink to section &quot;Prerequisites and Toolchain Alignment&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites and Toolchain Alignment</h2>
-<p>Before configuring DVC for spatial workloads, verify every component in the following table. Mismatched GDAL and rasterio versions are a common source of silent CRS handling differences between local and CI environments.</p>
+<h2 id="prerequisites-toolchain-alignment" tabindex="-1"><a class="header-anchor" href="#prerequisites-toolchain-alignment" aria-label="Permalink to section &quot;Prerequisites &amp; Toolchain Alignment&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Toolchain Alignment</h2>
+<p>Before configuring DVC for spatial workloads, verify every component below. Mismatched GDAL and rasterio versions are a common source of silent <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> handling differences between local and CI environments.</p>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -375,63 +385,64 @@
 </tr>
 </tbody>
 </table>
-</div><p>Additional requirements: a Git repository initialized with <code class="inline-code">.gitignore</code> entries for <code class="inline-code">.dvc/cache/</code>, virtual environments, and GDAL/OGR scratch directories; cloud object storage (AWS S3, GCP GCS, or Azure Blob) with programmatic IAM credentials; and familiarity with <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> before configuring CRS normalization stages.</p>
+</div><p>Additional requirements: a Git repository initialized with <code class="inline-code">.gitignore</code> entries for <code class="inline-code">.dvc/cache/</code>, virtual environments, and GDAL/OGR scratch directories; cloud object storage (AWS S3, GCP GCS, or Azure Blob) with programmatic IAM credentials.</p>
 <hr>
 <h2 id="dvc-pipeline-from-raw-imagery-to-training-ready-chips" tabindex="-1"><a class="header-anchor" href="#dvc-pipeline-from-raw-imagery-to-training-ready-chips" aria-label="Permalink to section &quot;DVC Pipeline: From Raw Imagery to Training-Ready Chips&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> DVC Pipeline: From Raw Imagery to Training-Ready Chips</h2>
 <p>The diagram below shows how data flows through a DVC-managed geospatial pipeline. Each box corresponds to a <code class="inline-code">dvc.yaml</code> stage; arrows represent the dependency relationships DVC uses to decide which stages need re-execution.</p>
-<svg viewBox="0 0 760 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC geospatial pipeline diagram showing stages from raw imagery through CRS normalization, chip generation, label export, and validation to training-ready outputs" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC geospatial pipeline diagram showing stages from raw imagery through CRS normalization, chip generation, label export, and validation to training-ready outputs" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
   <title>DVC Geospatial Pipeline</title>
-  <desc>Data flow diagram for a DVC-managed geospatial training data pipeline: Raw Imagery and Reference Vectors feed into CRS Normalization, which feeds Chip Generator and Label Exporter. Chip Generator and Label Exporter feed into Validation Gate, which produces Training-Ready Chips and Masks.</desc>
+  <desc>Data flow diagram for a DVC-managed geospatial training data pipeline: Raw Imagery and Reference Vectors feed into CRS Normalization, which feeds Chip Generator and Label Exporter. Both feed into the Validation Gate, which produces Training-Ready Chips and Masks.</desc>
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.55"/>
+    <marker id="dvc-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
     </marker>
   </defs>
-  <!-- Raw Imagery -->
-  <rect x="20" y="20" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="95" y="42" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Raw Imagery</text>
-  <text x="95" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">GeoTIFF / COG / VRT</text>
-  <!-- Reference Vectors -->
-  <rect x="20" y="100" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="95" y="122" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Reference Vectors</text>
-  <text x="95" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">GeoJSON / Shapefile</text>
-  <!-- CRS Normalization -->
-  <rect x="230" y="55" width="160" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
-  <text x="310" y="77" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="bold">CRS Normalization</text>
-  <text x="310" y="95" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">gdalwarp / rasterio.reproject</text>
-  <!-- Chip Generator -->
-  <rect x="460" y="20" width="155" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="537" y="42" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Chip Generator</text>
-  <text x="537" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">512×512 / 1024×1024 patches</text>
-  <!-- Label Exporter -->
-  <rect x="460" y="100" width="155" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
-  <text x="537" y="122" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Label Exporter</text>
-  <text x="537" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">segmentation masks / COCO</text>
-  <!-- Validation Gate -->
-  <rect x="230" y="195" width="160" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
-  <text x="310" y="217" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="bold">Validation Gate</text>
-  <text x="310" y="235" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">CRS · SHA manifest · geometry</text>
-  <!-- Training-Ready Outputs -->
-  <rect x="230" y="280" width="160" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
-  <text x="310" y="299" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Training-Ready</text>
-  <text x="310" y="315" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">chips + masks · dvc push</text>
-  <!-- Arrows: Raw → CRS Norm -->
-  <line x1="170" y1="46" x2="228" y2="72" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Arrows: Ref Vectors → CRS Norm -->
-  <line x1="170" y1="126" x2="228" y2="98" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- CRS Norm → Chip Generator -->
-  <line x1="390" y1="72" x2="458" y2="48" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- CRS Norm → Label Exporter -->
-  <line x1="390" y1="90" x2="458" y2="118" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Chip Generator → Validation -->
-  <line x1="537" y1="72" x2="390" y2="210" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Label Exporter → Validation -->
-  <line x1="537" y1="152" x2="390" y2="210" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
-  <!-- Validation → Training-Ready -->
-  <line x1="310" y1="247" x2="310" y2="278" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#arrow)"/>
+  <!-- Raw Imagery box: top-left -->
+  <rect x="20" y="30" width="155" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="97" y="52" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Raw Imagery</text>
+  <text x="97" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">GeoTIFF / COG / VRT</text>
+  <!-- Reference Vectors box: mid-left -->
+  <rect x="20" y="120" width="155" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="97" y="142" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Reference Vectors</text>
+  <text x="97" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">GeoJSON / Shapefile</text>
+  <!-- CRS Normalization box: centre -->
+  <rect x="220" y="75" width="165" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
+  <text x="302" y="97" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="700">CRS Normalization</text>
+  <text x="302" y="116" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">gdalwarp / rasterio.reproject</text>
+  <!-- Chip Generator box: right-top -->
+  <rect x="460" y="30" width="160" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="540" y="52" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Chip Generator</text>
+  <text x="540" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">512×512 / 1024×1024 patches</text>
+  <!-- Label Exporter box: right-mid -->
+  <rect x="460" y="120" width="160" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="540" y="142" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Label Exporter</text>
+  <text x="540" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">segmentation masks / COCO</text>
+  <!-- Validation Gate box: centre-lower -->
+  <rect x="220" y="210" width="165" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2" opacity="0.9"/>
+  <text x="302" y="232" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="700">Validation Gate</text>
+  <text x="302" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">CRS · SHA manifest · geometry</text>
+  <!-- Training-Ready box: centre-bottom -->
+  <rect x="220" y="300" width="165" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.7"/>
+  <text x="302" y="320" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">Training-Ready</text>
+  <text x="302" y="337" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">chips + masks · dvc push</text>
+  <!-- Arrow: Raw Imagery → CRS Normalization -->
+  <line x1="175" y1="58" x2="218" y2="92" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Reference Vectors → CRS Normalization -->
+  <line x1="175" y1="148" x2="218" y2="116" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: CRS Normalization → Chip Generator -->
+  <line x1="385" y1="92" x2="458" y2="58" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: CRS Normalization → Label Exporter -->
+  <line x1="385" y1="116" x2="458" y2="148" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Chip Generator → Validation Gate -->
+  <line x1="540" y1="86" x2="388" y2="222" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Label Exporter → Validation Gate -->
+  <line x1="460" y1="168" x2="387" y2="222" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
+  <!-- Arrow: Validation Gate → Training-Ready -->
+  <line x1="302" y1="266" x2="302" y2="298" stroke="currentColor" stroke-width="1.5" opacity="0.55" marker-end="url(#dvc-arrow)"/>
 </svg>
 <hr>
-<h2 id="step-1-initialize-dvc-and-configure-remote-storage" tabindex="-1"><a class="header-anchor" href="#step-1-initialize-dvc-and-configure-remote-storage" aria-label="Permalink to section &quot;Step 1: Initialize DVC and Configure Remote Storage&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1: Initialize DVC and Configure Remote Storage</h2>
+<h2 id="core-workflow" tabindex="-1"><a class="header-anchor" href="#core-workflow" aria-label="Permalink to section &quot;Core Workflow&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Workflow</h2>
+<h3 id="step-1-initialize-dvc-and-configure-remote-storage" tabindex="-1"><a class="header-anchor" href="#step-1-initialize-dvc-and-configure-remote-storage" aria-label="Permalink to section &quot;Step 1 — Initialize DVC and Configure Remote Storage&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Initialize DVC and Configure Remote Storage</h3>
 <p>DVC must be initialized alongside Git so that <code class="inline-code">.dvc</code> metadata files commit alongside code while binary assets route to cloud storage. Configure the remote backend for parallel multipart transfers and fast checksumming before adding any spatial data.</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -460,7 +471,7 @@ dvc remote modify geospatial-remote checksum xxhash
 </code></pre>
 </div>
 <p><code class="inline-code">upload_concurrency</code> and <code class="inline-code">download_concurrency</code> enable parallel multipart transfers for multi-gigabyte GeoTIFFs, preventing timeout failures on initial pushes. Switching from <code class="inline-code">md5</code> to <code class="inline-code">xxhash</code> reduces CPU overhead by roughly 3–5× during cache validation — critical when checking thousands of raster chips between pipeline runs.</p>
-<h2 id="step-2-structure-geospatial-data-for-deterministic-tracking" tabindex="-1"><a class="header-anchor" href="#step-2-structure-geospatial-data-for-deterministic-tracking" aria-label="Permalink to section &quot;Step 2: Structure Geospatial Data for Deterministic Tracking&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2: Structure Geospatial Data for Deterministic Tracking</h2>
+<h3 id="step-2-structure-geospatial-data-for-deterministic-tracking" tabindex="-1"><a class="header-anchor" href="#step-2-structure-geospatial-data-for-deterministic-tracking" aria-label="Permalink to section &quot;Step 2 — Structure Geospatial Data for Deterministic Tracking&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Structure Geospatial Data for Deterministic Tracking</h3>
 <p>Avoid monolithic directories. Organize assets by task, region, and temporal snapshot to enable granular versioning and efficient cache reuse. A flat, predictable hierarchy prevents unnecessary cache invalidation when only a subset of assets changes between annotation iterations.</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -483,7 +494,7 @@ dvc remote modify geospatial-remote checksum xxhash
 └── annotations/          # COCO, GeoJSON, or custom XML
 </code></pre>
 </div>
-<p>Before tracking any raster, normalize all inputs to a shared <code class="inline-code">EPSG:4326</code> (for global models) or a local UTM zone (for regional tasks) using <code class="inline-code">gdalwarp</code> or <code class="inline-code">rasterio.warp.reproject</code>. Misaligned projections cause silent spatial drift during convolution that degrades model accuracy without triggering any obvious error. See <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> for CRS contract patterns that prevent this class of failure.</p>
+<p>Before tracking any raster, normalize all inputs to a shared <code class="inline-code">EPSG:4326</code> (for global models) or a local UTM zone (for regional tasks) using <code class="inline-code">gdalwarp</code> or <code class="inline-code">rasterio.warp.reproject</code>. Misaligned projections cause silent spatial drift during convolution that degrades model accuracy without triggering any obvious error.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">bash</span>
@@ -501,7 +512,7 @@ dvc <span class="token function">add</span> data/annotations
 <span class="token function">git</span> commit <span class="token parameter variable">-m</span> <span class="token string">"feat: initialize geospatial dataset tracking"</span>
 </code></pre>
 </div>
-<h2 id="step-3-orchestrate-preprocessing-with-dvc-pipelines" tabindex="-1"><a class="header-anchor" href="#step-3-orchestrate-preprocessing-with-dvc-pipelines" aria-label="Permalink to section &quot;Step 3: Orchestrate Preprocessing with DVC Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3: Orchestrate Preprocessing with DVC Pipelines</h2>
+<h3 id="step-3-orchestrate-preprocessing-with-dvc-pipelines" tabindex="-1"><a class="header-anchor" href="#step-3-orchestrate-preprocessing-with-dvc-pipelines" aria-label="Permalink to section &quot;Step 3 — Orchestrate Preprocessing with DVC Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Orchestrate Preprocessing with DVC Pipelines</h3>
 <p>Manual preprocessing scripts break reproducibility because they leave no record of parameter values, execution order, or intermediate file states. DVC pipelines (<code class="inline-code">dvc.yaml</code>) enforce deterministic execution, cache intermediate outputs, and skip unchanged stages automatically.</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -570,10 +581,10 @@ dvc <span class="token function">add</span> data/annotations
 <span class="token key atrule">overlap</span><span class="token punctuation">:</span> <span class="token number">64</span>
 </code></pre>
 </div>
-<p>Run the full pipeline with <code class="inline-code">dvc repro</code>. DVC evaluates dependency hashes and re-executes only stages where inputs, scripts, or parameters have changed. Experiment variants — different <code class="inline-code">tile_size</code> values, alternative <code class="inline-code">resample_method</code> settings — can be tracked with <code class="inline-code">dvc exp run --set-param tile_size=1024</code> without branching Git history. For a complete treatment of pipeline automation, including <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">using DVC pipelines for automated dataset snapshots</a>, see the companion guide.</p>
-<h2 id="step-4-track-vector-annotations-and-validate-label-consistency" tabindex="-1"><a class="header-anchor" href="#step-4-track-vector-annotations-and-validate-label-consistency" aria-label="Permalink to section &quot;Step 4: Track Vector Annotations and Validate Label Consistency&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4: Track Vector Annotations and Validate Label Consistency</h2>
+<p>Run the full pipeline with <code class="inline-code">dvc repro</code>. DVC evaluates dependency hashes and re-executes only stages where inputs, scripts, or parameters have changed. Experiment variants — different <code class="inline-code">tile_size</code> values, alternative <code class="inline-code">resample_method</code> settings — can be tracked with <code class="inline-code">dvc exp run --set-param tile_size=1024</code> without branching Git history. For a complete treatment of pipeline automation, see <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">using DVC pipelines for automated dataset snapshots</a>.</p>
+<h3 id="step-4-track-vector-annotations-and-validate-label-consistency" tabindex="-1"><a class="header-anchor" href="#step-4-track-vector-annotations-and-validate-label-consistency" aria-label="Permalink to section &quot;Step 4 — Track Vector Annotations and Validate Label Consistency&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Track Vector Annotations and Validate Label Consistency</h3>
 <p>Vector annotations (GeoJSON, Shapefile, COCO JSON) introduce versioning complexity that rasters do not have. Floating-point coordinates may shift due to software rounding, topology cleaning, or CRS reprojection even when the visual label looks identical. DVC tracks raw file hashes — it cannot distinguish semantic annotation changes from accidental coordinate truncation.</p>
-<p>Pair DVC with SHA-256 manifests to catch precision-level drift:</p>
+<p>Pair DVC with <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">SHA-256 manifests</a> to catch precision-level drift:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">bash</span>
@@ -648,10 +659,9 @@ PRECISION_THRESHOLD <span class="token operator">=</span> <span class="token num
     <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">"Annotation precision check passed."</span><span class="token punctuation">)</span>
 </code></pre>
 </div>
-<p>This approach ensures model retraining triggers only when semantic label boundaries change, not when file metadata or coordinate representation shifts. For a deeper treatment of annotation integrity across iterative labeling cycles, see <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">tracking annotation changes with SHA hashing</a>.</p>
-<h2 id="step-5-execute-rollbacks-and-recover-corrupted-assets" tabindex="-1"><a class="header-anchor" href="#step-5-execute-rollbacks-and-recover-corrupted-assets" aria-label="Permalink to section &quot;Step 5: Execute Rollbacks and Recover Corrupted Assets&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5: Execute Rollbacks and Recover Corrupted Assets</h2>
+<p>This approach ensures model retraining triggers only when semantic label boundaries change, not when file metadata or coordinate representation shifts.</p>
+<h3 id="step-5-execute-rollbacks-and-recover-corrupted-assets" tabindex="-1"><a class="header-anchor" href="#step-5-execute-rollbacks-and-recover-corrupted-assets" aria-label="Permalink to section &quot;Step 5 — Execute Rollbacks and Recover Corrupted Assets&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5 — Execute Rollbacks and Recover Corrupted Assets</h3>
 <p>Geospatial datasets are prone to corruption during transfer, storage degradation, or interrupted pipeline runs. A truncated GeoTIFF header or a partially written Shapefile can silently break downstream training jobs — DVC’s checkout mechanism provides deterministic recovery.</p>
-<h3 id="restore-a-known-good-dataset-state" tabindex="-1"><a class="header-anchor" href="#restore-a-known-good-dataset-state" aria-label="Permalink to section &quot;Restore a Known-Good Dataset State&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Restore a Known-Good Dataset State</h3>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">bash</span>
@@ -675,7 +685,7 @@ PRECISION_THRESHOLD <span class="token operator">=</span> <span class="token num
 dvc checkout data/processed/chips.dvc
 </code></pre>
 </div>
-<h3 id="validate-cache-integrity-against-remote" tabindex="-1"><a class="header-anchor" href="#validate-cache-integrity-against-remote" aria-label="Permalink to section &quot;Validate Cache Integrity Against Remote&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Validate Cache Integrity Against Remote</h3>
+<p>Validate cache integrity against the remote before and after restoration:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">bash</span>
@@ -712,9 +722,8 @@ dvc repro <span class="token parameter variable">--force</span>
 </code></pre>
 </div>
 <p>Never delete <code class="inline-code">.dvc</code> metadata files manually — always use <code class="inline-code">dvc remove</code> or <code class="inline-code">git checkout</code> to maintain consistency between Git history and DVC cache state. For enterprise-grade recovery patterns including automated integrity checks and fallback remote routing, see <a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">rollback strategies for corrupted spatial datasets</a>.</p>
-<h2 id="step-6-scale-for-satellite-imagery-and-multi-temporal-stacks" tabindex="-1"><a class="header-anchor" href="#step-6-scale-for-satellite-imagery-and-multi-temporal-stacks" aria-label="Permalink to section &quot;Step 6: Scale for Satellite Imagery and Multi-Temporal Stacks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 6: Scale for Satellite Imagery and Multi-Temporal Stacks</h2>
+<h3 id="step-6-scale-for-satellite-imagery-and-multi-temporal-stacks" tabindex="-1"><a class="header-anchor" href="#step-6-scale-for-satellite-imagery-and-multi-temporal-stacks" aria-label="Permalink to section &quot;Step 6 — Scale for Satellite Imagery and Multi-Temporal Stacks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 6 — Scale for Satellite Imagery and Multi-Temporal Stacks</h3>
 <p>Single-scene GeoTIFFs often exceed 10 GB, and temporal stacks of the same area multiply storage requirements proportionally. Tracking raw multi-temporal stacks directly causes two problems: DVC must checksum the full file on every <code class="inline-code">dvc status</code> call, and each new acquisition invalidates the entire tracked object even when 95% of pixels are unchanged.</p>
-<h3 id="virtual-raster-vrt-strategy" tabindex="-1"><a class="header-anchor" href="#virtual-raster-vrt-strategy" aria-label="Permalink to section &quot;Virtual Raster (VRT) Strategy&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Virtual Raster (VRT) Strategy</h3>
 <p>Generate lightweight VRT index files that reference underlying cloud-optimized GeoTIFFs (COGs) stored directly in object storage:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -738,7 +747,6 @@ dvc <span class="token function">add</span> data/processed/temporal_stack.vrt
 </code></pre>
 </div>
 <p>VRT files remain under 100 KB while preserving band mappings, spatial extents, and temporal ordering. Training scripts use <code class="inline-code">rasterio</code> windowed reads against the VRT to pull exactly the spatial extent needed for each chip, avoiding full-scene downloads.</p>
-<h3 id="cog-native-tiling-for-windowed-training" tabindex="-1"><a class="header-anchor" href="#cog-native-tiling-for-windowed-training" aria-label="Permalink to section &quot;COG-Native Tiling for Windowed Training&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> COG-Native Tiling for Windowed Training</h3>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -774,7 +782,7 @@ dvc <span class="token function">add</span> data/processed/temporal_stack.vrt
 </div>
 <p>For guidance on handling petabyte-class archives or STAC catalog integration with DVC, see <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/">how to version control large satellite imagery datasets</a>.</p>
 <hr>
-<h2 id="spatial-parameters-and-configuration-reference" tabindex="-1"><a class="header-anchor" href="#spatial-parameters-and-configuration-reference" aria-label="Permalink to section &quot;Spatial Parameters and Configuration Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial Parameters and Configuration Reference</h2>
+<h2 id="spatial-parameters-configuration-reference" tabindex="-1"><a class="header-anchor" href="#spatial-parameters-configuration-reference" aria-label="Permalink to section &quot;Spatial Parameters &amp; Configuration Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial Parameters &amp; Configuration Reference</h2>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -830,10 +838,18 @@ dvc <span class="token function">add</span> data/processed/temporal_stack.vrt
 </tbody>
 </table>
 </div><hr>
-<h2 id="edge-cases-and-spatial-specific-failure-modes" tabindex="-1"><a class="header-anchor" href="#edge-cases-and-spatial-specific-failure-modes" aria-label="Permalink to section &quot;Edge Cases and Spatial-Specific Failure Modes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases and Spatial-Specific Failure Modes</h2>
-<p><strong>Datum shift masquerading as model degradation.</strong> When raw scenes mix <code class="inline-code">EPSG:4326</code> (WGS84) and <code class="inline-code">EPSG:4269</code> (NAD83) without an explicit datum transformation grid, <code class="inline-code">gdalwarp</code> applies a zero-shift fallback that introduces up to 3-metre errors in North America. Always specify <code class="inline-code">+towgs84</code> parameters or install PROJ datum grids (<code class="inline-code">proj-data</code> package) before running CRS normalization stages.</p>
-<p><strong>Partial multipart upload corruption.</strong> An interrupted <code class="inline-code">dvc push</code> leaves a partially written object in S3. DVC’s <code class="inline-code">dvc status</code> reports the file as “modified” locally but may not catch the remote corruption. Run <code class="inline-code">dvc fetch --jobs 1 --run-cache</code> to force a full re-download of the remote object and detect size mismatches before training.</p>
-<p><strong>Self-intersecting polygon boundaries after topology cleaning.</strong> QGIS buffer or snap operations can introduce self-intersections in annotation polygons that are invisible at normal zoom levels but break GDAL rasterization. Add a shapely validity check in the <code class="inline-code">export_labels</code> stage:</p>
+<h2 id="edge-cases-spatial-specific-failure-modes" tabindex="-1"><a class="header-anchor" href="#edge-cases-spatial-specific-failure-modes" aria-label="Permalink to section &quot;Edge Cases &amp; Spatial-Specific Failure Modes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases &amp; Spatial-Specific Failure Modes</h2>
+<details>
+<summary><strong>Datum shift masquerading as model degradation</strong></summary>
+<p>When raw scenes mix <code class="inline-code">EPSG:4326</code> (WGS84) and <code class="inline-code">EPSG:4269</code> (NAD83) without an explicit datum transformation grid, <code class="inline-code">gdalwarp</code> applies a zero-shift fallback that introduces up to 3-metre errors in North America. Always specify <code class="inline-code">+towgs84</code> parameters or install PROJ datum grids (<code class="inline-code">proj-data</code> package) before running CRS normalization stages.</p>
+</details>
+<details>
+<summary><strong>Partial multipart upload corruption</strong></summary>
+<p>An interrupted <code class="inline-code">dvc push</code> leaves a partially written object in S3. DVC’s <code class="inline-code">dvc status</code> reports the file as “modified” locally but may not catch the remote corruption. Run <code class="inline-code">dvc fetch --jobs 1 --run-cache</code> to force a full re-download of the remote object and detect size mismatches before training.</p>
+</details>
+<details>
+<summary><strong>Self-intersecting polygon boundaries after topology cleaning</strong></summary>
+<p>QGIS buffer or snap operations can introduce self-intersections in annotation polygons that are invisible at normal zoom levels but break GDAL rasterization. Add a shapely validity check in the <code class="inline-code">export_labels</code> stage:</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -844,8 +860,7 @@ dvc <span class="token function">add</span> data/processed/temporal_stack.vrt
       <span class="code-copy__label">Copy</span>
     </button>
   </div>
-  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> shape
-<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> make_valid
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> make_valid
 <span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
 
 <span class="token keyword">def</span> <span class="token function">clean_annotations</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">:</span>
@@ -857,10 +872,17 @@ dvc <span class="token function">add</span> data/processed/temporal_stack.vrt
     <span class="token keyword">return</span> gdf
 </code></pre>
 </div>
-<p><strong>Band order inconsistency across acquisition dates.</strong> Satellite providers occasionally reorder spectral bands between product generations. Hardcoding band indices (e.g., <code class="inline-code">src.read(1)</code> for red) breaks silently when the band order changes. Always read by band name using GDAL band descriptions or embed a band-to-index mapping in <code class="inline-code">params.yaml</code>.</p>
-<p><strong>Cache size explosion from frequent raster modifications.</strong> Every <code class="inline-code">dvc add</code> on a modified GeoTIFF creates a new cache object. On high-frequency annotation workflows, the local cache can exhaust disk space within days. Run <code class="inline-code">dvc gc -w --all-commits</code> weekly and configure cloud lifecycle policies to transition objects older than 90 days to infrequent-access storage tiers.</p>
+</details>
+<details>
+<summary><strong>Band order inconsistency across acquisition dates</strong></summary>
+<p>Satellite providers occasionally reorder spectral bands between product generations. Hardcoding band indices (e.g., <code class="inline-code">src.read(1)</code> for red) breaks silently when the band order changes. Always read by band name using GDAL band descriptions or embed a band-to-index mapping in <code class="inline-code">params.yaml</code>.</p>
+</details>
+<details>
+<summary><strong>Cache size explosion from frequent raster modifications</strong></summary>
+<p>Every <code class="inline-code">dvc add</code> on a modified GeoTIFF creates a new cache object. On high-frequency annotation workflows, the local cache can exhaust disk space within days. Run <code class="inline-code">dvc gc -w --all-commits</code> weekly and configure cloud lifecycle policies to transition objects older than 90 days to infrequent-access storage tiers.</p>
+</details>
 <hr>
-<h2 id="integration-and-automation-hooks" tabindex="-1"><a class="header-anchor" href="#integration-and-automation-hooks" aria-label="Permalink to section &quot;Integration and Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Integration and Automation Hooks</h2>
+<h2 id="integration-automation-hooks" tabindex="-1"><a class="header-anchor" href="#integration-automation-hooks" aria-label="Permalink to section &quot;Integration &amp; Automation Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Integration &amp; Automation Hooks</h2>
 <h3 id="github-actions-ci-gate" tabindex="-1"><a class="header-anchor" href="#github-actions-ci-gate" aria-label="Permalink to section &quot;GitHub Actions CI Gate&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> GitHub Actions CI Gate</h3>
 <div class="code-block">
   <div class="code-block__head">
@@ -944,7 +966,7 @@ dvc <span class="token function">add</span> data/processed/temporal_stack.vrt
 </code></pre>
 </div>
 <hr>
-<h2 id="validation-and-testing" tabindex="-1"><a class="header-anchor" href="#validation-and-testing" aria-label="Permalink to section &quot;Validation and Testing&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Validation and Testing</h2>
+<h2 id="validation-testing" tabindex="-1"><a class="header-anchor" href="#validation-testing" aria-label="Permalink to section &quot;Validation &amp; Testing&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Validation &amp; Testing</h2>
 <p>Confirm DVC setup is functioning correctly before committing to a full pipeline run:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -1044,7 +1066,7 @@ dvc status
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">
               <div class="title">Tracking Annotation Changes with SHA Hashing</div>
-              <div class="desc">Geospatial ML pipelines fail silently in ways that are difficult to detect after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file&#39;s modificati</div>
+              <div class="desc">Geospatial ML pipelines fail silently in ways that are difficult to catch after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file&#39;s modificatio</div>
             </a>
           
         </div>

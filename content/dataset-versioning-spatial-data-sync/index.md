@@ -5,7 +5,7 @@ slug: "dataset-versioning-spatial-data-sync"
 type: "pillar"
 breadcrumb: "Dataset Versioning & Spatial Data Sync"
 datePublished: "2025-03-10"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -17,7 +17,7 @@ dateModified: "2026-06-24"
       "headline": "Dataset Versioning & Spatial Data Sync for Geospatial AI/ML Pipelines",
       "description": "Production-grade dataset versioning and spatial data sync for geospatial AI/ML pipelines: content-addressable hashing, atomic tiling manifests, CRS governance, and CI/CD integration patterns for reproducible training datasets.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -72,11 +72,11 @@ This guide covers production-grade architectures, Python automation patterns, an
 
 ---
 
-## Core Concepts: Spatial Data Modalities and Version Primitives
+## Spatial Data Modalities and Version Primitives
 
 Before choosing a versioning strategy, teams must understand what makes geospatial data structurally different from the file types standard DevOps tooling was designed for.
 
-**Raster assets** — GeoTIFFs, Cloud-Optimized GeoTIFFs (COGs), HDF5 stacks, NetCDF archives — are multi-dimensional arrays anchored to the earth's surface via a geotransform matrix and a [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/). A single Sentinel-2 scene can exceed 1 GB per acquisition date. Tiling pipelines split these into overlapping patches (typically 256×256 or 512×512 pixels), and every tile inherits the parent's spatial metadata.
+**Raster assets** — GeoTIFFs, Cloud-Optimized GeoTIFFs (COGs), HDF5 stacks, NetCDF archives — are multi-dimensional arrays anchored to the earth's surface via a geotransform matrix and a coordinate reference system enforced as [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (geographic) or a local projected system such as `EPSG:32637` (UTM zone 37N). A single Sentinel-2 scene can exceed 1 GB per acquisition date. Tiling pipelines split these into overlapping patches (typically 256×256 or 512×512 pixels), and every tile inherits the parent's spatial metadata.
 
 **Vector annotation layers** — GeoJSON, Shapefile, FlatGeobuf, GeoParquet — encode geometries as coordinate sequences. A polygon's identity does not change when an annotator adjusts one vertex, but its SHA-256 hash does. [Defining ROI label taxonomies](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) for aerial imagery is the upstream task that determines how these geometries are classified and which geometry type (polygon vs bounding box) the annotation team produces.
 
@@ -84,67 +84,96 @@ Before choosing a versioning strategy, teams must understand what makes geospati
 
 ---
 
-## Dataset Versioning Pipeline: Architecture Overview
+## Versioning Pipeline Architecture: Ingestion to Training Feedback
 
 A production spatial versioning architecture has four interconnected layers. Each must operate deterministically to ensure that model training is fully reproducible across distributed compute environments.
 
-<svg viewBox="0 0 780 320" role="img" aria-label="Dataset versioning pipeline: four layers from object storage through version control, manifest engine, and compute data loader" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+<svg viewBox="0 0 800 380" role="img" aria-label="Dataset versioning pipeline architecture showing four layers and six data flow stages" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;display:block;margin:1.5rem auto;">
   <title>Dataset Versioning Pipeline Architecture</title>
-  <desc>Four-layer architecture diagram showing data flowing from Object Storage and Spatial Registry, through Content-Addressable Version Control, into the Atomic Manifest Engine, and finally the Compute-Aware Data Loader for PyTorch/TensorFlow/JAX.</desc>
+  <desc>Four-layer architecture: Object Storage feeds into Content-Addressable Version Control, then Atomic Manifest Engine, then Compute Data Loader. Below, six sequential data flow stages run left to right: Ingest raster, Validate CRS, Tile and hash, Overlay labels, Write manifest, Promote version. A dashed feedback arrow returns from Promote version back to Ingest raster.</desc>
   <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
+    <marker id="arr" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L0,7 L8,3.5 z" fill="currentColor" opacity="0.6"/>
+    </marker>
+    <marker id="arrDash" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L0,7 L8,3.5 z" fill="currentColor" opacity="0.4"/>
     </marker>
   </defs>
-  <!-- Layer boxes -->
-  <rect x="20" y="30" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="100" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Object Storage</text>
-  <text x="100" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">S3 / GCS / Azure Blob</text>
-  <text x="100" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Spatial Registry (PG/SQLite)</text>
-  <rect x="210" y="30" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="290" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Content-Addressable</text>
-  <text x="290" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Version Control (DVC)</text>
-  <text x="290" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">SHA-256 per tile+CRS</text>
-  <rect x="400" y="30" width="160" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="480" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Atomic Manifest</text>
-  <text x="480" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Engine (JSON/Parquet)</text>
-  <text x="480" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">Checksum + bbox index</text>
-  <rect x="590" y="30" width="170" height="80" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
-  <text x="675" y="60" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor">Compute Data Loader</text>
-  <text x="675" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">PyTorch / TF / JAX</text>
-  <text x="675" y="96" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.75">On-the-fly CRS warp</text>
-  <!-- Arrows between layers -->
-  <line x1="182" y1="70" x2="207" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="372" y1="70" x2="397" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <line x1="562" y1="70" x2="587" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.6"/>
-  <!-- Data flow stages below -->
-  <text x="390" y="155" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor" opacity="0.7">DATA FLOW STAGES</text>
-  <rect x="20" y="170" width="100" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-  <text x="70" y="193" text-anchor="middle" font-size="10" fill="currentColor">Ingest raster</text>
-  <rect x="138" y="170" width="100" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-  <text x="188" y="193" text-anchor="middle" font-size="10" fill="currentColor">Validate CRS</text>
-  <rect x="256" y="170" width="100" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-  <text x="306" y="193" text-anchor="middle" font-size="10" fill="currentColor">Tile + hash</text>
-  <rect x="374" y="170" width="110" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-  <text x="429" y="193" text-anchor="middle" font-size="10" fill="currentColor">Overlay labels</text>
-  <rect x="502" y="170" width="110" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-  <text x="557" y="193" text-anchor="middle" font-size="10" fill="currentColor">Write manifest</text>
-  <rect x="630" y="170" width="110" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-  <text x="685" y="193" text-anchor="middle" font-size="10" fill="currentColor">Promote version</text>
-  <!-- Stage arrows -->
-  <line x1="122" y1="188" x2="135" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
-  <line x1="240" y1="188" x2="253" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
-  <line x1="358" y1="188" x2="371" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
-  <line x1="486" y1="188" x2="499" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
-  <line x1="614" y1="188" x2="627" y2="188" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
-  <!-- Feedback arrow -->
-  <path d="M685,208 Q685,270 390,270 Q95,270 70,208" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arr)" opacity="0.4"/>
-  <text x="390" y="290" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">training feedback loop — metric regression triggers rollback</text>
+  <!-- Layer header -->
+  <text x="400" y="22" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor" opacity="0.55" letter-spacing="0.08em">SYSTEM LAYERS</text>
+  <!-- Layer 1: Object Storage -->
+  <rect x="10" y="32" width="175" height="76" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="97" y="56" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">Object Storage</text>
+  <text x="97" y="74" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">S3 / GCS / Azure Blob</text>
+  <text x="97" y="92" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Spatial Registry (PG/SQLite)</text>
+  <!-- Arrow 1→2 -->
+  <line x1="187" y1="70" x2="208" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.55"/>
+  <!-- Layer 2: Content-Addressable VC -->
+  <rect x="210" y="32" width="175" height="76" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="297" y="56" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">Content-Addressable</text>
+  <text x="297" y="74" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Version Control (DVC)</text>
+  <text x="297" y="92" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">SHA-256 per tile + CRS</text>
+  <!-- Arrow 2→3 -->
+  <line x1="387" y1="70" x2="408" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.55"/>
+  <!-- Layer 3: Atomic Manifest -->
+  <rect x="410" y="32" width="175" height="76" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="497" y="56" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">Atomic Manifest</text>
+  <text x="497" y="74" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Engine (JSON / Parquet)</text>
+  <text x="497" y="92" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Checksum + bbox index</text>
+  <!-- Arrow 3→4 -->
+  <line x1="587" y1="70" x2="608" y2="70" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)" opacity="0.55"/>
+  <!-- Layer 4: Compute Data Loader -->
+  <rect x="610" y="32" width="180" height="76" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
+  <text x="700" y="56" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">Compute Data Loader</text>
+  <text x="700" y="74" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">PyTorch / TF / JAX</text>
+  <text x="700" y="92" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">On-the-fly CRS warp</text>
+  <!-- Stage header -->
+  <text x="400" y="142" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor" opacity="0.55" letter-spacing="0.08em">DATA FLOW STAGES</text>
+  <!-- Stage boxes — 6 stages evenly spaced in 800px -->
+  <!-- Stage 1 -->
+  <rect x="10" y="154" width="118" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+  <text x="69" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">1. Ingest raster</text>
+  <text x="69" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.65">COG + registry</text>
+  <!-- Arrow s1→s2 -->
+  <line x1="130" y1="176" x2="142" y2="176" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <!-- Stage 2 -->
+  <rect x="144" y="154" width="118" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+  <text x="203" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">2. Validate CRS</text>
+  <text x="203" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.65">Reproject if needed</text>
+  <!-- Arrow s2→s3 -->
+  <line x1="264" y1="176" x2="276" y2="176" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <!-- Stage 3 -->
+  <rect x="278" y="154" width="118" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+  <text x="337" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">3. Tile + hash</text>
+  <text x="337" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.65">SHA-256 per tile</text>
+  <!-- Arrow s3→s4 -->
+  <line x1="398" y1="176" x2="410" y2="176" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <!-- Stage 4 -->
+  <rect x="412" y="154" width="118" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+  <text x="471" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">4. Overlay labels</text>
+  <text x="471" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.65">Clip + confidence</text>
+  <!-- Arrow s4→s5 -->
+  <line x1="532" y1="176" x2="544" y2="176" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <!-- Stage 5 -->
+  <rect x="546" y="154" width="118" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+  <text x="605" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">5. Write manifest</text>
+  <text x="605" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.65">JSON / Parquet</text>
+  <!-- Arrow s5→s6 -->
+  <line x1="666" y1="176" x2="678" y2="176" stroke="currentColor" stroke-width="1.2" marker-end="url(#arr)" opacity="0.5"/>
+  <!-- Stage 6 -->
+  <rect x="680" y="154" width="110" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+  <text x="735" y="172" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">6. Promote version</text>
+  <text x="735" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.65">Registry pointer</text>
+  <!-- Feedback arc: from stage 6 bottom → stage 1 bottom, via a curve below -->
+  <path d="M735,200 Q735,260 400,280 Q65,300 69,200" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrDash)" opacity="0.38"/>
+  <text x="400" y="300" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45">metric regression or manifest corruption triggers rollback</text>
+  <!-- Rollback label -->
+  <text x="400" y="318" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.38" font-style="italic">training feedback loop</text>
 </svg>
 
 ### Layer 1: Object Storage and Spatial Registry
 
-Cloud-native storage (AWS S3, Google Cloud Storage, Azure Blob) serves as the immutable backing store. Datasets follow a hierarchical path: `/{project_id}/{dataset_name}/{version_hash}/{layer_type}/`. A lightweight metadata registry — PostgreSQL, SQLite, or a managed catalog like AWS Glue — tracks spatial extents, `EPSG` codes, acquisition timestamps, sensor type, and dependency graphs. This registry is the single source of truth for pipeline orchestration and must be queried before any training run begins.
+Cloud-native storage (AWS S3, Google Cloud Storage, Azure Blob) serves as the immutable backing store. Datasets follow a hierarchical path: `/{project_id}/{dataset_name}/{version_hash}/{layer_type}/`. A lightweight metadata registry — PostgreSQL, SQLite, or a managed catalog like AWS Glue — tracks spatial extents, EPSG codes, acquisition timestamps, sensor type, and dependency graphs. This registry is the single source of truth for pipeline orchestration and must be queried before any training run begins.
 
 ### Layer 2: Content-Addressable Version Control
 
@@ -162,7 +191,7 @@ The final layer interfaces with PyTorch, TensorFlow, or JAX. Custom data loaders
 
 ## Per-Stage Deep Dives
 
-### Stage 1: Raster Ingestion
+### Stage 1: Raster Ingestion and CRS Validation
 
 Raw satellite imagery arrives as full-scene GeoTIFFs. The ingestion stage converts these to COG format, validates the coordinate reference system against the project's canonical CRS, and records acquisition metadata in the registry.
 
@@ -291,7 +320,6 @@ Promotion is a two-step atomic operation: first, write the manifest to object st
 import boto3
 import json
 import psycopg2
-from contextlib import contextmanager
 
 def promote_version(
     manifest: dict,
@@ -315,7 +343,7 @@ def promote_version(
 
 ---
 
-## Spatial-Specific Gotchas and Failure Modes
+## Spatial-Specific Failure Modes and Gotchas
 
 Standard DevOps pipelines do not surface these failure patterns — they are unique to geospatial data engineering.
 
@@ -410,7 +438,7 @@ When new satellite imagery is delivered on a fixed cadence, an Airflow DAG orche
 
 ---
 
-## Operational Governance
+## Operational Governance for Versioned Spatial Datasets
 
 Versioning infrastructure only delivers value when paired with strict operational protocols.
 
@@ -426,7 +454,7 @@ Versioning infrastructure only delivers value when paired with strict operationa
 
 ---
 
-## Implementation Checklist
+## Production-Readiness Implementation Checklist
 
 The following gates define a production-ready spatial versioning system. Incomplete gates should block model training runs.
 

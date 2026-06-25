@@ -5,7 +5,7 @@ slug: "qgis-plugin-ecosystem-for-annotation-teams"
 type: "cluster"
 breadcrumb: "Labeling Workflows & Toolchain Integration > QGIS Plugin Ecosystem for Annotation Teams"
 datePublished: "2025-03-10"
-dateModified: "2026-06-24"
+dateModified: "2026-06-25"
 ---
 
 <script type="application/ld+json">
@@ -17,7 +17,7 @@ dateModified: "2026-06-24"
       "headline": "QGIS Plugin Ecosystem for Annotation Teams",
       "description": "Configure, extend, and automate the QGIS plugin stack for production geospatial annotation pipelines: CRS harmonization, schema enforcement, pre-label ingestion, FlatGeobuf export, and CI/CD integration.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -383,17 +383,49 @@ Version control `.qgz` project files alongside annotation layers to maintain rep
 
 ## Edge Cases & Spatial Gotchas
 
-**On-the-fly reprojection during annotation.** If a basemap layer uses `EPSG:4326` while the annotation layer uses `EPSG:3857`, QGIS reprojects the basemap at render time. Annotators see correctly aligned features in the canvas but the underlying coordinates store accumulated rounding error from the display transform. Lock the project CRS before opening annotation layers and disable on-the-fly reprojection for annotation layers specifically.
+These are the failure modes that most often reach a training job undetected. Each expands to the symptom, the root cause, and the fix.
 
-**Datum shift between NAD83 and WGS84.** In North American projects, mixing `EPSG:4269` (NAD83) and `EPSG:4326` (WGS84) introduces a sub-metre offset that is invisible at country-scale zoom but material for 10 cm/px drone imagery. Apply the `+nadgrids=@null` PROJ flag only if datum grid files are genuinely absent; prefer installing `proj-data` to use accurate grid-based transformations.
+<details>
+<summary><strong>On-the-fly reprojection during annotation</strong></summary>
 
-**Self-intersecting polygons from SAM masks.** Vectorized SAM output frequently produces self-intersecting rings at class boundaries where adjacent mask regions share pixels. Run `shapely.make_valid()` on every ingested polygon before storing it as an editable feature, and record the repair in the audit log.
+If a basemap layer uses `EPSG:4326` while the annotation layer uses `EPSG:3857`, QGIS reprojects the basemap at render time. Annotators see correctly aligned features in the canvas, but the underlying coordinates accumulate rounding error from the display transform. Lock the project CRS before opening annotation layers, and disable on-the-fly reprojection for the annotation layers specifically so vertices are digitized directly in stored coordinates.
 
-**Thread-safety violations in background processing.** Calling `QgsVectorLayer.getFeatures()` directly from a worker thread without `QgsTask` causes random crashes that are impossible to reproduce deterministically. Always subclass `QgsTask`, perform all data access inside `run()`, and emit a custom signal that the main thread connects to for UI updates.
+</details>
 
-**Plugin conflicts between annotation releases.** QuickMapServices and custom digitizing plugins sometimes register overlapping keyboard shortcuts, causing silent action-hijacking. After installing a new plugin, run `QgsApplication.actionManager()` in the QGIS Python console to list all registered actions and detect duplicate keybindings before distributing to annotators.
+<details>
+<summary><strong>Datum shift between NAD83 and WGS84</strong></summary>
 
-**Sliver polygons at tile boundaries.** Tiled SAM inference with insufficient overlap (< 10%) generates narrow sliver polygons at tile edges where masks from adjacent tiles do not fully overlap. Apply a minimum-area filter and use `shapely.buffer(0)` to dissolve slivers before loading features into the annotation layer.
+In North American projects, mixing `EPSG:4269` (NAD83) and `EPSG:4326` (WGS84) introduces a sub-metre offset that is invisible at country-scale zoom but material for 10 cm/px drone imagery. Apply the `+nadgrids=@null` PROJ flag only if datum grid files are genuinely absent; prefer installing `proj-data` so transformations use accurate grid-based shifts rather than a null approximation.
+
+</details>
+
+<details>
+<summary><strong>Self-intersecting polygons from SAM masks</strong></summary>
+
+Vectorized SAM output frequently produces self-intersecting rings at class boundaries where adjacent mask regions share pixels. Run `shapely.make_valid()` on every ingested polygon before storing it as an editable feature, and record the repair in the audit log so the geometry change is traceable back to its source mask.
+
+</details>
+
+<details>
+<summary><strong>Thread-safety violations in background processing</strong></summary>
+
+Calling `QgsVectorLayer.getFeatures()` directly from a worker thread without `QgsTask` causes random crashes that are impossible to reproduce deterministically. Always subclass `QgsTask`, perform all data access inside `run()`, and emit a custom signal that the main thread connects to for UI updates.
+
+</details>
+
+<details>
+<summary><strong>Plugin conflicts between annotation releases</strong></summary>
+
+QuickMapServices and custom digitizing plugins sometimes register overlapping keyboard shortcuts, causing silent action-hijacking. After installing a new plugin, run `QgsApplication.actionManager()` in the QGIS Python console to list every registered action and detect duplicate keybindings before distributing the profile to annotators.
+
+</details>
+
+<details>
+<summary><strong>Sliver polygons at tile boundaries</strong></summary>
+
+Tiled SAM inference with insufficient overlap (< 10%) generates narrow sliver polygons at tile edges where masks from adjacent tiles do not fully overlap. Apply a minimum-area filter and use `shapely.buffer(0)` to dissolve slivers before loading features into the annotation layer.
+
+</details>
 
 ## Integration & Automation Hooks
 
@@ -500,7 +532,6 @@ This workflow is one component of the broader [Labeling Workflows & Toolchain In
 
 **Related**
 
-- [Automating Pre-Labeling with Foundation Models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) — chain SAM inference with QGIS processing tools for batch polygon generation
 - [Automating Batch Pre-Labeling with SAM and QGIS](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/) — step-by-step SAM tiling, inference, and mask vectorization inside QGIS
 - [Human-in-the-Loop Validation Cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — structure review queues and track annotator disagreement across sprints
 - [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — webhook and REST API bridging between QGIS and Label Studio

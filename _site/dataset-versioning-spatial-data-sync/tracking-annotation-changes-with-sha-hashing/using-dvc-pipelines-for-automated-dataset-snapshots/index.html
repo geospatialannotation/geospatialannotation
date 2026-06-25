@@ -55,7 +55,7 @@
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
   <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
-  <script defer src="/assets/js/site.js?v=60200a44"></script>
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
 {
@@ -284,7 +284,7 @@
       "headline": "Using DVC Pipelines for Automated Dataset Snapshots",
       "description": "Define declarative DVC pipeline stages that validate CRS consistency, compute SHA-256 checksums, and archive geospatial annotations to content-addressable remote storage.",
       "datePublished": "2025-03-10",
-      "dateModified": "2026-06-24",
+      "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "Geospatial Annotation"},
       "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
     },
@@ -340,11 +340,66 @@
 }
 </script>
 <h1>Using DVC Pipelines for Automated Dataset Snapshots</h1>
-<p>A declarative <code class="inline-code">dvc.yaml</code> pipeline turns annotation archival from a manual chore into a reproducible, hash-gated stage: DVC validates spatial integrity, computes SHA-256 checksums for every changed asset, and pushes only the modified chunks to remote storage. The precise coordinate geometry, <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a>, and label schema used in each training run become permanently traceable — no zip archives, no timestamp-based backups, no guesswork.</p>
-<h2 id="why-naive-approaches-break-geospatial-pipelines" tabindex="-1"><a class="header-anchor" href="#why-naive-approaches-break-geospatial-pipelines" aria-label="Permalink to section &quot;Why Naive Approaches Break Geospatial Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Naive Approaches Break Geospatial Pipelines</h2>
-<p>A single reprojected raster, shifted polygon vertex, or corrected <code class="inline-code">.prj</code> file can silently invalidate months of training metrics without triggering any Git diff on binary assets. Teams that version spatial data only by committing files to Git LFS hit two compounding problems: large binary blobs slow every clone, and LFS provides no built-in mechanism to assert that the data inside those blobs is geometrically consistent before archival. The result is annotation drift — where the dataset a model was trained on differs from the dataset recorded in the experiment tracker, making rollback guesswork.</p>
-<p><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking annotation changes with SHA hashing</a> solves the detection problem; DVC pipelines solve the enforcement problem by making the hash check a mandatory gate before any output artifact is written.</p>
-<h2 id="step-by-step-implementation" tabindex="-1"><a class="header-anchor" href="#step-by-step-implementation" aria-label="Permalink to section &quot;Step-by-Step Implementation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step Implementation</h2>
+<p>A declarative <code class="inline-code">dvc.yaml</code> pipeline turns annotation archival from a manual chore into a reproducible, hash-gated stage. DVC normalises all inputs to a consistent <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> — by default <code class="inline-code">EPSG:4326</code> — validates spatial integrity, computes SHA-256 checksums for every changed asset, then pushes only the modified chunks to remote storage. The precise geometry, projection, and label schema used in each training run become permanently traceable without zip archives, timestamp-based backups, or guesswork.</p>
+<h2 id="why-annotation-drift-breaks-geospatial-training-pipelines" tabindex="-1"><a class="header-anchor" href="#why-annotation-drift-breaks-geospatial-training-pipelines" aria-label="Permalink to section &quot;Why Annotation Drift Breaks Geospatial Training Pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Annotation Drift Breaks Geospatial Training Pipelines</h2>
+<p>A single reprojected raster, shifted polygon vertex, or corrected <code class="inline-code">.prj</code> file can silently invalidate months of training metrics without triggering any Git diff on binary assets. Teams that version spatial data only via Git LFS hit two compounding problems: large binary blobs slow every clone, and LFS provides no built-in mechanism to assert geometric consistency before archival. The result is annotation drift — where the dataset a model was trained on differs from the dataset recorded in the experiment tracker, making rollback guesswork. <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking annotation changes with SHA hashing</a> solves the detection problem; DVC pipelines solve the enforcement problem by making the hash check a mandatory gate before any output artifact is written.</p>
+<h2 id="step-by-step-dvc-pipeline-implementation" tabindex="-1"><a class="header-anchor" href="#step-by-step-dvc-pipeline-implementation" aria-label="Permalink to section &quot;Step-by-Step DVC Pipeline Implementation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-Step DVC Pipeline Implementation</h2>
+<svg viewBox="0 0 740 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC snapshot pipeline: raw GeoJSON files flow through CRS validation, SHA-256 hashing, and Parquet manifest generation before being pushed to remote storage" style="width:100%;max-width:740px;height:auto;display:block;margin:1.5rem auto;">
+  <title>DVC snapshot pipeline for geospatial annotations</title>
+  <desc>Raw GeoJSON annotation files enter a DVC pipeline stage that validates CRS and geometry, computes SHA-256 checksums, writes a Parquet snapshot manifest, and pushes changed chunks to S3/GCS remote storage. Git receives only lightweight dvc.lock pointer files.</desc>
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- DVC stage boundary -->
+  <rect x="178" y="18" width="470" height="32" rx="4" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="413" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="bold">DVC pipeline stage: snapshot_annotations</text>
+  <!-- Bracket lines from stage boundary down to boxes -->
+  <line x1="178" y1="50" x2="178" y2="92" stroke="currentColor" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+  <line x1="648" y1="50" x2="648" y2="132" stroke="currentColor" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
+  <!-- Raw annotations -->
+  <rect x="20" y="102" width="120" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="80" y="126" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Raw GeoJSON</text>
+  <text x="80" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">annotations/</text>
+  <text x="80" y="157" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">data/raw/</text>
+  <!-- Arrow 1 -->
+  <line x1="140" y1="132" x2="178" y2="132" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- CRS + Geometry validation -->
+  <rect x="178" y="92" width="130" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="243" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">CRS + Geometry</text>
+  <text x="243" y="135" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Validation</text>
+  <text x="243" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">reproject → repair</text>
+  <text x="243" y="166" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">EPSG:4326</text>
+  <!-- Arrow 2 -->
+  <line x1="308" y1="132" x2="346" y2="132" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- SHA-256 hashing -->
+  <rect x="346" y="92" width="120" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="406" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">SHA-256</text>
+  <text x="406" y="135" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Hashing</text>
+  <text x="406" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">per-file digest</text>
+  <text x="406" y="166" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">+ pipeline hash</text>
+  <!-- Arrow 3 -->
+  <line x1="466" y1="132" x2="504" y2="132" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Parquet snapshot -->
+  <rect x="504" y="92" width="120" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="564" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Parquet</text>
+  <text x="564" y="135" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Snapshot</text>
+  <text x="564" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">latest_snapshot</text>
+  <text x="564" y="166" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">.parquet</text>
+  <!-- Arrow down to remote storage -->
+  <line x1="564" y1="172" x2="564" y2="218" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Remote storage -->
+  <rect x="484" y="218" width="160" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="564" y="240" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">S3 / GCS Remote</text>
+  <text x="564" y="256" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">dvc push (changed chunks only)</text>
+  <!-- Arrow down from validation stage to Git -->
+  <line x1="243" y1="172" x2="243" y2="218" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
+  <!-- Git pointer -->
+  <rect x="163" y="218" width="160" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3"/>
+  <text x="243" y="240" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Git repository</text>
+  <text x="243" y="256" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">dvc.lock pointer files only</text>
+</svg>
 <h3 id="step-1-install-dvc-with-your-storage-backend" tabindex="-1"><a class="header-anchor" href="#step-1-install-dvc-with-your-storage-backend" aria-label="Permalink to section &quot;Step 1 — Install DVC with Your Storage Backend&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Install DVC with Your Storage Backend</h3>
 <div class="code-block">
   <div class="code-block__head">
@@ -483,7 +538,6 @@ log <span class="token operator">=</span> logging<span class="token punctuation"
         gdf<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>invalid_mask<span class="token punctuation">,</span> <span class="token string">"geometry"</span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">(</span>
             gdf<span class="token punctuation">.</span>loc<span class="token punctuation">[</span>invalid_mask<span class="token punctuation">,</span> <span class="token string">"geometry"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">buffer</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span>
         <span class="token punctuation">)</span>
-        <span class="token comment"># Confirm repair succeeded</span>
         still_invalid <span class="token operator">=</span> <span class="token operator">~</span>gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>is_valid
         <span class="token keyword">if</span> still_invalid<span class="token punctuation">.</span><span class="token builtin">any</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
             log<span class="token punctuation">.</span>error<span class="token punctuation">(</span>
@@ -527,12 +581,10 @@ log <span class="token operator">=</span> logging<span class="token punctuation"
     <span class="token keyword">if</span> <span class="token keyword">not</span> records<span class="token punctuation">:</span>
         <span class="token keyword">raise</span> ValueError<span class="token punctuation">(</span><span class="token string">"No valid GeoJSON files were processed — aborting snapshot."</span><span class="token punctuation">)</span>
 
-    <span class="token comment"># Write Parquet manifest (consumed by downstream training scripts)</span>
     df <span class="token operator">=</span> pd<span class="token punctuation">.</span>DataFrame<span class="token punctuation">(</span>records<span class="token punctuation">)</span>
     parquet_path <span class="token operator">=</span> output_path <span class="token operator">/</span> <span class="token string">"latest_snapshot.parquet"</span>
     df<span class="token punctuation">.</span>to_parquet<span class="token punctuation">(</span>parquet_path<span class="token punctuation">,</span> index<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span>
 
-    <span class="token comment"># Write JSON metadata (tracked in Git via cache:false)</span>
     pipeline_hash <span class="token operator">=</span> hashlib<span class="token punctuation">.</span>sha256<span class="token punctuation">(</span>
         json<span class="token punctuation">.</span>dumps<span class="token punctuation">(</span>records<span class="token punctuation">,</span> sort_keys<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span><span class="token punctuation">.</span>encode<span class="token punctuation">(</span><span class="token punctuation">)</span>
     <span class="token punctuation">)</span><span class="token punctuation">.</span>hexdigest<span class="token punctuation">(</span><span class="token punctuation">)</span>
@@ -547,7 +599,6 @@ log <span class="token operator">=</span> logging<span class="token punctuation"
         json<span class="token punctuation">.</span>dumps<span class="token punctuation">(</span>metadata<span class="token punctuation">,</span> indent<span class="token operator">=</span><span class="token number">2</span><span class="token punctuation">)</span><span class="token punctuation">,</span> encoding<span class="token operator">=</span><span class="token string">"utf-8"</span>
     <span class="token punctuation">)</span>
 
-    <span class="token comment"># Write lightweight metrics file (not cached in DVC remote)</span>
     metrics<span class="token punctuation">:</span> <span class="token builtin">dict</span><span class="token punctuation">[</span><span class="token builtin">str</span><span class="token punctuation">,</span> Any<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">{</span>
         <span class="token string">"files_processed"</span><span class="token punctuation">:</span> <span class="token builtin">len</span><span class="token punctuation">(</span>records<span class="token punctuation">)</span><span class="token punctuation">,</span>
         <span class="token string">"total_features"</span><span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">(</span>df<span class="token punctuation">[</span><span class="token string">"feature_count"</span><span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token builtin">sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
@@ -624,7 +675,7 @@ dvc push
 </div>
 <p>DVC writes a <code class="inline-code">.dvc</code> pointer file containing only the hash — the binary never enters the local cache.</p>
 <h3 id="step-5-automate-snapshots-in-cicd" tabindex="-1"><a class="header-anchor" href="#step-5-automate-snapshots-in-cicd" aria-label="Permalink to section &quot;Step 5 — Automate Snapshots in CI/CD&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5 — Automate Snapshots in CI/CD</h3>
-<p>A GitHub Actions workflow that gates pull requests on pipeline success prevents annotation drift from reaching production training jobs. <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving metadata across dataset versions</a> explains how the <code class="inline-code">metadata.json</code> manifest output integrates with experiment trackers such as MLflow.</p>
+<p>A GitHub Actions workflow that gates pull requests on pipeline success prevents annotation drift from reaching production training jobs. The <code class="inline-code">metadata.json</code> manifest output integrates with experiment trackers such as MLflow — see <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> for how to embed CRS, geometry type, and label schema into versioned manifests consumed by training scripts.</p>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">yaml</span>
@@ -674,69 +725,7 @@ dvc push
         <span class="token key atrule">run</span><span class="token punctuation">:</span> dvc push
 </code></pre>
 </div>
-<h2 id="pipeline-architecture" tabindex="-1"><a class="header-anchor" href="#pipeline-architecture" aria-label="Permalink to section &quot;Pipeline Architecture&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Pipeline Architecture</h2>
-<p>The diagram below shows how annotation files travel through the pipeline — from raw deposit to training-ready manifest — with DVC acting as the hash-gating layer between each transition.</p>
-<svg viewBox="0 0 720 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC snapshot pipeline: raw GeoJSON files flow through CRS validation, SHA-256 hashing, and Parquet manifest generation before being pushed to remote storage" style="width:100%;max-width:720px;height:auto;display:block;margin:1.5rem auto;">
-  <title>DVC snapshot pipeline for geospatial annotations</title>
-  <desc>Raw GeoJSON annotation files enter a DVC pipeline stage that validates CRS and geometry, computes SHA-256 checksums, writes a Parquet snapshot manifest, and pushes changed chunks to S3/GCS remote storage. Git receives only lightweight dvc.lock pointer files.</desc>
-  <!-- Background -->
-  <rect width="720" height="280" rx="8" fill="none"/>
-  <!-- Stage boxes -->
-  <!-- Raw annotations -->
-  <rect x="20" y="100" width="120" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="80" y="124" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Raw GeoJSON</text>
-  <text x="80" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">annotations/</text>
-  <text x="80" y="154" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">data/raw/</text>
-  <!-- Arrow 1 -->
-  <line x1="140" y1="130" x2="178" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- CRS + Geometry validation -->
-  <rect x="178" y="90" width="130" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="243" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">CRS + Geometry</text>
-  <text x="243" y="133" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Validation</text>
-  <text x="243" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">reproject → repair</text>
-  <text x="243" y="163" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">EPSG:4326</text>
-  <!-- Arrow 2 -->
-  <line x1="308" y1="130" x2="346" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- SHA-256 hashing -->
-  <rect x="346" y="90" width="120" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="406" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">SHA-256</text>
-  <text x="406" y="133" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Hashing</text>
-  <text x="406" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">per-file digest</text>
-  <text x="406" y="163" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">+ pipeline hash</text>
-  <!-- Arrow 3 -->
-  <line x1="466" y1="130" x2="504" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- Parquet snapshot -->
-  <rect x="504" y="90" width="120" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-  <text x="564" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Parquet</text>
-  <text x="564" y="133" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Snapshot</text>
-  <text x="564" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">latest_snapshot</text>
-  <text x="564" y="163" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">.parquet</text>
-  <!-- Arrow down to remote storage -->
-  <line x1="564" y1="170" x2="564" y2="210" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- Remote storage -->
-  <rect x="484" y="210" width="160" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="564" y="231" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">S3 / GCS Remote</text>
-  <text x="564" y="248" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">dvc push (changed chunks only)</text>
-  <!-- Arrow down from validation to Git -->
-  <line x1="243" y1="170" x2="243" y2="210" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr)"/>
-  <!-- Git pointer -->
-  <rect x="163" y="210" width="160" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5,3"/>
-  <text x="243" y="231" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">Git repository</text>
-  <text x="243" y="248" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">dvc.lock pointer files only</text>
-  <!-- DVC stage label at top -->
-  <rect x="178" y="20" width="466" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="4,2"/>
-  <text x="411" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="bold">DVC pipeline stage: snapshot_annotations</text>
-  <!-- Bracket lines from stage box to pipeline label -->
-  <line x1="178" y1="34" x2="178" y2="90" stroke="currentColor" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
-  <line x1="644" y1="34" x2="644" y2="130" stroke="currentColor" stroke-width="1" stroke-dasharray="3,2" opacity="0.5"/>
-  <!-- Arrow marker -->
-  <defs>
-    <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
-    </marker>
-  </defs>
-</svg>
-<h2 id="key-parameter-reference" tabindex="-1"><a class="header-anchor" href="#key-parameter-reference" aria-label="Permalink to section &quot;Key Parameter Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Key Parameter Reference</h2>
+<h2 id="spatial-parameters-and-pipeline-thresholds" tabindex="-1"><a class="header-anchor" href="#spatial-parameters-and-pipeline-thresholds" aria-label="Permalink to section &quot;Spatial Parameters and Pipeline Thresholds&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial Parameters and Pipeline Thresholds</h2>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -779,23 +768,23 @@ dvc push
 </tbody>
 </table>
 </div><h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common Errors and Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors and Fixes</h2>
-<p><strong><code class="inline-code">ERROR: No valid GeoJSON files processed.</code></strong>
-Root cause: every file in <code class="inline-code">data/raw/annotations/</code> either has a missing CRS or contains unrepairable geometries. Fix: run <code class="inline-code">ogrinfo -al -so &lt;file&gt;.geojson</code> to confirm CRS is declared, and <code class="inline-code">python -c &quot;import geopandas as gpd; gdf=gpd.read_file(&#39;&lt;file&gt;&#39;); print(gdf.geometry.is_valid.value_counts())&quot;</code> to audit geometry health before the pipeline run.</p>
-<p><strong><code class="inline-code">dvc repro</code> reports <code class="inline-code">stage is cached</code> after editing a <code class="inline-code">.geojson</code> file</strong>
-Root cause: DVC hashes file content, not modification time. If the file changed but the content-hash is identical (e.g. you saved without altering data), DVC correctly considers the stage up to date. If content did change, confirm the file is listed under <code class="inline-code">deps</code> in <code class="inline-code">dvc.yaml</code>, not just the parent directory — DVC tracks directories by recursively hashing their contents, so this usually resolves itself; if not, run <code class="inline-code">dvc status --verbose</code> to compare stored vs current hashes.</p>
-<p><strong><code class="inline-code">pyproj.exceptions.CRSError: Invalid projection</code></strong>
-Root cause: annotation tool exported a <code class="inline-code">.geojson</code> with a non-standard or missing <code class="inline-code">crs</code> member. Fix: use <code class="inline-code">pyproj.CRS.from_user_input(gdf.crs)</code> to attempt a fuzzy match, or force <code class="inline-code">gdf.crs = pyproj.CRS.from_epsg(4326)</code> when the source CRS is known from project documentation.</p>
-<p><strong><code class="inline-code">dvc push</code> transfers unchanged chunks repeatedly</strong>
-Root cause: the remote is misconfigured to use a path prefix that differs between runs (e.g. a date-stamped folder). Fix: pin a stable <code class="inline-code">url</code> in <code class="inline-code">.dvc/config</code> and use <code class="inline-code">dvc gc --cloud -w</code> sparingly to prune truly unreferenced objects rather than deleting valid cache entries.</p>
+<p><code class="inline-code">ERROR: No valid GeoJSON files processed.</code>
+: Every file in <code class="inline-code">data/raw/annotations/</code> has a missing CRS or unrepairable geometries. Run <code class="inline-code">ogrinfo -al -so &lt;file&gt;.geojson</code> to confirm CRS is declared, and audit geometry health with <code class="inline-code">python -c &quot;import geopandas as gpd; gdf=gpd.read_file(&#39;&lt;file&gt;&#39;); print(gdf.geometry.is_valid.value_counts())&quot;</code> before the pipeline run.</p>
+<p><code class="inline-code">dvc repro</code> reports <code class="inline-code">stage is cached</code> after editing a <code class="inline-code">.geojson</code> file
+: DVC hashes file content, not modification time. If content did change, confirm the file is listed under <code class="inline-code">deps</code> in <code class="inline-code">dvc.yaml</code> — DVC tracks directories by recursively hashing their contents, so parent-directory entries usually resolve this. Run <code class="inline-code">dvc status --verbose</code> to compare stored vs current hashes.</p>
+<p><code class="inline-code">pyproj.exceptions.CRSError: Invalid projection</code>
+: The annotation tool exported a <code class="inline-code">.geojson</code> with a non-standard or missing <code class="inline-code">crs</code> member. Use <code class="inline-code">pyproj.CRS.from_user_input(gdf.crs)</code> for a fuzzy match, or force <code class="inline-code">gdf.crs = pyproj.CRS.from_epsg(4326)</code> when the source CRS is known from project documentation.</p>
+<p><code class="inline-code">dvc push</code> transfers unchanged chunks repeatedly
+: The remote is misconfigured with a path prefix that varies between runs (e.g. a date-stamped folder). Pin a stable <code class="inline-code">url</code> in <code class="inline-code">.dvc/config</code> and use <code class="inline-code">dvc gc --cloud -w</code> sparingly to prune truly unreferenced objects rather than deleting valid cache entries.</p>
 <hr>
 <p>This workflow is one component of the broader <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> strategy for deterministic spatial data lineage.</p>
 <p><strong>Related</strong></p>
 <ul>
 <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — parent: how SHA-256 digests surface annotation drift in geospatial datasets</li>
 <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> — full DVC setup for spatial ML, from remote config to <code class="inline-code">.dvc</code> file conventions</li>
-<li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> — how to embed CRS, geometry type, and label schema into versioned manifests consumed by training scripts</li>
+<li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a> — embedding CRS, geometry type, and label schema into versioned manifests consumed by training scripts</li>
 <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a> — recovering a known-good snapshot hash when a pipeline stage writes corrupt outputs</li>
-<li><a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> — the full picture: content-addressable storage, rollback, and sync strategies across annotation environments</li>
+<li><a href="/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> — content-addressable storage, rollback, and sync strategies across annotation environments</li>
 </ul>
 
 
