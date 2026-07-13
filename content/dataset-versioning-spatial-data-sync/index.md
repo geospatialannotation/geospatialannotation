@@ -2,7 +2,7 @@
 title: "Dataset Versioning & Spatial Data Sync"
 description: "Production-grade dataset versioning and spatial data sync for geospatial AI/ML pipelines: content-addressable hashing, atomic tiling manifests, CRS governance, and CI/CD integration patterns for reproducible training datasets."
 slug: "dataset-versioning-spatial-data-sync"
-type: "pillar"
+type: "overview"
 breadcrumb: "Dataset Versioning & Spatial Data Sync"
 datePublished: "2025-03-10"
 dateModified: "2026-06-25"
@@ -24,8 +24,8 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"}
       ]
     },
     {
@@ -66,7 +66,7 @@ dateModified: "2026-06-25"
 
 # Dataset Versioning & Spatial Data Sync for Geospatial AI/ML Pipelines
 
-Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop annotations. When training pipelines scale beyond proof-of-concept, the absence of rigorous dataset versioning and spatial data sync becomes the primary bottleneck to reproducibility, model stability, and deployment velocity. Spatial data scientists, ML engineers, and GIS annotation teams require infrastructure that treats [coordinate reference systems](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), tiling schemes, and annotation geometries as first-class versioned entities — not afterthoughts attached to model checkpoints.
+Geospatial machine learning operates at the intersection of massive raster archives, complex vector topologies, and continuously evolving human-in-the-loop annotations. When training pipelines scale beyond proof-of-concept, the absence of rigorous dataset versioning and spatial data sync becomes the primary bottleneck to reproducibility, model stability, and deployment velocity. Spatial data scientists, ML engineers, and GIS annotation teams require infrastructure that treats [coordinate reference systems](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), tiling schemes, and annotation geometries as first-class versioned entities — not afterthoughts attached to model checkpoints.
 
 This guide covers production-grade architectures, Python automation patterns, and operational protocols for synchronizing and versioning spatial training datasets. By treating geospatial assets with the same rigor as code, teams can eliminate silent data drift, accelerate annotation workflows, and guarantee that every model checkpoint maps to a deterministic, auditable dataset snapshot.
 
@@ -76,9 +76,9 @@ This guide covers production-grade architectures, Python automation patterns, an
 
 Before choosing a versioning strategy, teams must understand what makes geospatial data structurally different from the file types standard DevOps tooling was designed for.
 
-**Raster assets** — GeoTIFFs, Cloud-Optimized GeoTIFFs (COGs), HDF5 stacks, NetCDF archives — are multi-dimensional arrays anchored to the earth's surface via a geotransform matrix and a coordinate reference system enforced as [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (geographic) or a local projected system such as `EPSG:32637` (UTM zone 37N). A single Sentinel-2 scene can exceed 1 GB per acquisition date. Tiling pipelines split these into overlapping patches (typically 256×256 or 512×512 pixels), and every tile inherits the parent's spatial metadata.
+**Raster assets** — GeoTIFFs, Cloud-Optimized GeoTIFFs (COGs), HDF5 stacks, NetCDF archives — are multi-dimensional arrays anchored to the earth's surface via a geotransform matrix and a coordinate reference system enforced as [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (geographic) or a local projected system such as `EPSG:32637` (UTM zone 37N). A single Sentinel-2 scene can exceed 1 GB per acquisition date. Tiling pipelines split these into overlapping patches (typically 256×256 or 512×512 pixels), and every tile inherits the parent's spatial metadata.
 
-**Vector annotation layers** — GeoJSON, Shapefile, FlatGeobuf, GeoParquet — encode geometries as coordinate sequences. A polygon's identity does not change when an annotator adjusts one vertex, but its SHA-256 hash does. [Defining ROI label taxonomies](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) for aerial imagery is the upstream task that determines how these geometries are classified and which geometry type (polygon vs bounding box) the annotation team produces.
+**Vector annotation layers** — GeoJSON, Shapefile, FlatGeobuf, GeoParquet — encode geometries as coordinate sequences. A polygon's identity does not change when an annotator adjusts one vertex, but its SHA-256 hash does. [Defining ROI label taxonomies](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) for aerial imagery is the upstream task that determines how these geometries are classified and which geometry type (polygon vs bounding box) the annotation team produces.
 
 **Version primitives** in spatial pipelines are not files — they are tuples of `(pixel_array, crs_string, geotransform, annotation_ids)`. Any change to any element of that tuple constitutes a new dataset version. This distinction drives every architectural choice below.
 
@@ -177,7 +177,7 @@ Cloud-native storage (AWS S3, Google Cloud Storage, Azure Blob) serves as the im
 
 ### Layer 2: Content-Addressable Version Control
 
-Instead of tracking file modifications by timestamp, spatial pipelines use cryptographic hashes (SHA-256) derived from pixel arrays, CRS metadata, and tiling configurations. When a single tile or annotation vertex changes, only the affected hash updates, triggering a delta sync rather than a full dataset re-upload. [Implementing DVC for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) provides the canonical migration path from ad-hoc scripts to structured DVC pipelines that bridge Git workflows with heavy spatial assets.
+Instead of tracking file modifications by timestamp, spatial pipelines use cryptographic hashes (SHA-256) derived from pixel arrays, CRS metadata, and tiling configurations. When a single tile or annotation vertex changes, only the affected hash updates, triggering a delta sync rather than a full dataset re-upload. [Implementing DVC for geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) provides the canonical migration path from ad-hoc scripts to structured DVC pipelines that bridge Git workflows with heavy spatial assets.
 
 ### Layer 3: Atomic Sync and Tiling Manifest Engine
 
@@ -255,7 +255,7 @@ def hash_vector_feature(feature: dict) -> str:
     return hashlib.sha256(payload).hexdigest()
 ```
 
-[Tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) covers topology normalization in depth — including how to handle multi-polygon dissolves and floating-point precision across annotator workstations.
+[Tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) covers topology normalization in depth — including how to handle multi-polygon dissolves and floating-point precision across annotator workstations.
 
 ### Stage 3: Manifest Generation and Validation
 
@@ -291,7 +291,7 @@ def validate_manifest(manifest: dict[str, Any], target_dir: str) -> list[str]:
 
 ### Stage 4: Annotation Overlay and Label Extraction
 
-After tiles are generated, the pipeline extracts annotation polygons that spatially intersect each tile's bounding box. [Confidence scoring for geospatial labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) determines which annotations are included in training versus held out for review, and those scores must be preserved in the manifest alongside geometry hashes.
+After tiles are generated, the pipeline extracts annotation polygons that spatially intersect each tile's bounding box. [Confidence scoring for geospatial labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) determines which annotations are included in training versus held out for review, and those scores must be preserved in the manifest alongside geometry hashes.
 
 ```python
 import geopandas as gpd
@@ -411,7 +411,7 @@ jobs:
 
 ### DVC Pipeline Hook for Automated Snapshots
 
-[Using DVC pipelines for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) integrates directly with this CI/CD pattern. A `dvc.yaml` stage runs `generate_manifest` after every tile job, and `dvc repro` enforces that no training run can proceed without a valid, committed manifest.
+[Using DVC pipelines for automated dataset snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) integrates directly with this CI/CD pattern. A `dvc.yaml` stage runs `generate_manifest` after every tile job, and `dvc repro` enforces that no training run can proceed without a valid, committed manifest.
 
 ```yaml
 # dvc.yaml
@@ -446,9 +446,9 @@ Versioning infrastructure only delivers value when paired with strict operationa
 
 **Access control and audit logging.** Restrict write access to the sync orchestration service account. All read/write operations log to an immutable audit trail (CloudTrail, Datadog, or ELK stack) with user ID, timestamp, and dataset hash. Any manual write to a versioned path should trigger an alert.
 
-**Automated rollback triggers.** When validation metrics drop below a defined threshold or a sync job produces corrupted manifests, the pipeline should automatically revert to the previous stable version. [Rollback strategies for corrupted spatial datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) details step-by-step recovery patterns for both object storage and training cluster states — including how to identify the last clean version hash from the registry.
+**Automated rollback triggers.** When validation metrics drop below a defined threshold or a sync job produces corrupted manifests, the pipeline should automatically revert to the previous stable version. [Rollback strategies for corrupted spatial datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) details step-by-step recovery patterns for both object storage and training cluster states — including how to identify the last clean version hash from the registry.
 
-**Metadata preservation across iterations.** Spatial datasets carry critical provenance: sensor type, cloud cover percentage, acquisition angle, and per-annotation confidence scores. Stripping this metadata during sync breaks downstream quality analysis. [Preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) demonstrates how to embed provenance directly into Parquet manifests and GeoTIFF sidecar files so that every training sample traces back to its source observation.
+**Metadata preservation across iterations.** Spatial datasets carry critical provenance: sensor type, cloud cover percentage, acquisition angle, and per-annotation confidence scores. Stripping this metadata during sync breaks downstream quality analysis. [Preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) demonstrates how to embed provenance directly into Parquet manifests and GeoTIFF sidecar files so that every training sample traces back to its source observation.
 
 **Pre-commit hooks for spatial drift.** Python's built-in `hashlib` and `rasterio` validation routines can be wrapped into pre-commit hooks to catch CRS mismatches or topology errors before they reach the shared data store.
 
@@ -475,9 +475,9 @@ The following gates define a production-ready spatial versioning system. Incompl
 
 ## Related
 
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — migrate from ad-hoc sync scripts to DVC pipelines with S3/GCS remotes
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — normalize and hash complex label geometries for deterministic drift detection
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — recover from corrupted COG exports, registry pointer failures, and partial sync states
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — embed sensor provenance, confidence scores, and acquisition context into Parquet manifests
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS contracts that every versioning pipeline depends on
-- [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) — the upstream architecture that produces the annotation layers this pipeline versions
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — migrate from ad-hoc sync scripts to DVC pipelines with S3/GCS remotes
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — normalize and hash complex label geometries for deterministic drift detection
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — recover from corrupted COG exports, registry pointer failures, and partial sync states
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — embed sensor provenance, confidence scores, and acquisition context into Parquet manifests
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS contracts that every versioning pipeline depends on
+- [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) — the upstream architecture that produces the annotation layers this pipeline versions

@@ -2,7 +2,7 @@
 title: "Label Studio vs QGIS for Geospatial Annotation"
 description: "When to use Label Studio's web workflow vs QGIS desktop precision for geospatial annotation — topology editing, throughput, CRS handling, and a hybrid pipeline that routes tasks to each tool's strengths."
 slug: "label-studio-vs-qgis-for-geospatial-annotation"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"},
-        {"@type": "ListItem", "position": 4, "name": "Label Studio vs QGIS for Geospatial Annotation", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"},
+        {"@type": "ListItem", "position": 4, "name": "Label Studio vs QGIS for Geospatial Annotation", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/"}
       ]
     },
     {
@@ -85,13 +85,13 @@ schema:
 
 # Label Studio vs QGIS for Geospatial Annotation
 
-Choose the tool by the geometry, not the brand. Use [Label Studio](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) for high-throughput distributed labeling of tiled image chips with model-assisted pre-labeling, where a large annotator pool clears bounding boxes and coarse masks at speed. Use [QGIS](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) for precision topology editing, vertex snapping, and CRS-aware cadastral and network work, where a shared boundary must be traced exactly once and every geometry has to stay valid. The strongest production setup is neither/or but hybrid: a routing layer sends bulk tasks to Label Studio and escalates topologically complex tiles to QGIS, then merges both streams into one versioned dataset. This guide gives the decision criteria, a comparison table, and a runnable routing implementation.
+Choose the tool by the geometry, not the brand. Use [Label Studio](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) for high-throughput distributed labeling of tiled image chips with model-assisted pre-labeling, where a large annotator pool clears bounding boxes and coarse masks at speed. Use [QGIS](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) for precision topology editing, vertex snapping, and CRS-aware cadastral and network work, where a shared boundary must be traced exactly once and every geometry has to stay valid. The strongest production setup is neither/or but hybrid: a routing layer sends bulk tasks to Label Studio and escalates topologically complex tiles to QGIS, then merges both streams into one versioned dataset. This guide gives the decision criteria, a comparison table, and a runnable routing implementation.
 
 ## Why the Tool Choice Determines Annotation Quality
 
-The two tools optimise for opposite ends of the annotation problem. Label Studio is a web application built around task queues, per-annotator assignment, and pre-labels; it treats each tile as an image and records annotations in pixel space. That model is ideal for volume — thousands of chips, dozens of annotators, uncertainty-driven task ordering — but it is blind to real-world coordinates and has no concept of shared edges between adjacent features. QGIS is a desktop GIS that understands a [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) natively, snaps new vertices to existing geometry, and enforces topological rules so two parcels share one boundary instead of two nearly-coincident lines.
+The two tools optimise for opposite ends of the annotation problem. Label Studio is a web application built around task queues, per-annotator assignment, and pre-labels; it treats each tile as an image and records annotations in pixel space. That model is ideal for volume — thousands of chips, dozens of annotators, uncertainty-driven task ordering — but it is blind to real-world coordinates and has no concept of shared edges between adjacent features. QGIS is a desktop GIS that understands a [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) natively, snaps new vertices to existing geometry, and enforces topological rules so two parcels share one boundary instead of two nearly-coincident lines.
 
-Pick the wrong tool and the cost surfaces downstream. Trace cadastral parcels or road centrelines in a pixel-space web tool and you get slivers, gaps, and boundaries that drift by a metre after reprojection. Push a 40-annotator asset-detection campaign through a desktop GIS and throughput collapses because there is no queue, no assignment, and no [confidence score](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) to prioritise ambiguous chips. The hybrid pattern below exists precisely so that neither failure mode is forced on you.
+Pick the wrong tool and the cost surfaces downstream. Trace cadastral parcels or road centrelines in a pixel-space web tool and you get slivers, gaps, and boundaries that drift by a metre after reprojection. Push a 40-annotator asset-detection campaign through a desktop GIS and throughput collapses because there is no queue, no assignment, and no [confidence score](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) to prioritise ambiguous chips. The hybrid pattern below exists precisely so that neither failure mode is forced on you.
 
 ## Feature-by-Feature Comparison
 
@@ -258,7 +258,7 @@ def merge_streams(
     return combined.reset_index(drop=True)
 ```
 
-The canonical CRS here is the georeferencing anchor for the whole dataset; using [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) as the storage CRS keeps features portable, though you should reproject to a metric zone for any area or distance computation. Because Label Studio only produces pixel geometries, its output must first be georeferenced from each tile's geotransform before it reaches `merge_streams` — carry that geotransform as a sidecar through the whole pipeline.
+The canonical CRS here is the georeferencing anchor for the whole dataset; using [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) as the storage CRS keeps features portable, though you should reproject to a metric zone for any area or distance computation. Because Label Studio only produces pixel geometries, its output must first be georeferenced from each tile's geotransform before it reaches `merge_streams` — carry that geotransform as a sidecar through the whole pipeline.
 
 ## Common Errors and Fixes
 
@@ -280,8 +280,8 @@ Fix: ensure every feature carries a stable `tile_id` and keep `drop_duplicates(s
 
 ## Related
 
-- [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — the topic area this comparison sits within, covering the plugins that make QGIS the precision half of the pipeline
-- [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — how to wire Label Studio into a georeferenced pipeline and serve model-assisted pre-labels into its queue
-- [Syncing QGIS Edits to Cloud Annotation Platforms](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/) — the mechanics of pushing edited QGIS geometry back to a shared cloud dataset in the escalation path
+- [QGIS Plugin Ecosystem for Annotation Teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — the topic area this comparison sits within, covering the plugins that make QGIS the precision half of the pipeline
+- [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — how to wire Label Studio into a georeferenced pipeline and serve model-assisted pre-labels into its queue
+- [Syncing QGIS Edits to Cloud Annotation Platforms](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/) — the mechanics of pushing edited QGIS geometry back to a shared cloud dataset in the escalation path
 
-This guide is part of the broader [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/), which sits under [Labeling Workflows & Toolchain Integration for Geospatial AI](/labeling-workflows-toolchain-integration/).
+This guide is part of the broader [QGIS Plugin Ecosystem for Annotation Teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/), which sits under [Labeling Workflows & Toolchain Integration for Geospatial AI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/).

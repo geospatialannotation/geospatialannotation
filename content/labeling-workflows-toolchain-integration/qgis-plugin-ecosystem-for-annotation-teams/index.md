@@ -2,7 +2,7 @@
 title: "QGIS Plugin Ecosystem for Annotation Teams"
 description: "Configure, extend, and automate the QGIS plugin stack for production geospatial annotation pipelines: CRS harmonization, schema enforcement, pre-label ingestion, FlatGeobuf export, and CI/CD integration."
 slug: "qgis-plugin-ecosystem-for-annotation-teams"
-type: "cluster"
+type: "guide"
 breadcrumb: "Labeling Workflows & Toolchain Integration > QGIS Plugin Ecosystem for Annotation Teams"
 datePublished: "2025-03-10"
 dateModified: "2026-06-25"
@@ -24,9 +24,9 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"}
       ]
     },
     {
@@ -66,9 +66,9 @@ dateModified: "2026-06-25"
 
 # QGIS Plugin Ecosystem for Annotation Teams
 
-When a polygon layer annotated in QGIS arrives at a model training job only to collapse IoU scores by 30 percentage points, the culprit is rarely the annotators. It is almost always a silent [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) mismatch between the QGIS project, the background imagery, and the export format — compounded by missing schema constraints that let attribute drift accumulate undetected. QGIS has matured into a programmable orchestration layer for geospatial ML pipelines, but extracting that value requires deliberate plugin configuration, PyQGIS scripting discipline, and tight integration with downstream training infrastructure.
+When a polygon layer annotated in QGIS arrives at a model training job only to collapse IoU scores by 30 percentage points, the culprit is rarely the annotators. It is almost always a silent [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) mismatch between the QGIS project, the background imagery, and the export format — compounded by missing schema constraints that let attribute drift accumulate undetected. QGIS has matured into a programmable orchestration layer for geospatial ML pipelines, but extracting that value requires deliberate plugin configuration, PyQGIS scripting discipline, and tight integration with downstream training infrastructure.
 
-This page covers the full production workflow: plugin stack deployment, `EPSG:3857`-enforced CRS harmonization, attribute schema constraints, SAM-based pre-label ingestion, FlatGeobuf export, and CI/CD hooks — all grounded in the broader [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) pipeline.
+This page covers the full production workflow: plugin stack deployment, `EPSG:3857`-enforced CRS harmonization, attribute schema constraints, SAM-based pre-label ingestion, FlatGeobuf export, and CI/CD hooks — all grounded in the broader [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) pipeline.
 
 <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QGIS annotation pipeline: from raw imagery through plugin stack, CRS enforcement, schema validation, pre-label ingestion, human review, and FlatGeobuf export to ML training" style="width:100%;max-width:820px;display:block;margin:2rem auto;">
   <title>QGIS Annotation Pipeline</title>
@@ -139,7 +139,7 @@ gdal==3.8.5
 requests==2.31.0
 ```
 
-**Spatial knowledge prerequisites:** Annotators should understand projected vs. geographic CRS distinctions before editing. The [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page covers datum transformations, EPSG code selection, and the consequences of mixing geographic and projected coordinates in the same processing chain.
+**Spatial knowledge prerequisites:** Annotators should understand projected vs. geographic CRS distinctions before editing. The [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page covers datum transformations, EPSG code selection, and the consequences of mixing geographic and projected coordinates in the same processing chain.
 
 ## Core Workflow
 
@@ -266,11 +266,11 @@ def enforce_schema(layer: QgsVectorLayer) -> None:
     print("Schema enforced on", layer.name())
 ```
 
-Pair field constraints with QGIS form widgets: use **Value Maps** for `class_id` and `review_status` to prevent typos, **Range Sliders** (0.0–1.0) for `confidence`, and read-only expressions for `annotator_id` populated from the OS login. Assign per-annotation [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) to drive active learning queues in downstream training workflows.
+Pair field constraints with QGIS form widgets: use **Value Maps** for `class_id` and `review_status` to prevent typos, **Range Sliders** (0.0–1.0) for `confidence`, and read-only expressions for `annotator_id` populated from the OS login. Assign per-annotation [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) to drive active learning queues in downstream training workflows.
 
 ### Step 4 — Pre-Label Ingestion & Human-in-the-Loop Refinement
 
-Manual digitization bottlenecks high-throughput pipelines. The recommended pattern injects foundation-model masks as draft features that annotators correct rather than draw from scratch. The [automating batch pre-labeling with SAM and QGIS](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/) workflow covers the full SAM inference chain; the integration points below show how to receive its output inside the plugin stack.
+Manual digitization bottlenecks high-throughput pipelines. The recommended pattern injects foundation-model masks as draft features that annotators correct rather than draw from scratch. The [automating batch pre-labeling with SAM and QGIS](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/) workflow covers the full SAM inference chain; the integration points below show how to receive its output inside the plugin stack.
 
 Vectorize SAM binary masks using GDAL's polygonize algorithm, then load results as editable draft features:
 
@@ -302,7 +302,7 @@ def ingest_sam_masks(mask_raster: str, output_dir: str) -> QgsVectorLayer:
 
 Configure QGIS rendering rules to visually separate pre-labels from manually digitized features. Use a rule-based renderer: show pre-labels with a dashed orange stroke and human-reviewed features with a solid green stroke. This lets annotators immediately identify regions that require attention.
 
-For [automating pre-labeling with foundation models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) beyond SAM — including segment-then-classify pipelines — enable QGIS's **Advanced Digitizing** panel to constrain correction angles and snapping distances during the refinement pass.
+For [automating pre-labeling with foundation models](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) beyond SAM — including segment-then-classify pipelines — enable QGIS's **Advanced Digitizing** panel to constrain correction angles and snapping distances during the refinement pass.
 
 ### Step 5 — FlatGeobuf Export & CI/CD Integration
 
@@ -366,7 +366,7 @@ jobs:
         run: python scripts/export_ml_ready.py annotations/ exports/
 ```
 
-Version control `.qgz` project files alongside annotation layers to maintain reproducible environments. Store large spatial datasets using [DVC versioning for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) rather than Git LFS, which handles binary diff and remote storage more efficiently for raster datasets exceeding a few hundred megabytes.
+Version control `.qgz` project files alongside annotation layers to maintain reproducible environments. Store large spatial datasets using [DVC versioning for geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) rather than Git LFS, which handles binary diff and remote storage more efficiently for raster datasets exceeding a few hundred megabytes.
 
 ## Spatial Parameters & Configuration Reference
 
@@ -378,7 +378,7 @@ Version control `.qgz` project files alongside annotation layers to maintain rep
 | Confidence threshold | float | 0.0–1.0 | Features below 0.5 should be routed to human review |
 | Snapping tolerance | map units | 0.1–1.0 m (projected) | Too large merges distinct vertices; too small leaves topology gaps |
 | GSD range (annotation quality) | cm/px | 5–30 cm/px (optimal for objects > 2 m) | Coarser GSD reduces polygon precision and increases boundary ambiguity |
-| IoU acceptance threshold | float | 0.5 (detection), 0.75 (segmentation) | See [IoU thresholds for geospatial object detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) |
+| IoU acceptance threshold | float | 0.5 (detection), 0.75 (segmentation) | See [IoU thresholds for geospatial object detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) |
 | Max feature count per layer | integer | ≤ 500 000 for in-memory layers | Larger layers require PostGIS or GeoPackage-backed approach |
 
 ## Edge Cases & Spatial Gotchas
@@ -429,7 +429,7 @@ Tiled SAM inference with insufficient overlap (< 10%) generates narrow sliver po
 
 ## Integration & Automation Hooks
 
-The QGIS plugin stack integrates with [Label Studio for geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) via its REST API. Export GeoPackage layers from QGIS and push them to Label Studio as pre-annotations, then pull human-reviewed results back as GeoJSON for final export:
+The QGIS plugin stack integrates with [Label Studio for geospatial workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) via its REST API. Export GeoPackage layers from QGIS and push them to Label Studio as pre-annotations, then pull human-reviewed results back as GeoJSON for final export:
 
 ```python
 import requests
@@ -473,7 +473,7 @@ def push_prelabels_to_label_studio(
     return resp.json()
 ```
 
-For DVC integration, track `.gpkg` and `.fgb` annotation files as DVC-managed artifacts. This enables [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) at the file level and supports rollback if a corrupt export reaches the training pipeline.
+For DVC integration, track `.gpkg` and `.fgb` annotation files as DVC-managed artifacts. This enables [tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) at the file level and supports rollback if a corrupt export reaches the training pipeline.
 
 ## Validation & Testing
 
@@ -524,15 +524,15 @@ Add a `ogrinfo` sanity check as a lightweight CI step that does not require Pyth
 ogrinfo -al -so annotations.fgb | grep -E "Geometry Type|Feature Count|Layer SRS"
 ```
 
-Verify [metadata preservation across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) by comparing field checksums between the QGIS source layer and the exported FlatGeobuf to detect silent attribute truncation.
+Verify [metadata preservation across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) by comparing field checksums between the QGIS source layer and the exported FlatGeobuf to detect silent attribute truncation.
 
 ---
 
-This workflow is one component of the broader [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) pipeline.
+This workflow is one component of the broader [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) pipeline.
 
 **Related**
 
-- [Automating Batch Pre-Labeling with SAM and QGIS](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/) — step-by-step SAM tiling, inference, and mask vectorization inside QGIS
-- [Human-in-the-Loop Validation Cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — structure review queues and track annotator disagreement across sprints
-- [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — webhook and REST API bridging between QGIS and Label Studio
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS selection, datum transformation grids, and projection mismatch debugging
+- [Automating Batch Pre-Labeling with SAM and QGIS](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/) — step-by-step SAM tiling, inference, and mask vectorization inside QGIS
+- [Human-in-the-Loop Validation Cycles](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — structure review queues and track annotator disagreement across sprints
+- [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — webhook and REST API bridging between QGIS and Label Studio
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS selection, datum transformation grids, and projection mismatch debugging

@@ -2,7 +2,7 @@
 title: "A GitHub Actions Geometry Validation Gate"
 description: "A complete GitHub Actions workflow that validates annotation geometry on every pull request — self-intersections, zero-area polygons, and CRS mismatches — failing the build with an annotated report."
 slug: "github-actions-geometry-validation-gate"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "CI/CD Gates for Annotation Datasets", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/"},
-        {"@type": "ListItem", "position": 4, "name": "A GitHub Actions Geometry Validation Gate", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "CI/CD Gates for Annotation Datasets", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/"},
+        {"@type": "ListItem", "position": 4, "name": "A GitHub Actions Geometry Validation Gate", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/"}
       ]
     },
     {
@@ -91,7 +91,7 @@ A geometry validation gate is a GitHub Actions job that runs on any pull request
 
 Broken annotation geometry rarely announces itself. A bowtie polygon still renders, a zero-area sliver still serializes to valid JSON, and a layer written in a metric projection but tagged as WGS84 loads without complaint. The corruption only surfaces downstream: `shapely` returns an empty intersection during evaluation, a rasterizer emits an all-background mask, or reprojected coordinates land in the ocean. By then the feature has merged, propagated into a versioned snapshot, and possibly trained a checkpoint.
 
-Moving the check to the pull request inverts that cost. The invalid feature is still an isolated diff attributed to one annotator, the fix is a single edit, and no dataset rollback or retraining is required. This is the same shift-left logic behind [validating annotation export formats](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) at the schema level — geometry validation is the topological half of the same contract. Where schema checks confirm the JSON is shaped correctly, the geometry gate confirms the shapes themselves are usable.
+Moving the check to the pull request inverts that cost. The invalid feature is still an isolated diff attributed to one annotator, the fix is a single edit, and no dataset rollback or retraining is required. This is the same shift-left logic behind [validating annotation export formats](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) at the schema level — geometry validation is the topological half of the same contract. Where schema checks confirm the JSON is shaped correctly, the geometry gate confirms the shapes themselves are usable.
 
 <svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram: a pull request passes through a GeoJSON path filter, then a geometry validator, which writes a step summary and either passes or blocks the merge" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>Geometry validation gate flow in GitHub Actions</title>
@@ -205,7 +205,7 @@ def validate_file(path: Path) -> list[Violation]:
     return problems
 ```
 
-The first `EPSG:4326` reference above is the WGS84 [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) that most web-tile annotation exports declare. The `crs-mismatch` rule is deliberately strict: a file whose declared CRS is not the expected authority code is rejected outright, because a wrong CRS silently poisons every downstream reprojection and area computation.
+The first `EPSG:4326` reference above is the WGS84 [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) that most web-tile annotation exports declare. The `crs-mismatch` rule is deliberately strict: a file whose declared CRS is not the expected authority code is rejected outright, because a wrong CRS silently poisons every downstream reprojection and area computation.
 
 The reporting layer converts violations into a Markdown table, appends it to the file named by `$GITHUB_STEP_SUMMARY`, and chooses the exit code. Writing to that file is how a job publishes rich output on its summary page:
 
@@ -333,9 +333,9 @@ Fix: pin `shapely==2.0.6`, and let `geopandas==0.14.4` construct geometries from
 
 ## Related
 
-- [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the schema-contract half of the same gate, confirming the JSON is shaped correctly before topology is checked
-- [CI/CD Gates for Annotation Datasets](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — the parent guide covering geometry, CRS, class-balance, and schema gates wired into GitHub Actions and DVC pipelines
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — how the `crs-mismatch` rule fits a pipeline-wide CRS contract, including datum handling and reprojection patterns
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — why an invalid or zero-area geometry silently collapses IoU evaluation downstream
+- [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the schema-contract half of the same gate, confirming the JSON is shaped correctly before topology is checked
+- [CI/CD Gates for Annotation Datasets](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — the parent guide covering geometry, CRS, class-balance, and schema gates wired into GitHub Actions and DVC pipelines
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — how the `crs-mismatch` rule fits a pipeline-wide CRS contract, including datum handling and reprojection patterns
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — why an invalid or zero-area geometry silently collapses IoU evaluation downstream
 
-This guide is one gate within the broader [CI/CD Gates for Annotation Datasets](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) topic area, itself part of [Labeling Workflows & Toolchain Integration for Geospatial AI](/labeling-workflows-toolchain-integration/).
+This guide is one gate within the broader [CI/CD Gates for Annotation Datasets](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) topic area, itself part of [Labeling Workflows & Toolchain Integration for Geospatial AI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/).

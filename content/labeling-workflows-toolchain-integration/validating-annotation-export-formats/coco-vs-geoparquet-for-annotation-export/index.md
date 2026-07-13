@@ -2,7 +2,7 @@
 title: "COCO vs GeoParquet for Annotation Export"
 description: "A decision guide comparing COCO JSON and GeoParquet for exporting geospatial annotations: CRS fidelity, query performance, file size, and interoperability with ML training vs spatial analytics."
 slug: "coco-vs-geoparquet-for-annotation-export"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "Validating Annotation Export Formats", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/"},
-        {"@type": "ListItem", "position": 4, "name": "COCO vs GeoParquet for Annotation Export", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "Validating Annotation Export Formats", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/"},
+        {"@type": "ListItem", "position": 4, "name": "COCO vs GeoParquet for Annotation Export", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ Choose **COCO** when the immediate consumer is an off-the-shelf detector or segm
 
 The format you export to encodes an assumption about what the annotations are *for*. COCO was designed for natural-image object detection, where a photograph has no georeference and a box is defined purely in image pixels. That assumption is baked into its schema: `bbox` is `[x, y, width, height]` in pixels, `segmentation` is a polygon or RLE mask in pixels, and there is no field anywhere for a CRS, a datum, or an affine geotransform. Export straight to COCO and you have silently thrown away the one property that made your labels geospatial — the ability to know *where on Earth* each object sits.
 
-That loss is invisible until the second use case arrives. A model retrains on a new acquisition, someone needs to join detections against a parcel boundary layer, or an auditor asks which annotations fall inside a flood zone. If COCO is your only record, every one of those questions requires reconstructing the geotransform you discarded, and if the imagery was re-tiled in between, the pixel coordinates no longer map to anything. GeoParquet inverts the failure mode: it stores geometries in a real [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), so the labels remain meaningful independent of any particular image grid, and the pixel-space COCO file becomes a cheap, reproducible projection of them rather than the primary record.
+That loss is invisible until the second use case arrives. A model retrains on a new acquisition, someone needs to join detections against a parcel boundary layer, or an auditor asks which annotations fall inside a flood zone. If COCO is your only record, every one of those questions requires reconstructing the geotransform you discarded, and if the imagery was re-tiled in between, the pixel coordinates no longer map to anything. GeoParquet inverts the failure mode: it stores geometries in a real [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), so the labels remain meaningful independent of any particular image grid, and the pixel-space COCO file becomes a cheap, reproducible projection of them rather than the primary record.
 
 ## Dimension-by-Dimension Comparison
 
@@ -171,7 +171,7 @@ def build_label_store(path: str) -> gpd.GeoDataFrame:
     return gdf
 ```
 
-The CRS above is [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS84). Because GeoParquet stores this in file metadata, a later reader that reprojects the geometries can trust the declared source CRS rather than inferring it from coordinate magnitudes.
+The CRS above is [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS84). Because GeoParquet stores this in file metadata, a later reader that reprojects the geometries can trust the declared source CRS rather than inferring it from coordinate magnitudes.
 
 ### Step 2 — Define the Image Geotransform
 
@@ -261,7 +261,7 @@ def write_coco(
         json.dump(doc, fh)
 ```
 
-Because the geotransform lives in `ImageGrid` rather than in COCO, the pixel coordinates are fully reproducible from the georeferenced store. If you also want inference-time detections to be reprojectable, persist that geotransform alongside the COCO file — [embedding geotransform metadata in COCO exports](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) covers the sidecar and custom-field conventions for doing so.
+Because the geotransform lives in `ImageGrid` rather than in COCO, the pixel coordinates are fully reproducible from the georeferenced store. If you also want inference-time detections to be reprojectable, persist that geotransform alongside the COCO file — [embedding geotransform metadata in COCO exports](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) covers the sidecar and custom-field conventions for doing so.
 
 ## Common Errors and Fixes
 
@@ -287,9 +287,9 @@ Fix: keep GeoParquet authoritative and export COCO per experiment at the needed 
 
 ## Related
 
-- [Validating Annotation Export Formats](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the parent guide covering schema contracts and geometry checks across COCO, YOLO, and GeoJSON exports
-- [Enforcing the COCO JSON Schema in CI](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/) — gate the derived COCO artifact against a strict schema so cross-references and bbox bounds are validated before training
-- [Embedding Geotransform Metadata in COCO Exports](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) — attach the affine geotransform and EPSG code to COCO so pixel-space detections reproject to world coordinates
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS handling that makes GeoParquet a trustworthy georeferenced source of truth
+- [Validating Annotation Export Formats](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the parent guide covering schema contracts and geometry checks across COCO, YOLO, and GeoJSON exports
+- [Enforcing the COCO JSON Schema in CI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/) — gate the derived COCO artifact against a strict schema so cross-references and bbox bounds are validated before training
+- [Embedding Geotransform Metadata in COCO Exports](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) — attach the affine geotransform and EPSG code to COCO so pixel-space detections reproject to world coordinates
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS handling that makes GeoParquet a trustworthy georeferenced source of truth
 
-This guide sits within [Validating Annotation Export Formats](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/), part of [Labeling Workflows & Toolchain Integration for Geospatial AI](/labeling-workflows-toolchain-integration/).
+This guide sits within [Validating Annotation Export Formats](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/), part of [Labeling Workflows & Toolchain Integration for Geospatial AI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/).

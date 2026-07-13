@@ -2,7 +2,7 @@
 title: "Automating Batch Pre-Labeling with SAM and QGIS"
 description: "Run Meta's Segment Anything Model on georeferenced raster tiles, convert binary masks to vector polygons with correct CRS, and load spatially aligned GeoJSON directly into QGIS for rapid human review."
 slug: "automating-batch-pre-labeling-with-sam-and-qgis"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -32,10 +32,10 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"},
-        {"@type": "ListItem", "position": 4, "name": "Automating Batch Pre-Labeling with SAM and QGIS", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "QGIS Plugin Ecosystem for Annotation Teams", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/"},
+        {"@type": "ListItem", "position": 4, "name": "Automating Batch Pre-Labeling with SAM and QGIS", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/"}
       ]
     },
     {
@@ -83,7 +83,7 @@ A headless Python pipeline runs Meta's Segment Anything Model (SAM) on georefere
 
 ## Why Unprojected Inference Breaks the Pipeline
 
-When the source raster is in a geographic [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) such as `EPSG:4326`, one pixel does not represent a consistent ground distance across the image. SAM's receptive field spans different physical areas in the north versus south of a scene, causing fragmented or oversized masks at scale. The second failure is quieter: converting pixel-space contours back to geographic coordinates using a geographic CRS affine transform produces geometries that look correct in a GIS viewer but carry distorted area and perimeter values, which collapses [IoU threshold](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) calculations at model evaluation time. Both failures are silent — the pipeline finishes, the GeoJSON loads, but the annotations do not match the ground truth.
+When the source raster is in a geographic [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) such as `EPSG:4326`, one pixel does not represent a consistent ground distance across the image. SAM's receptive field spans different physical areas in the north versus south of a scene, causing fragmented or oversized masks at scale. The second failure is quieter: converting pixel-space contours back to geographic coordinates using a geographic CRS affine transform produces geometries that look correct in a GIS viewer but carry distorted area and perimeter values, which collapses [IoU threshold](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) calculations at model evaluation time. Both failures are silent — the pipeline finishes, the GeoJSON loads, but the annotations do not match the ground truth.
 
 <figure>
 <svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SAM batch pre-labeling pipeline: raster tiles flow through SAM inference, mask vectorization, and QGIS review" style="width:100%;max-width:720px;display:block;">
@@ -241,7 +241,7 @@ def run_sam_on_tiles(tile_paths: list[str]) -> list[tuple[str, list[dict]]]:
 
 ### Step 3 — Convert Pixel Masks to Georeferenced Polygons
 
-Apply each tile's affine transform to map pixel contour coordinates to real-world map coordinates. Assign per-polygon [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) so annotators can triage masks by certainty in QGIS.
+Apply each tile's affine transform to map pixel contour coordinates to real-world map coordinates. Assign per-polygon [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) so annotators can triage masks by certainty in QGIS.
 
 ```python
 # requirements: shapely==2.0.4, geopandas==0.14.4, opencv-python==4.9.0.80
@@ -332,9 +332,9 @@ def export_prelabels(gdf: gpd.GeoDataFrame) -> None:
     print(f"  High-confidence (≥0.90): {high_conf} ({100*high_conf/len(gdf):.1f}%)")
 ```
 
-In QGIS, open **Layer > Add Layer > Add Vector Layer** and select the GeoJSON. Apply a **Graduated** renderer on the `confidence` field — green for ≥ 0.90, amber for 0.80–0.89, red for < 0.80. Enable **Snapping** (Settings > Snapping Options, tolerance 5–10 map units) so editors can snap pre-label edges to existing survey boundaries. This review cycle integrates with the broader [QGIS plugin ecosystem for annotation teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/).
+In QGIS, open **Layer > Add Layer > Add Vector Layer** and select the GeoJSON. Apply a **Graduated** renderer on the `confidence` field — green for ≥ 0.90, amber for 0.80–0.89, red for < 0.80. Enable **Snapping** (Settings > Snapping Options, tolerance 5–10 map units) so editors can snap pre-label edges to existing survey boundaries. This review cycle integrates with the broader [QGIS plugin ecosystem for annotation teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/).
 
-Because every polygon already carries a metric geotransform, the reviewed layer exports cleanly to [COCO/YOLO formats](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) with the geotransform preserved as metadata — no second reprojection round-trip, and pixel-space bounding boxes recovered by inverting the same affine used in Step 3.
+Because every polygon already carries a metric geotransform, the reviewed layer exports cleanly to [COCO/YOLO formats](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) with the geotransform preserved as metadata — no second reprojection round-trip, and pixel-space bounding boxes recovered by inverting the same affine used in Step 3.
 
 ## Key Parameters Reference
 
@@ -380,9 +380,9 @@ The `vit_h` checkpoint needs roughly 7 GB of VRAM per batch, which overflows a 1
 
 ## Related
 
-- [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — parent page covering plugin selection, scripting hooks, and team review workflows
-- [Automating Pre-Labeling with Foundation Models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) — broader treatment of foundation-model-assisted labeling including Label Studio integration
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts underlying the reprojection steps above
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — how to use SAM's `predicted_iou` field to drive active learning queues
+- [QGIS Plugin Ecosystem for Annotation Teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — parent page covering plugin selection, scripting hooks, and team review workflows
+- [Automating Pre-Labeling with Foundation Models](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) — broader treatment of foundation-model-assisted labeling including Label Studio integration
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts underlying the reprojection steps above
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — how to use SAM's `predicted_iou` field to drive active learning queues
 
-This page is part of the [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) section within [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/).
+This page is part of the [QGIS Plugin Ecosystem for Annotation Teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) section within [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/).

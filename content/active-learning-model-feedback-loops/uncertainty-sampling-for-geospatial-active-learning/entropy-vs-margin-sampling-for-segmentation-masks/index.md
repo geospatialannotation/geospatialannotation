@@ -2,7 +2,7 @@
 title: "Entropy vs Margin Sampling for Segmentation Masks"
 description: "Compare entropy and margin (least-confidence) uncertainty scoring for per-pixel segmentation masks on aerial imagery, with runnable NumPy code and thresholds for tile prioritization."
 slug: "entropy-vs-margin-sampling-for-segmentation-masks"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"},
-        {"@type": "ListItem", "position": 3, "name": "Uncertainty Sampling for Geospatial Active Learning", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/"},
-        {"@type": "ListItem", "position": 4, "name": "Entropy vs Margin Sampling for Segmentation Masks", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"},
+        {"@type": "ListItem", "position": 3, "name": "Uncertainty Sampling for Geospatial Active Learning", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/"},
+        {"@type": "ListItem", "position": 4, "name": "Entropy vs Margin Sampling for Segmentation Masks", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/"}
       ]
     },
     {
@@ -84,7 +84,7 @@ schema:
 
 # Entropy vs Margin Sampling for Segmentation Masks
 
-For per-pixel segmentation masks, the choice between entropy and margin sampling comes down to how many classes carry real probability mass. Entropy uses the full class distribution and is the better signal for many-class land cover masks, where three- and four-way confusion is common and only a full-distribution measure captures it. Margin sampling — and its close relative least-confidence — is cheaper to compute and produces a more stable ranking for binary or few-class masks such as building, water, or road extraction. In both cases the critical move is aggregation: convert the per-pixel uncertainty map to a single tile score using the **mean of the top-k most uncertain pixels**, never the global mean, so a small ambiguous region is not averaged into irrelevance by a large confident background. That tile score is what feeds the ranking that drives your [active learning loop](/active-learning-model-feedback-loops/).
+For per-pixel segmentation masks, the choice between entropy and margin sampling comes down to how many classes carry real probability mass. Entropy uses the full class distribution and is the better signal for many-class land cover masks, where three- and four-way confusion is common and only a full-distribution measure captures it. Margin sampling — and its close relative least-confidence — is cheaper to compute and produces a more stable ranking for binary or few-class masks such as building, water, or road extraction. In both cases the critical move is aggregation: convert the per-pixel uncertainty map to a single tile score using the **mean of the top-k most uncertain pixels**, never the global mean, so a small ambiguous region is not averaged into irrelevance by a large confident background. That tile score is what feeds the ranking that drives your [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/).
 
 ## Why This Matters in Geospatial Pipelines
 
@@ -272,7 +272,7 @@ if __name__ == "__main__":
 
 ## Parameters and Score Ranges
 
-The two measures live on different numeric scales even after normalisation, so pick thresholds per measure and per target type rather than reusing one global cutoff. Because these scores drive annotation priority the same way [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) drive review triage, keep them calibrated: over-confident softmax output compresses both measures toward zero and flattens the ranking.
+The two measures live on different numeric scales even after normalisation, so pick thresholds per measure and per target type rather than reusing one global cutoff. Because these scores drive annotation priority the same way [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) drive review triage, keep them calibrated: over-confident softmax output compresses both measures toward zero and flattens the ranking.
 
 | Parameter | Entropy | Margin / least-confidence | Notes |
 |---|---|---|---|
@@ -284,7 +284,7 @@ The two measures live on different numeric scales even after normalisation, so p
 | "Send to annotator" tile score | ≳ 0.55 | ≳ 0.45 | Tune on a held-out set per model |
 | Stability under noisy tails | Sensitive | Robust | Heavy probability tails perturb entropy more |
 
-Treat the "send to annotator" rows as ranking anchors, not hard gates — in most loops you take a fixed batch size off the top of the ranked queue each round rather than everything above a score. When ambiguity clusters spatially, deduplicate the batch so you are not labeling ten adjacent tiles of the same confused field; that is the subject of [prioritizing tiles by model disagreement](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/).
+Treat the "send to annotator" rows as ranking anchors, not hard gates — in most loops you take a fixed batch size off the top of the ranked queue each round rather than everything above a score. When ambiguity clusters spatially, deduplicate the batch so you are not labeling ten adjacent tiles of the same confused field; that is the subject of [prioritizing tiles by model disagreement](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/).
 
 ## Common Errors and Fixes
 
@@ -310,9 +310,9 @@ Fix: apply temperature scaling to the logits before `softmax()` so the score spr
 
 ## Related
 
-- [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the topic area this guide belongs to, covering entropy, margin, and BALD scoring across detectors and segmenters
-- [Prioritizing Annotation Tiles by Model Disagreement](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/) — query-by-committee vote entropy and batch selection that removes the spatial redundancy this ranking alone does not handle
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — how per-annotation confidence is defined and calibrated so uncertainty scores stay comparable across batches
-- [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) — the broader feedback-loop architecture these tile scores feed into
+- [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the topic area this guide belongs to, covering entropy, margin, and BALD scoring across detectors and segmenters
+- [Prioritizing Annotation Tiles by Model Disagreement](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/) — query-by-committee vote entropy and batch selection that removes the spatial redundancy this ranking alone does not handle
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — how per-annotation confidence is defined and calibrated so uncertainty scores stay comparable across batches
+- [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) — the broader feedback-loop architecture these tile scores feed into
 
-This guide is one specialised technique within [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/), which is itself part of [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/).
+This guide is one specialised technique within [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/), which is itself part of [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/).

@@ -2,7 +2,7 @@
 title: "Rollback Strategies for Corrupted Spatial Datasets"
 description: "Production-tested rollback strategies for corrupted geospatial ML datasets: atomic restoration, SHA manifest verification, CRS drift detection, and DVC integration for deterministic pipeline recovery."
 slug: rollback-strategies-for-corrupted-spatial-datasets
-type: cluster
+type: "guide"
 breadcrumb:
   - label: Dataset Versioning & Spatial Data Sync
     url: /dataset-versioning-spatial-data-sync/
@@ -28,8 +28,8 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 2, "name": "Rollback Strategies for Corrupted Spatial Datasets", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/"}
+        {"@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 2, "name": "Rollback Strategies for Corrupted Spatial Datasets", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/"}
       ]
     },
     {
@@ -70,7 +70,7 @@ dateModified: "2026-06-25"
 
 # Rollback Strategies for Corrupted Spatial Datasets
 
-A corrupted geospatial training dataset rarely announces itself. A malformed [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation platform exporting incremental patches against a rolled-back tile set produces geometry joins that return empty matches or misaligned instance masks. By the time model validation surfaces the problem, the corrupted version may already be the "latest" snapshot in your remote store.
+A corrupted geospatial training dataset rarely announces itself. A malformed [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation platform exporting incremental patches against a rolled-back tile set produces geometry joins that return empty matches or misaligned instance masks. By the time model validation surfaces the problem, the corrupted version may already be the "latest" snapshot in your remote store.
 
 This page covers the complete recovery workflow: pre-flight triage, distributed locking, atomic restoration, post-restore CRS verification, and the integration hooks that make the whole sequence repeatable inside a CI pipeline.
 
@@ -132,7 +132,7 @@ filelock==3.14.0     # cross-process distributed locking
 
 System dependencies: GDAL ≥ 3.6 with PROJ ≥ 9.2. Confirm with `gdal-config --version` and `proj --version`.
 
-**Spatial prerequisites:** You should understand how [dataset versioning and spatial data sync](/dataset-versioning-spatial-data-sync/) works at the infrastructure level — specifically how `.dvc` pointer files decouple metadata from binary payloads and how remote caches store content-addressed objects. If your team is still establishing those foundations, start with [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) before deploying rollback automation.
+**Spatial prerequisites:** You should understand how [dataset versioning and spatial data sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) works at the infrastructure level — specifically how `.dvc` pointer files decouple metadata from binary payloads and how remote caches store content-addressed objects. If your team is still establishing those foundations, start with [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) before deploying rollback automation.
 
 **Storage layout contract:** Raw rasters, vector annotations, and derived feature stores must live in independent directories (or object storage prefixes). Cross-contamination during restoration is a primary failure vector. Isolating modalities allows you to restore a corrupted label set without touching validated satellite tiles.
 
@@ -142,7 +142,7 @@ System dependencies: GDAL ≥ 3.6 with PROJ ≥ 9.2. Confirm with `gdal-config -
 
 ### Step 1 — Build and Register the Integrity Manifest
 
-Every dataset commit must generate a `manifest.json` mapping relative file paths to SHA-256 checksums, plus a `crs_registry.json` recording the [EPSG code](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) and WKT string for every spatial file. These two artefacts are the ground truth for all downstream validation.
+Every dataset commit must generate a `manifest.json` mapping relative file paths to SHA-256 checksums, plus a `crs_registry.json` recording the [EPSG code](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) and WKT string for every spatial file. These two artefacts are the ground truth for all downstream validation.
 
 ```python
 import hashlib
@@ -255,7 +255,7 @@ def triage_dataset(
     return faults
 ```
 
-The triage step integrates naturally with [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — if your pipeline already generates per-file hashes at annotation export time, the manifest is a simple aggregation step rather than a full recompute.
+The triage step integrates naturally with [tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — if your pipeline already generates per-file hashes at annotation export time, the manifest is a simple aggregation step rather than a full recompute.
 
 ---
 
@@ -424,7 +424,7 @@ def emit_telemetry(telemetry: RollbackTelemetry, sink_path: Path) -> None:
 
 **CRS drift across reprojection versions.** When rolling back to a snapshot that used `EPSG:4326` while the current pipeline expects a local metric CRS such as `EPSG:32636`, augmentation pipelines may silently misalign tiles. Pixel-space bounding boxes become meaningless across the projection boundary. Always compare the WKT strings stored in `crs_registry.json` against the live expectation, not just the authority code — authority codes can collide across CRS databases.
 
-**Annotation drift against restored tiles.** Labeling platforms often export incremental patches rather than full manifests. A rollback that restores an older tile set while the annotation layer points to newer bounding boxes causes spatial joins to return empty matches or misaligned instance masks. Cross-version validation — checking annotation geometry extents against raster footprints for every restored file — catches this before training resumes. See the detailed treatment in [Debugging annotation drift across dataset versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/).
+**Annotation drift against restored tiles.** Labeling platforms often export incremental patches rather than full manifests. A rollback that restores an older tile set while the annotation layer points to newer bounding boxes causes spatial joins to return empty matches or misaligned instance masks. Cross-version validation — checking annotation geometry extents against raster footprints for every restored file — catches this before training resumes. See the detailed treatment in [Debugging annotation drift across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/).
 
 **Sidecar file desynchronisation.** Spatial datasets rely on companion files: `.tfw` (world file), `.prj` (projection), `.shx` (Shapefile index), `.aux.xml` (statistics cache). Rolling back only the primary `.tif` or `.geojson` while leaving stale sidecars produces an inconsistent state that GDAL reads without error but interprets incorrectly. Treat every spatial file and its sidecars as a single atomic unit during both versioning and restoration.
 
@@ -432,7 +432,7 @@ def emit_telemetry(telemetry: RollbackTelemetry, sink_path: Path) -> None:
 
 **Gradual degradation spanning multiple commits.** Silent annotation quality decay — e.g., a labeling tool that gradually drifts polygon vertices outward — may not surface in checksum validation because each commit is internally consistent. Implement cross-version geometry delta checks: compare the mean area and centroid shift of a random sample of polygons across the last three commits. A statistically significant drift is a signal to roll back further than the immediately previous version.
 
-**Metadata desynchronisation in [DVC pipeline](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stages.** DVC run-cache entries store input/output checksums separately from the data files. After a manual file restoration that bypasses `dvc checkout`, the run-cache believes outputs are stale and will re-run expensive preprocessing stages. Force-sync with `dvc commit --force` after every manual rollback to keep the cache consistent with the filesystem state.
+**Metadata desynchronisation in [DVC pipeline](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stages.** DVC run-cache entries store input/output checksums separately from the data files. After a manual file restoration that bypasses `dvc checkout`, the run-cache believes outputs are stale and will re-run expensive preprocessing stages. Force-sync with `dvc commit --force` after every manual rollback to keep the cache consistent with the filesystem state.
 
 ---
 
@@ -493,7 +493,7 @@ jobs:
         run: python scripts/triage_dataset.py --dataset-dir data/train --fail-on-fault
 ```
 
-For [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) within the same CI pipeline, emit the `manifest.json` and `crs_registry.json` as workflow artefacts so they are available to the rollback job without re-pulling the full binary payload.
+For [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) within the same CI pipeline, emit the `manifest.json` and `crs_registry.json` as workflow artefacts so they are available to the rollback job without re-pulling the full binary payload.
 
 ---
 
@@ -596,10 +596,10 @@ Maintain at least two prior production-tagged versions in cold storage. Single-v
 
 ## Related
 
-- [Debugging Annotation Drift Across Dataset Versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — geometry delta analysis that catches gradual label corruption before checksums flag anything
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — how per-annotation SHA hashes are generated and stored so rollback triage can pinpoint the labeling layer vs. the raster layer
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — remote cache configuration, `dvc checkout`, and run-cache synchronisation that underpin version-aware rollback
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — ensuring CRS records, bounding boxes, and schema versions survive across dataset commits and rollback events
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts including datum shifts and projection conformance checks referenced throughout this page
+- [Debugging Annotation Drift Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — geometry delta analysis that catches gradual label corruption before checksums flag anything
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — how per-annotation SHA hashes are generated and stored so rollback triage can pinpoint the labeling layer vs. the raster layer
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — remote cache configuration, `dvc checkout`, and run-cache synchronisation that underpin version-aware rollback
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — ensuring CRS records, bounding boxes, and schema versions survive across dataset commits and rollback events
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts including datum shifts and projection conformance checks referenced throughout this page
 
-This workflow is one specialised component of the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) infrastructure, which covers the full lifecycle from initial DVC setup through production-grade recovery patterns.
+This workflow is one specialised component of the broader [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) infrastructure, which covers the full lifecycle from initial DVC setup through production-grade recovery patterns.

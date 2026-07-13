@@ -2,7 +2,7 @@
 title: "Automating Pre-Labeling with Foundation Models"
 description: "A production engineering guide to building deterministic, CRS-aware pre-labeling pipelines using SAM, Grounding DINO, and open-vocabulary vision models for geospatial ML training datasets."
 slug: "automating-pre-labeling-with-foundation-models"
-type: "cluster"
+type: "guide"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -30,9 +30,9 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/" },
-        { "@type": "ListItem", "position": 3, "name": "Automating Pre-Labeling with Foundation Models", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/" },
+        { "@type": "ListItem", "position": 3, "name": "Automating Pre-Labeling with Foundation Models", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/" }
       ]
     },
     {
@@ -73,11 +73,11 @@ dateModified: "2026-06-25"
 
 # Automating Pre-Labeling with Foundation Models
 
-A foundation model pipeline that looks perfect in a notebook fails in production the moment it encounters a raster with a non-standard [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), a tile whose bounding box straddles the antimeridian, or a batch where GPU memory spikes during the second epoch. The central engineering challenge of automating geospatial pre-labeling is not running inference — it is building a deterministic, resumable pipeline that preserves spatial metadata across every transformation from raw imagery to validated annotation export.
+A foundation model pipeline that looks perfect in a notebook fails in production the moment it encounters a raster with a non-standard [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), a tile whose bounding box straddles the antimeridian, or a batch where GPU memory spikes during the second epoch. The central engineering challenge of automating geospatial pre-labeling is not running inference — it is building a deterministic, resumable pipeline that preserves spatial metadata across every transformation from raw imagery to validated annotation export.
 
-This page covers the complete production workflow: raster tiling with affine-transform preservation, batched inference with SAM and Grounding DINO, mask vectorization back to georeferenced polygons, confidence-aware filtering, tile-boundary deduplication, and integration with annotation platforms for [human-in-the-loop validation](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/). When the pipeline is hardened correctly, manual annotation overhead drops by 60–80% while keeping spatial accuracy within acceptable IoU bounds for downstream model training.
+This page covers the complete production workflow: raster tiling with affine-transform preservation, batched inference with SAM and Grounding DINO, mask vectorization back to georeferenced polygons, confidence-aware filtering, tile-boundary deduplication, and integration with annotation platforms for [human-in-the-loop validation](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/). When the pipeline is hardened correctly, manual annotation overhead drops by 60–80% while keeping spatial accuracy within acceptable IoU bounds for downstream model training.
 
-This workflow sits inside the broader [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) pipeline.
+This workflow sits inside the broader [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) pipeline.
 
 ---
 
@@ -114,7 +114,7 @@ PROJ 9.3+ is required for full VERTCON/NADCON5 datum grid support. Older version
 
 ### Spatial Prerequisites
 
-Before building the pipeline, review [vector vs. raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) for the foundational contrast between pixel-space and geographic-space representations. Pre-labeling pipelines span both: model inference operates in pixel space; all exported annotations must live in geographic space with a declared CRS.
+Before building the pipeline, review [vector vs. raster annotation workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) for the foundational contrast between pixel-space and geographic-space representations. Pre-labeling pipelines span both: model inference operates in pixel space; all exported annotations must live in geographic space with a declared CRS.
 
 ---
 
@@ -214,7 +214,7 @@ def validate_raster(raster_path: Path) -> dict:
         }
 ```
 
-If `epsg` returns `None`, the CRS is non-standard (common with older aerial survey files). Convert explicitly to a known EPSG code before proceeding — the [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page covers the standard reprojection pattern.
+If `epsg` returns `None`, the CRS is non-standard (common with older aerial survey files). Convert explicitly to a known EPSG code before proceeding — the [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page covers the standard reprojection pattern.
 
 ### Step 2 — Tiling with Windowed Reads
 
@@ -367,7 +367,7 @@ Apply `make_valid` from Shapely immediately after construction. Contour extracti
 
 ### Step 5 — Confidence Filtering and Tile-Boundary Deduplication
 
-Two-stage filtering removes noise before the merge step. Calibrate thresholds on a 200-tile validation split of manually labeled imagery. Assign per-annotation [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as attributes so annotation platforms can prioritize low-confidence candidates for human review.
+Two-stage filtering removes noise before the merge step. Calibrate thresholds on a 200-tile validation split of manually labeled imagery. Assign per-annotation [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as attributes so annotation platforms can prioritize low-confidence candidates for human review.
 
 ```python
 from shapely.ops import unary_union
@@ -417,7 +417,7 @@ For regional datasets with millions of predictions, replace the O(n²) loop with
 
 ### Step 6 — Export and Platform Integration
 
-Serialize to GeoJSON or GeoParquet with a mandatory metadata schema. Reproject to [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS 84) for direct import into Label Studio without additional reprojection steps. GeoParquet is preferred for datasets exceeding 50,000 annotations — it compresses 5–10× compared to GeoJSON and retains geometry precision without floating-point truncation.
+Serialize to GeoJSON or GeoParquet with a mandatory metadata schema. Reproject to [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS 84) for direct import into Label Studio without additional reprojection steps. GeoParquet is preferred for datasets exceeding 50,000 annotations — it compresses 5–10× compared to GeoJSON and retains geometry precision without floating-point truncation.
 
 ```python
 import json
@@ -518,7 +518,7 @@ For North American datasets, treating WGS 84 and NAD83 as identical introduces u
 
 ### Label Studio Pre-Annotation Integration
 
-Push pre-labels as Label Studio pre-annotations using the SDK, filtered to a specific confidence band to surface the most uncertain candidates first. See [integrating Label Studio with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) for full platform setup, S3/GCS storage sync, and per-annotator quality scoring.
+Push pre-labels as Label Studio pre-annotations using the SDK, filtered to a specific confidence band to surface the most uncertain candidates first. See [integrating Label Studio with geospatial workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) for full platform setup, S3/GCS storage sync, and per-annotator quality scoring.
 
 ```python
 from label_studio_sdk import Client
@@ -548,11 +548,11 @@ def push_to_label_studio(
     return len(tasks)
 ```
 
-The [QGIS plugin ecosystem for annotation teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) provides a complementary desktop review path — load the exported GeoJSON directly into a QGIS project to inspect prediction geometry against the source orthomosaic, snap polygons to visible edges, and batch-edit attributes before re-exporting.
+The [QGIS plugin ecosystem for annotation teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) provides a complementary desktop review path — load the exported GeoJSON directly into a QGIS project to inspect prediction geometry against the source orthomosaic, snap polygons to visible edges, and batch-edit attributes before re-exporting.
 
 ### DVC Pipeline Checkpoint Integration
 
-Wire each stage as a [DVC pipeline](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stage so that partial runs checkpoint at the tile level and downstream stages only re-execute when their inputs change:
+Wire each stage as a [DVC pipeline](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stage so that partial runs checkpoint at the tile level and downstream stages only re-execute when their inputs change:
 
 ```yaml
 # dvc.yaml
@@ -579,7 +579,7 @@ When `confidence_threshold` changes in the config, DVC invalidates and re-runs o
 
 ## Validation and Testing
 
-Run these assertions before committing pre-labels to storage or pushing to an annotation platform. Teams producing training data for safety-critical applications (flood mapping, infrastructure inspection) should also compute [IoU thresholds](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) against a held-out labeled reference to quantify pre-label quality before human review begins.
+Run these assertions before committing pre-labels to storage or pushing to an annotation platform. Teams producing training data for safety-critical applications (flood mapping, infrastructure inspection) should also compute [IoU thresholds](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) against a held-out labeled reference to quantify pre-label quality before human review begins.
 
 ```python
 import pytest
@@ -636,9 +636,9 @@ Add these assertions as a `pytest` suite and run them as a CI gate using GitHub 
 
 ## Related
 
-- [Converting Label Studio Exports to YOLOv8 Format](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/) — format-conversion workflow for the downstream training step
-- [Human-in-the-Loop Validation Cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — how to structure the review queue, track edit distance, and feed corrections back into the model
-- [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — platform setup, S3/GCS storage sync, and per-annotator quality scoring
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version the raw tiles, pre-labels, and corrected annotations as a reproducible pipeline
+- [Converting Label Studio Exports to YOLOv8 Format](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/) — format-conversion workflow for the downstream training step
+- [Human-in-the-Loop Validation Cycles](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — how to structure the review queue, track edit distance, and feed corrections back into the model
+- [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — platform setup, S3/GCS storage sync, and per-annotator quality scoring
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version the raw tiles, pre-labels, and corrected annotations as a reproducible pipeline
 
-This workflow is one component of the broader [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) pipeline.
+This workflow is one component of the broader [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) pipeline.

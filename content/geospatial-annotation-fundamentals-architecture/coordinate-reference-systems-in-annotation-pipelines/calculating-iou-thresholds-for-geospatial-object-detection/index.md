@@ -2,7 +2,7 @@
 title: "Calculating IoU Thresholds for Geospatial Object Detection"
 description: "How to compute projection-aware Intersection over Union (IoU) for aerial and satellite pipelines: CRS transformation with pyproj, topology validation with shapely, and GSD-calibrated threshold selection."
 slug: "calculating-iou-thresholds-for-geospatial-object-detection"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
-        {"@type": "ListItem", "position": 4, "name": "Calculating IoU Thresholds for Geospatial Object Detection", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
+        {"@type": "ListItem", "position": 4, "name": "Calculating IoU Thresholds for Geospatial Object Detection", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/"}
       ]
     },
     {
@@ -85,7 +85,7 @@ schema:
 
 # Calculating IoU Thresholds for Geospatial Object Detection
 
-Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits omit: reprojection from angular coordinates to a [local metric coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) before any area computation, topology validation with `shapely` 2.0+ `make_valid()`, and threshold values calibrated to ground sample distance (GSD) and mission type. Reproject all geometries to a UTM or state-plane CRS using `pyproj` 3.6+, then apply adaptive cutoffs in the 0.35–0.75 range rather than a fixed 0.50. Skipping any of these steps introduces projection-induced bias that silently corrupts precision/recall curves.
+Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits omit: reprojection from angular coordinates to a [local metric coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) before any area computation, topology validation with `shapely` 2.0+ `make_valid()`, and threshold values calibrated to ground sample distance (GSD) and mission type. Reproject all geometries to a UTM or state-plane CRS using `pyproj` 3.6+, then apply adaptive cutoffs in the 0.35–0.75 range rather than a fixed 0.50. Skipping any of these steps introduces projection-induced bias that silently corrupts precision/recall curves.
 
 ## Why Unprojected IoU Breaks Aerial Pipelines
 
@@ -168,7 +168,7 @@ def to_valid_polygon(coords: Union[list, tuple]) -> Polygon:
 
 ### Step 3 — Compute IoU in Metric Space
 
-After reprojection and validation, intersection and union areas are in square metres. Assign [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) alongside the IoU value when building evaluation logs — they let you weight borderline matches rather than applying a hard binary cut:
+After reprojection and validation, intersection and union areas are in square metres. Assign [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) alongside the IoU value when building evaluation logs — they let you weight borderline matches rather than applying a hard binary cut:
 
 ```python
 from shapely.ops import transform
@@ -230,7 +230,7 @@ def evaluate_detection(
 
 ### Step 5 — Size-Stratified Batch Evaluation
 
-Aggregate IoU scores mask scale-dependent failure modes. Bin predictions by projected area — the same approach used in [polygon vs. bounding-box annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) quality assessment — and compute per-bin match rates after transformation:
+Aggregate IoU scores mask scale-dependent failure modes. Bin predictions by projected area — the same approach used in [polygon vs. bounding-box annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) quality assessment — and compute per-bin match rates after transformation:
 
 ```python
 import numpy as np
@@ -324,7 +324,7 @@ def stratified_map(
 - `EPSG:32737` — UTM Zone 37S, metric (East Africa / Madagascar)
 - `EPSG:3857` — Web Mercator, metric fallback for multi-zone datasets (distortion acceptable for tile-level area ratios under ~50 km wide)
 
-Ensure the CRS and GSD metadata needed for threshold selection travels with every dataset export — [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) covers the mechanics of attaching that context to each versioned snapshot.
+Ensure the CRS and GSD metadata needed for threshold selection travels with every dataset export — [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) covers the mechanics of attaching that context to each versioned snapshot.
 
 ## Common Errors and Fixes
 
@@ -346,9 +346,9 @@ Fix: upgrade to `shapely==2.0.6` and re-create all geometry objects from raw coo
 
 ## Related
 
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — parent page covering CRS contracts, datum management, and reprojection patterns across an entire annotation pipeline
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — assign per-annotation uncertainty values that complement IoU during model evaluation and active-learning triage
-- [Best Practices for Polygon vs Bounding Box Annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) — annotation geometry choices that determine how tight IoU scores can realistically be
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — ensure the CRS and GSD metadata needed for threshold selection travel with every dataset export
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — parent page covering CRS contracts, datum management, and reprojection patterns across an entire annotation pipeline
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — assign per-annotation uncertainty values that complement IoU during model evaluation and active-learning triage
+- [Best Practices for Polygon vs Bounding Box Annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) — annotation geometry choices that determine how tight IoU scores can realistically be
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — ensure the CRS and GSD metadata needed for threshold selection travel with every dataset export
 
-This page covers one specialised calculation within [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This page covers one specialised calculation within [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).

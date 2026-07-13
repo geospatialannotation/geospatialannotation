@@ -2,7 +2,7 @@
 title: "Embedding Geotransform Metadata in COCO Exports"
 description: "Attach the affine geotransform and EPSG code to COCO exports via a sidecar and custom fields so pixel-space detections can be reprojected to real-world coordinates at inference time."
 slug: "embedding-geotransform-metadata-in-coco-exports"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Preserving Metadata Across Dataset Versions", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/"},
-        {"@type": "ListItem", "position": 4, "name": "Embedding Geotransform Metadata in COCO Exports", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Preserving Metadata Across Dataset Versions", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/"},
+        {"@type": "ListItem", "position": 4, "name": "Embedding Geotransform Metadata in COCO Exports", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/"}
       ]
     },
     {
@@ -91,7 +91,7 @@ COCO is a pixel-space annotation format: an image record carries only `width`, `
 
 A model trained on COCO tiles predicts boxes in pixels relative to the tile it saw. That is fine while you stay inside the tile, but any downstream use — writing detections into a GIS layer, deduplicating objects across overlapping tiles, measuring real areas, or joining to parcel data — needs the box expressed in a metric or geographic coordinate reference system. Without the affine transform, a box at pixel column 512, row 340 is unmoored: you cannot tell whether it sits at `EPSG:32633` easting 500 000 or somewhere a thousand kilometres away, and you cannot even establish which way the y-axis runs.
 
-The affine geotransform is the missing bridge. It is a compact six-number mapping from `(column, row)` pixel indices to `(x, y)` map coordinates in the tile's CRS. Store it next to the pixel labels and the export becomes self-describing: any consumer can reconstruct the world position of a detection from the tile it came from. Keeping that context bound to each versioned snapshot is exactly the discipline that [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) is built around — a COCO file that has lost its geotransform is not reproducible, no matter how carefully the imagery itself is hashed.
+The affine geotransform is the missing bridge. It is a compact six-number mapping from `(column, row)` pixel indices to `(x, y)` map coordinates in the tile's CRS. Store it next to the pixel labels and the export becomes self-describing: any consumer can reconstruct the world position of a detection from the tile it came from. Keeping that context bound to each versioned snapshot is exactly the discipline that [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) is built around — a COCO file that has lost its geotransform is not reproducible, no matter how carefully the imagery itself is hashed.
 
 <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow from a COCO image record and geotransform sidecar through a pixel bounding box to real-world coordinates" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>From COCO pixel box to world coordinates via the geotransform sidecar</title>
@@ -179,7 +179,7 @@ def read_georeference(tile_path: Path) -> tuple[list[float], int]:
 
 ### Step 2 — Inject `transform` and `crs` into the COCO Image Records
 
-The COCO `images` array is a list of dictionaries. Walk it, match each entry to its source tile by `file_name`, and add two custom keys. Serialising the CRS as an EPSG authority string keeps it unambiguous; the first `EPSG:` code here refers back to the wider mechanics of a [coordinate reference system in an annotation pipeline](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/):
+The COCO `images` array is a list of dictionaries. Walk it, match each entry to its source tile by `file_name`, and add two custom keys. Serialising the CRS as an EPSG authority string keeps it unambiguous; the first `EPSG:` code here refers back to the wider mechanics of a [coordinate reference system in an annotation pipeline](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/):
 
 ```python
 import json
@@ -215,7 +215,7 @@ An enriched image record now looks like this — the two custom keys sit alongsi
 
 ### Step 3 — Write a Sidecar Manifest
 
-Custom COCO keys are fragile: many loaders discard unknown fields when they re-serialise a file, so the georeference can vanish after one pass through an augmentation or training tool. Emit a sidecar keyed by image `id` as an independent, durable copy. Content-addressed sidecars like this are the same artifacts that [DVC versioning](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) tracks alongside the imagery, so the georeference travels with every dataset snapshot:
+Custom COCO keys are fragile: many loaders discard unknown fields when they re-serialise a file, so the georeference can vanish after one pass through an augmentation or training tool. Emit a sidecar keyed by image `id` as an independent, durable copy. Content-addressed sidecars like this are the same artifacts that [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) tracks alongside the imagery, so the georeference travels with every dataset snapshot:
 
 ```python
 def write_sidecar(coco: dict, sidecar_path: Path) -> None:
@@ -306,9 +306,9 @@ Fix: pass the COCO bbox as `(x, y)` — column then row — and remember `e` is 
 
 ## Related
 
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — the topic area this guide sits within, covering how CRS, geotransform, and acquisition context stay bound to each versioned snapshot
-- [COCO vs GeoParquet for Annotation Export](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/) — when a georeferenced COCO export is enough and when a natively spatial format serves the pipeline better
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS contracts and reprojection patterns that the affine and EPSG code depend on
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — track the sidecar manifest alongside imagery so georeference is reproducible across versions
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — the topic area this guide sits within, covering how CRS, geotransform, and acquisition context stay bound to each versioned snapshot
+- [COCO vs GeoParquet for Annotation Export](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/) — when a georeferenced COCO export is enough and when a natively spatial format serves the pipeline better
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS contracts and reprojection patterns that the affine and EPSG code depend on
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — track the sidecar manifest alongside imagery so georeference is reproducible across versions
 
-This guide is part of the broader [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) topic area within [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/).
+This guide is part of the broader [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) topic area within [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/).

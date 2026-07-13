@@ -2,7 +2,7 @@
 title: "Fixing Legacy Shapefile .prj Mismatches"
 description: "Diagnose and repair Shapefiles whose .prj file disagrees with the actual coordinate values, using pyproj and Fiona to detect, override, and correctly re-assign the CRS before ingestion."
 slug: "fixing-legacy-shapefile-prj-mismatches"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
-        {"@type": "ListItem", "position": 4, "name": "Fixing Legacy Shapefile .prj Mismatches", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
+        {"@type": "ListItem", "position": 4, "name": "Fixing Legacy Shapefile .prj Mismatches", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/"}
       ]
     },
     {
@@ -86,7 +86,7 @@ schema:
 
 # Fixing Legacy Shapefile .prj Mismatches
 
-A legacy Shapefile whose `.prj` sidecar declares one [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) while its coordinate values were actually recorded in another is one of the quietest data-corruption bugs in a geospatial annotation pipeline. The file loads without error, the geometries look valid, and every downstream tool trusts the `.prj`. The fix is counter-intuitive: you must **override** the CRS with `set_crs` (a pure relabel, no coordinate movement), never **reproject** it with `to_crs`. Reprojecting a mismatched file runs a transform from a CRS the data was never in and scatters features across the globe. Detect the mismatch by testing whether the raw coordinate extent falls inside the declared CRS's valid bounds; if it does not, override to the true CRS, then reproject to your canonical CRS.
+A legacy Shapefile whose `.prj` sidecar declares one [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) while its coordinate values were actually recorded in another is one of the quietest data-corruption bugs in a geospatial annotation pipeline. The file loads without error, the geometries look valid, and every downstream tool trusts the `.prj`. The fix is counter-intuitive: you must **override** the CRS with `set_crs` (a pure relabel, no coordinate movement), never **reproject** it with `to_crs`. Reprojecting a mismatched file runs a transform from a CRS the data was never in and scatters features across the globe. Detect the mismatch by testing whether the raw coordinate extent falls inside the declared CRS's valid bounds; if it does not, override to the true CRS, then reproject to your canonical CRS.
 
 ## Why a Mislabelled .prj Silently Corrupts Labels
 
@@ -225,7 +225,7 @@ def plan_repair(declared: CRS, extent: tuple[float, float, float, float]) -> Rep
 
 ### Step 4 — Apply set_crs Then to_crs
 
-On the override path, `set_crs(true_crs, allow_override=True)` relabels the geometries in place — no coordinate moves — and only afterwards does `to_crs(canonical)` reproject into your pipeline's target. On the correct-`.prj` path you skip `set_crs` entirely. The canonical target here is `EPSG:4326`; the first appearance of that code links to the broader CRS reference. Choosing one canonical CRS for the whole pipeline is covered in [CRS roundtrip testing with pyproj](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/).
+On the override path, `set_crs(true_crs, allow_override=True)` relabels the geometries in place — no coordinate moves — and only afterwards does `to_crs(canonical)` reproject into your pipeline's target. On the correct-`.prj` path you skip `set_crs` entirely. The canonical target here is `EPSG:4326`; the first appearance of that code links to the broader CRS reference. Choosing one canonical CRS for the whole pipeline is covered in [CRS roundtrip testing with pyproj](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/).
 
 ```python
 def repair_crs(
@@ -247,7 +247,7 @@ def repair_crs(
     return gdf.to_crs(canonical)
 ```
 
-The first appearance of [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) as the canonical target is deliberate: pick one target CRS and normalise every ingested file to it.
+The first appearance of [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) as the canonical target is deliberate: pick one target CRS and normalise every ingested file to it.
 
 ### Step 5 — Re-Save the Repaired File
 
@@ -290,12 +290,12 @@ Fix: treat it as the missing-`.prj` case — infer the true CRS, assign with `se
 
 **Round-tripped file still confuses a downstream tool**
 Root cause: field-name truncation or geometry rewriting during `to_file`, unrelated to the CRS repair.
-Fix: prefer a modern container; [converting Shapefiles to GeoParquet](/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) removes the sidecar `.prj` entirely by embedding the CRS in the file.
+Fix: prefer a modern container; [converting Shapefiles to GeoParquet](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) removes the sidecar `.prj` entirely by embedding the CRS in the file.
 
 ## Related
 
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — parent guide covering CRS contracts, datum handling, and reprojection patterns across a full annotation pipeline
-- [CRS Roundtrip Testing with pyproj](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/) — assert that a reproject-out-and-back drift stays under tolerance, catching the lossy transforms and axis-order bugs a repaired file can still hide
-- [Converting Shapefiles to GeoParquet for Annotation](/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) — retire the fragile `.prj` sidecar by embedding the CRS directly in a modern columnar format
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — parent guide covering CRS contracts, datum handling, and reprojection patterns across a full annotation pipeline
+- [CRS Roundtrip Testing with pyproj](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/) — assert that a reproject-out-and-back drift stays under tolerance, catching the lossy transforms and axis-order bugs a repaired file can still hide
+- [Converting Shapefiles to GeoParquet for Annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) — retire the fragile `.prj` sidecar by embedding the CRS directly in a modern columnar format
 
-This guide covers one repair within [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This guide covers one repair within [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).

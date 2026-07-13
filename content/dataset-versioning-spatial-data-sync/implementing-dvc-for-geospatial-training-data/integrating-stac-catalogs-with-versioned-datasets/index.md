@@ -2,7 +2,7 @@
 title: "Integrating STAC Catalogs with Versioned Datasets"
 description: "Bridge a STAC catalog with DVC-tracked training data so every versioned dataset snapshot maps back to STAC items, preserving acquisition metadata and enabling reproducible spatiotemporal queries."
 slug: "integrating-stac-catalogs-with-versioned-datasets"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Implementing DVC for Geospatial Training Data", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/"},
-        {"@type": "ListItem", "position": 4, "name": "Integrating STAC Catalogs with Versioned Datasets", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/integrating-stac-catalogs-with-versioned-datasets/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Implementing DVC for Geospatial Training Data", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/"},
+        {"@type": "ListItem", "position": 4, "name": "Integrating STAC Catalogs with Versioned Datasets", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/integrating-stac-catalogs-with-versioned-datasets/"}
       ]
     },
     {
@@ -85,7 +85,7 @@ schema:
 
 # Integrating STAC Catalogs with Versioned Datasets
 
-A versioned training set is only reproducible if you can prove which source scenes it was built from. Pinning each snapshot to its exact acquisition records means storing the STAC item ids plus a catalog hash inside a dataset manifest that [DVC versioning](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) tracks. The manifest records the SpatioTemporal Asset Catalog (STAC) items a snapshot draws from — their ids, their `self` hrefs, and the spatial and temporal query that selected them — then hashes that list so any drift is detectable. With this bridge in place, any training set is reproducible back to its acquisition metadata, and the same spatiotemporal query can be re-run to rebuild or extend the dataset months later.
+A versioned training set is only reproducible if you can prove which source scenes it was built from. Pinning each snapshot to its exact acquisition records means storing the STAC item ids plus a catalog hash inside a dataset manifest that [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) tracks. The manifest records the SpatioTemporal Asset Catalog (STAC) items a snapshot draws from — their ids, their `self` hrefs, and the spatial and temporal query that selected them — then hashes that list so any drift is detectable. With this bridge in place, any training set is reproducible back to its acquisition metadata, and the same spatiotemporal query can be re-run to rebuild or extend the dataset months later.
 
 ## Why Acquisition Provenance Belongs in the Version Record
 
@@ -158,7 +158,7 @@ Install the tooling with pinned versions so the manifest is byte-stable across m
 pip install pystac==1.9.0 shapely==2.0.6 python-dateutil==2.9.0
 ```
 
-STAC items carry geometry in `EPSG:4326` by convention, so the bounding-box filter below operates in decimal degrees. If your area of interest is expressed in a metric [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), reproject it to WGS84 before filtering. The first stage walks the catalog and applies a spatial and temporal predicate:
+STAC items carry geometry in `EPSG:4326` by convention, so the bounding-box filter below operates in decimal degrees. If your area of interest is expressed in a metric [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), reproject it to WGS84 before filtering. The first stage walks the catalog and applies a spatial and temporal predicate:
 
 ```python
 from __future__ import annotations
@@ -231,7 +231,7 @@ def build_manifest(
     }
 ```
 
-Because `self_href` points at an immutable catalog record and the `id` uniquely names the scene, these two fields together are enough to rehydrate the imagery later — either by re-fetching from the STAC-hosted remote or by pulling the assets you mirrored into your own [DVC remote configuration](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/).
+Because `self_href` points at an immutable catalog record and the `id` uniquely names the scene, these two fields together are enough to rehydrate the imagery later — either by re-fetching from the STAC-hosted remote or by pulling the assets you mirrored into your own [DVC remote configuration](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/).
 
 ## Hashing the Manifest for Drift Detection
 
@@ -337,9 +337,9 @@ Fix: construct query bounds with `tzinfo=timezone.utc` so both sides of the comp
 
 ## Related
 
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the parent guide covering how DVC pointers, caches, and pipelines version large spatial datasets end to end
-- [Configuring DVC Remotes for Geospatial Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/) — set up the S3, GCS, or Azure remote that mirrors the STAC assets your manifest references
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — the broader patterns for carrying CRS, geotransform, and acquisition context through every versioned snapshot
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — reproject an area of interest to WGS84 before filtering STAC geometries, and reconcile native asset CRS at rehydration
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the parent guide covering how DVC pointers, caches, and pipelines version large spatial datasets end to end
+- [Configuring DVC Remotes for Geospatial Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/) — set up the S3, GCS, or Azure remote that mirrors the STAC assets your manifest references
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — the broader patterns for carrying CRS, geotransform, and acquisition context through every versioned snapshot
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — reproject an area of interest to WGS84 before filtering STAC geometries, and reconcile native asset CRS at rehydration
 
-This guide covers one integration within [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), which is itself part of [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/).
+This guide covers one integration within [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), which is itself part of [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/).

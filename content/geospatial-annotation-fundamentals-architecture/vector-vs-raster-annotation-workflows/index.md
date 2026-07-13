@@ -2,7 +2,7 @@
 title: "Vector vs Raster Annotation Workflows for Geospatial ML"
 description: "A production-focused comparison of vector and raster annotation pipelines for satellite and aerial imagery: step-by-step Python implementation, spatial gotchas, CI integration, and a decision matrix for ML engineers."
 slug: "vector-vs-raster-annotation-workflows"
-type: "cluster"
+type: "guide"
 breadcrumb: "Geospatial Annotation Fundamentals > Vector vs Raster Annotation Workflows"
 datePublished: "2025-11-10"
 dateModified: "2026-06-24"
@@ -24,9 +24,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"}
       ]
     },
     {
@@ -76,9 +76,9 @@ dateModified: "2026-06-24"
 
 # Vector vs Raster Annotation Workflows for Geospatial ML
 
-The choice between vector and raster annotation formats is an architectural decision that propagates through every stage of a geospatial ML pipeline: storage costs, preprocessing complexity, model architecture compatibility, and inference latency all depend on it. A poorly chosen format discovered mid-project means weeks of reprocessing. The failure scenario is concrete: a segmentation team annotates 50,000 tiles in raw PNG masks at full resolution, only to learn their object-detection model expects polygon-level instance IDs — every annotation must be re-exported, [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) realigned, and rasterized from scratch.
+The choice between vector and raster annotation formats is an architectural decision that propagates through every stage of a geospatial ML pipeline: storage costs, preprocessing complexity, model architecture compatibility, and inference latency all depend on it. A poorly chosen format discovered mid-project means weeks of reprocessing. The failure scenario is concrete: a segmentation team annotates 50,000 tiles in raw PNG masks at full resolution, only to learn their object-detection model expects polygon-level instance IDs — every annotation must be re-exported, [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) realigned, and rasterized from scratch.
 
-This page gives you the step-by-step implementation for both workflows, a decision matrix, and the spatial-specific gotchas that cause silent pipeline failures. For the foundational concepts that underpin both approaches, see [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This page gives you the step-by-step implementation for both workflows, a decision matrix, and the spatial-specific gotchas that cause silent pipeline failures. For the foundational concepts that underpin both approaches, see [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).
 
 ---
 
@@ -99,7 +99,7 @@ Before choosing a format, confirm the following are locked in. Misaligned prereq
 **Spatial knowledge prerequisites:**
 
 1. **Source imagery metadata:** Verify GeoTIFF bit depth, band order, compression (LZW vs DEFLATE), and tile boundaries before annotation begins. Inconsistent tiling schemes produce boundary artifacts during rasterization and break spatial joins between adjacent tiles.
-2. **[Label taxonomy](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/):** Establish a controlled class vocabulary with mutually exclusive categories and explicit boundary rules before any annotation starts. A taxonomy revised mid-project requires back-annotating all existing labels.
+2. **[Label taxonomy](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/):** Establish a controlled class vocabulary with mutually exclusive categories and explicit boundary rules before any annotation starts. A taxonomy revised mid-project requires back-annotating all existing labels.
 3. **CRS contract:** All annotation outputs must share the exact CRS as the source imagery. Sub-pixel misalignment from mixing `EPSG:4326` geographic coordinates with a projected CRS such as `EPSG:32618` (UTM zone 18N) distorts IoU calculations and breaks spatial indexing.
 
 ---
@@ -250,7 +250,7 @@ def validate_vector_annotations(
     return gdf
 ```
 
-For production-grade attribute schema and property naming conventions, follow the [GeoJSON structuring guide for ML training datasets](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/), which covers numeric typing, explicit CRS declarations, and embedding [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) per feature.
+For production-grade attribute schema and property naming conventions, follow the [GeoJSON structuring guide for ML training datasets](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/), which covers numeric typing, explicit CRS declarations, and embedding [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) per feature.
 
 ---
 
@@ -337,7 +337,7 @@ def generate_raster_mask(
     return mask
 ```
 
-Always version-control the `class_mapping` dictionary alongside the dataset — a renamed class breaks existing masks silently. Use [SHA-256 hashing of the lookup table](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to detect mapping drift across dataset versions.
+Always version-control the `class_mapping` dictionary alongside the dataset — a renamed class breaks existing masks silently. Use [SHA-256 hashing of the lookup table](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to detect mapping drift across dataset versions.
 
 ---
 
@@ -420,7 +420,7 @@ class GeoAnnotationDataset(Dataset):
 
 **Band order differs between tool and model.** `rasterio` reads tiles as `(C, H, W)` in band-file order, which may be `BGR` for imagery exported from certain platforms. Models pre-trained on RGB ImageNet weights expect `(R, G, B)`. Assert band order by reading the `ColorInterp` metadata and reorder with `np.flip(image, axis=0)` if needed.
 
-**IoU collapse from unprojected coordinates.** Computing [IoU thresholds](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) on geometries still in `EPSG:4326` produces degree-based areas rather than metric areas. A polygon over a mid-latitude tile will have its area underestimated by ~25–40%. Always reproject to a local metric CRS before any area or IoU calculation.
+**IoU collapse from unprojected coordinates.** Computing [IoU thresholds](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) on geometries still in `EPSG:4326` produces degree-based areas rather than metric areas. A polygon over a mid-latitude tile will have its area underestimated by ~25–40%. Always reproject to a local metric CRS before any area or IoU calculation.
 
 **Rasterization order determines class priority.** When two polygons overlap, the last one written wins in `rasterize`. Sort your GeoDataFrame by `class_id` descending (or by annotation priority) so that high-priority classes overwrite low-priority background.
 
@@ -448,11 +448,11 @@ def on_export_complete(export_path: str, target_epsg: int = 32618) -> None:
     print(f"Validation passed: {export_path}")
 ```
 
-For deeper [Label Studio integration](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) patterns — including project configuration, ML backend wiring, and export format mapping — see the dedicated integration guide.
+For deeper [Label Studio integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) patterns — including project configuration, ML backend wiring, and export format mapping — see the dedicated integration guide.
 
 ### DVC pipeline stage
 
-Register vector validation and rasterization as explicit [DVC pipeline](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stages so dataset provenance is tracked end-to-end:
+Register vector validation and rasterization as explicit [DVC pipeline](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stages so dataset provenance is tracked end-to-end:
 
 ```yaml
 # dvc.yaml
@@ -475,7 +475,7 @@ stages:
       - data/masks
 ```
 
-This makes every transformation reproducible and enables [rollback strategies](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) when a corrupted batch is detected downstream.
+This makes every transformation reproducible and enables [rollback strategies](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) when a corrupted batch is detected downstream.
 
 ---
 
@@ -563,10 +563,10 @@ The hybrid approach — vector annotation stored in version control, lazy raster
 
 ## Related
 
-- [How to Structure GeoJSON for ML Training Datasets](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) — attribute schema, property typing, and CRS declaration conventions
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contract, datum transforms, and automated validation routines
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — metric-CRS IoU, GSD-based threshold selection
-- [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — class hierarchy design before annotation begins
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — recovering from bad rasterization batches
+- [How to Structure GeoJSON for ML Training Datasets](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) — attribute schema, property typing, and CRS declaration conventions
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contract, datum transforms, and automated validation routines
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — metric-CRS IoU, GSD-based threshold selection
+- [Defining ROI Label Taxonomies for Aerial Imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — class hierarchy design before annotation begins
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — recovering from bad rasterization batches
 
-This workflow is one component of the broader [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) section, which covers CRS contracts, label taxonomies, confidence scoring, and the full annotation stack for spatial ML pipelines.
+This workflow is one component of the broader [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) section, which covers CRS contracts, label taxonomies, confidence scoring, and the full annotation stack for spatial ML pipelines.

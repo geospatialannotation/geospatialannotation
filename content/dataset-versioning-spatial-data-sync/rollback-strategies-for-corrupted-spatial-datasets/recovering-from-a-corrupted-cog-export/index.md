@@ -2,7 +2,7 @@
 title: "Recovering from a Corrupted COG Export"
 description: "Diagnose and recover from a corrupted Cloud-Optimized GeoTIFF export — truncated IFDs, broken overviews, invalid geotransform — using gdalinfo, rio-cogeo validation, and a versioned rollback."
 slug: "recovering-from-a-corrupted-cog-export"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Rollback Strategies for Corrupted Spatial Datasets", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/"},
-        {"@type": "ListItem", "position": 4, "name": "Recovering from a Corrupted COG Export", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/recovering-from-a-corrupted-cog-export/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Rollback Strategies for Corrupted Spatial Datasets", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/"},
+        {"@type": "ListItem", "position": 4, "name": "Recovering from a Corrupted COG Export", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/recovering-from-a-corrupted-cog-export/"}
       ]
     },
     {
@@ -85,7 +85,7 @@ schema:
 
 # Recovering from a Corrupted COG Export
 
-A Cloud-Optimized GeoTIFF (COG) that fails midway through an export leaves a file that may still open, still preview, and still pass a casual glance — yet break the moment a training loader tries to range-read a tile or a reprojection step reads its geotransform. Recovery follows one disciplined path: diagnose the exact failure with `gdalinfo` and `rio cogeo validate`, decide whether the primary pixel data survived, and then either rebuild a valid COG around the intact data or roll back to the last known-good copy tracked in [DVC versioning](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/). The one decision that governs everything is whether the corruption is structural — overviews, layout, or georeferencing metadata — or whether the base raster band itself is gone. Structural damage is repairable in place; lost primary data is not, and the only correct response is a versioned restore.
+A Cloud-Optimized GeoTIFF (COG) that fails midway through an export leaves a file that may still open, still preview, and still pass a casual glance — yet break the moment a training loader tries to range-read a tile or a reprojection step reads its geotransform. Recovery follows one disciplined path: diagnose the exact failure with `gdalinfo` and `rio cogeo validate`, decide whether the primary pixel data survived, and then either rebuild a valid COG around the intact data or roll back to the last known-good copy tracked in [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/). The one decision that governs everything is whether the corruption is structural — overviews, layout, or georeferencing metadata — or whether the base raster band itself is gone. Structural damage is repairable in place; lost primary data is not, and the only correct response is a versioned restore.
 
 ## Why a Silently Corrupted COG Poisons Downstream Training
 
@@ -166,7 +166,7 @@ The diagnosis funnels into a single branch. If the primary band reads cleanly an
 
 ## Rebuilding a Valid COG When the Pixels Survive
 
-When the base band reads, the fix is to reassign a correct geotransform if one is missing and rewrite the file through `rio-cogeo`, which regenerates the overview pyramid and orders the IFDs to spec. The first mention of a georeferencing frame here is worth grounding: the geotransform and its [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) together map pixel indices to ground coordinates, and a COG that lost either is spatially meaningless even when its pixels are intact.
+When the base band reads, the fix is to reassign a correct geotransform if one is missing and rewrite the file through `rio-cogeo`, which regenerates the overview pyramid and orders the IFDs to spec. The first mention of a georeferencing frame here is worth grounding: the geotransform and its [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) together map pixel indices to ground coordinates, and a COG that lost either is spatially meaningless even when its pixels are intact.
 
 The helper below detects an invalid (identity or degenerate) geotransform, substitutes a recovered `Affine` and CRS when supplied, and rewrites a compliant COG:
 
@@ -222,7 +222,7 @@ def rebuild_cog(
     tmp_path.unlink(missing_ok=True)
 ```
 
-The `src.read()` call is deliberate: if the primary IFD is truncated, it raises here and the rebuild aborts before producing a valid-looking container around missing data. When it succeeds, `cog_translate` rebuilds the overview pyramid with `average` resampling and writes IFDs in the order `rio cogeo validate` expects. If the export's origin coordinates use a specific `[`EPSG:32633`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/)` UTM frame, pass that as `recovered_crs` so the rewritten file carries the correct projection rather than an unset one.
+The `src.read()` call is deliberate: if the primary IFD is truncated, it raises here and the rebuild aborts before producing a valid-looking container around missing data. When it succeeds, `cog_translate` rebuilds the overview pyramid with `average` resampling and writes IFDs in the order `rio cogeo validate` expects. If the export's origin coordinates use a specific `[`EPSG:32633`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/)` UTM frame, pass that as `recovered_crs` so the rewritten file carries the correct projection rather than an unset one.
 
 Confirm the rebuild before releasing it back to the pipeline:
 
@@ -251,7 +251,7 @@ dvc get . data/tiles/scene_0421.tif \
   --out recovered/scene_0421.tif
 ```
 
-Always re-validate the restored file with `rio cogeo validate` before returning it to service, then record a fresh content hash so downstream stages can detect future drift — [computing stable content hashes for COGs](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/) covers hashing that ignores volatile metadata so an identical raster always hashes identically across re-exports.
+Always re-validate the restored file with `rio cogeo validate` before returning it to service, then record a fresh content hash so downstream stages can detect future drift — [computing stable content hashes for COGs](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/) covers hashing that ignores volatile metadata so an identical raster always hashes identically across re-exports.
 
 ## Symptom-to-Fix Reference
 
@@ -284,9 +284,9 @@ Fix: recover the transform from an intact adjacent tile in the same acquisition,
 
 ## Related
 
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — the broader topic area covering how to detect, isolate, and reverse corruption across a versioned spatial dataset
-- [Computing Stable Content Hashes for COGs](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/) — hash imagery in a way that ignores volatile metadata so silent corruption and drift are detectable
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — set up the version control that makes a clean rollback to a known-good COG possible
-- [Debugging Annotation Drift Across Dataset Versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — a sibling guide on tracing when and how labels diverge between versioned snapshots
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — the broader topic area covering how to detect, isolate, and reverse corruption across a versioned spatial dataset
+- [Computing Stable Content Hashes for COGs](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/) — hash imagery in a way that ignores volatile metadata so silent corruption and drift are detectable
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — set up the version control that makes a clean rollback to a known-good COG possible
+- [Debugging Annotation Drift Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — a sibling guide on tracing when and how labels diverge between versioned snapshots
 
-This guide is part of the broader [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/), itself one topic within [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/).
+This guide is part of the broader [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/), itself one topic within [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/).

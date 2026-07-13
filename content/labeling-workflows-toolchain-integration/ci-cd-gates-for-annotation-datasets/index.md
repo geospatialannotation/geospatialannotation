@@ -2,7 +2,7 @@
 title: "CI/CD Gates for Annotation Datasets"
 description: "Build CI/CD gates that block broken geospatial annotations from reaching training: geometry validation, CRS assertions, class-balance checks, and schema enforcement wired into GitHub Actions and DVC pipelines."
 slug: "ci-cd-gates-for-annotation-datasets"
-type: "cluster"
+type: "guide"
 breadcrumb: "Labeling Workflows & Toolchain Integration > CI/CD Gates for Annotation Datasets"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,9 +29,9 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "CI/CD Gates for Annotation Datasets", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "CI/CD Gates for Annotation Datasets", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ schema:
 
 A junior annotator finishes a batch of 400 building footprints on Friday afternoon, opens a pull request, and a teammate approves it on the strength of a clean visual diff. The merge looks routine. What the diff did not show is that the export tool wrote the footprints in the imagery's native `EPSG:32633` while the rest of the training store is normalized to `EPSG:4326`, and that three of the polygons self-intersect where the annotator clicked back across an existing edge. The nightly retraining job ingests the batch without complaint — the loader happily reads whatever coordinates it finds — and the model quietly loses two points of mean average precision on the validation set. Nobody notices for a week, because nothing gated the batch. By the time the regression is traced back, four more batches have been built on the corrupted convention.
 
-This is the failure mode a CI/CD gate exists to prevent. In software, no one merges code that fails the build; annotation datasets deserve the same discipline. This guide shows how to build an automated gate for the [labeling workflows and toolchain integration](/labeling-workflows-toolchain-integration/) that sit between your annotators and your training queue — a script that runs geometry, coordinate reference system, class-balance, and schema checks, exits non-zero on failure, and blocks the merge until the batch is fixed. You will wire that script into GitHub Actions so it runs on every pull request that touches annotations, mirror it as a reproducible DVC stage, and post a per-check report so reviewers see exactly what broke.
+This is the failure mode a CI/CD gate exists to prevent. In software, no one merges code that fails the build; annotation datasets deserve the same discipline. This guide shows how to build an automated gate for the [labeling workflows and toolchain integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) that sit between your annotators and your training queue — a script that runs geometry, coordinate reference system, class-balance, and schema checks, exits non-zero on failure, and blocks the merge until the batch is fixed. You will wire that script into GitHub Actions so it runs on every pull request that touches annotations, mirror it as a reproducible DVC stage, and post a per-check report so reviewers see exactly what broke.
 
 <svg viewBox="0 0 880 200" role="img" aria-label="CI gate pipeline for annotation datasets from pull request through validation to merge or block" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:880px;display:block;margin:1.5rem auto;">
   <title>Annotation CI Gate Pipeline</title>
@@ -145,7 +145,7 @@ pip install \
 You also need two pieces of infrastructure:
 
 - **GitHub Actions** (or an equivalent CI service) with branch protection enabled on your default branch, so the gate can be marked a *required status check*. Without branch protection the gate reports failures but cannot actually stop a merge.
-- **A data layer** that stores the heavy assets outside Git. This guide assumes either Git LFS for imagery or [DVC for versioning geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), which keeps multi-gigabyte rasters and their annotation exports content-addressed rather than committed as blobs.
+- **A data layer** that stores the heavy assets outside Git. This guide assumes either Git LFS for imagery or [DVC for versioning geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), which keeps multi-gigabyte rasters and their annotation exports content-addressed rather than committed as blobs.
 
 A minimal repository layout the gate expects:
 
@@ -160,7 +160,7 @@ repo/
 └── .github/workflows/annotation-gate.yml
 ```
 
-The gate operates on the files under `annotations/`. Every label file is expected to carry a declared [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) and a `class` property on each feature that matches your agreed [label taxonomy](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/). Those two contracts are what the checks below enforce.
+The gate operates on the files under `annotations/`. Every label file is expected to carry a declared [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) and a `class` property on each feature that matches your agreed [label taxonomy](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/). Those two contracts are what the checks below enforce.
 
 ## Structuring the Four-Check Validation Gate
 
@@ -190,7 +190,7 @@ class Issue:
 
 ### Geometry validity checks with shapely
 
-Invalid geometry is the defect most likely to slip past a visual review and then break rasterization or [IoU threshold calculations](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) downstream. The check flags three distinct failure classes — topological invalidity, empty geometries, and zero-area polygons — because conflating them produces confusing reports.
+Invalid geometry is the defect most likely to slip past a visual review and then break rasterization or [IoU threshold calculations](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) downstream. The check flags three distinct failure classes — topological invalidity, empty geometries, and zero-area polygons — because conflating them produces confusing reports.
 
 ```python
 import geopandas as gpd
@@ -264,7 +264,7 @@ def check_class_balance(
 
 ### Schema enforcement with jsonschema
 
-Geometry and CRS guard the spatial layer; JSON Schema guards the attribute layer. A contract in `schemas/feature.schema.json` pins which properties every feature must carry, their types, and their allowed values — for example, that `class` is one of an enumerated taxonomy and `confidence` is a number between 0 and 1. This is where a formal export contract, described in [validating annotation export formats](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/), becomes an executable check.
+Geometry and CRS guard the spatial layer; JSON Schema guards the attribute layer. A contract in `schemas/feature.schema.json` pins which properties every feature must carry, their types, and their allowed values — for example, that `class` is one of an enumerated taxonomy and `confidence` is a number between 0 and 1. This is where a formal export contract, described in [validating annotation export formats](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/), becomes an executable check.
 
 ```python
 import json
@@ -502,7 +502,7 @@ def test_entrypoint_blocks_bad_batch() -> None:
     assert "ERROR" in result.stdout
 ```
 
-Pin these tests into the same CI workflow, and pair the gate with content-addressed change detection so it re-runs only when a batch truly changes. The techniques in [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) give you stable per-batch hashes, letting the gate skip untouched files and making its verdicts reproducible across machines and re-exports.
+Pin these tests into the same CI workflow, and pair the gate with content-addressed change detection so it re-runs only when a batch truly changes. The techniques in [tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) give you stable per-batch hashes, letting the gate skip untouched files and making its verdicts reproducible across machines and re-exports.
 
 ## Frequently Asked Questions
 
@@ -524,9 +524,9 @@ Validate only the files the pull request changed instead of the whole dataset, c
 
 ## Related
 
-- [A GitHub Actions Geometry Validation Gate](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/) — a complete, copy-ready workflow focused on catching self-intersections, zero-area polygons, and CRS mismatches on every pull request
-- [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the schema contracts and format checks your gate enforces before training
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — content-addressed change detection that lets the gate re-run only on batches that actually changed
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS normalization rules the gate's projection assertions depend on
+- [A GitHub Actions Geometry Validation Gate](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/) — a complete, copy-ready workflow focused on catching self-intersections, zero-area polygons, and CRS mismatches on every pull request
+- [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the schema contracts and format checks your gate enforces before training
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — content-addressed change detection that lets the gate re-run only on batches that actually changed
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS normalization rules the gate's projection assertions depend on
 
-This guide is part of the broader [Labeling Workflows & Toolchain Integration for Geospatial AI](/labeling-workflows-toolchain-integration/) topic area, which connects annotation tooling to the automated pipelines that turn labels into trained models.
+This guide is part of the broader [Labeling Workflows & Toolchain Integration for Geospatial AI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) topic area, which connects annotation tooling to the automated pipelines that turn labels into trained models.

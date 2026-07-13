@@ -27,7 +27,7 @@ function extractDescription(md) {
     .replace(/[*_`]/g, "")
     .replace(/\s+/g, " ")
     .trim();
-  // Truncate to 160 chars max (SEO best practice: 50–165 chars), breaking at a word boundary
+  // Truncate to 160 chars max (search-snippet length guidance, 50–165 chars), breaking at a word boundary
   if (text.length <= 160) return text;
   const cut = text.slice(0, 160);
   const lastSpace = cut.lastIndexOf(" ");

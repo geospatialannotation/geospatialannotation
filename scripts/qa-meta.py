@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Comprehensive SEO sanity check on the built _site/.
+"""Comprehensive metadata sanity check on the built _site/.
 
 Checks per HTML page:
 - <title> present, unique, length 10-70

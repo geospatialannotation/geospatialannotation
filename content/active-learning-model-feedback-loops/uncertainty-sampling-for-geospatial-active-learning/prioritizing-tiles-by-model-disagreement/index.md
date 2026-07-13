@@ -2,7 +2,7 @@
 title: "Prioritizing Annotation Tiles by Model Disagreement"
 description: "Use query-by-committee ensemble disagreement to rank unlabeled geospatial tiles for annotation, including a vote-entropy implementation and a batch selection strategy that avoids spatial redundancy."
 slug: "prioritizing-tiles-by-model-disagreement"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"},
-        {"@type": "ListItem", "position": 3, "name": "Uncertainty Sampling for Geospatial Active Learning", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/"},
-        {"@type": "ListItem", "position": 4, "name": "Prioritizing Annotation Tiles by Model Disagreement", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"},
+        {"@type": "ListItem", "position": 3, "name": "Uncertainty Sampling for Geospatial Active Learning", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/"},
+        {"@type": "ListItem", "position": 4, "name": "Prioritizing Annotation Tiles by Model Disagreement", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/"}
       ]
     },
     {
@@ -85,13 +85,13 @@ schema:
 
 # Prioritizing Annotation Tiles by Model Disagreement
 
-When an [active learning loop](/active-learning-model-feedback-loops/) has to choose which of thousands of unlabeled satellite or drone tiles to send to annotators next, single-model uncertainty is not the only signal available. Query-by-committee ranks tiles by how much a set of models *disagree* with each other: run N model checkpoints — or N augmentation-perturbed passes of one model — over every unlabeled tile, then score each tile by vote entropy and average KL divergence from the committee consensus. Tiles where the committee splits are the most informative to label, because they sit near a decision boundary that new annotations will sharpen. This guide implements that ranking in NumPy and adds a batch selector that avoids wasting budget on spatially adjacent, near-duplicate tiles.
+When an [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) has to choose which of thousands of unlabeled satellite or drone tiles to send to annotators next, single-model uncertainty is not the only signal available. Query-by-committee ranks tiles by how much a set of models *disagree* with each other: run N model checkpoints — or N augmentation-perturbed passes of one model — over every unlabeled tile, then score each tile by vote entropy and average KL divergence from the committee consensus. Tiles where the committee splits are the most informative to label, because they sit near a decision boundary that new annotations will sharpen. This guide implements that ranking in NumPy and adds a batch selector that avoids wasting budget on spatially adjacent, near-duplicate tiles.
 
 ## Why Committee Disagreement Beats Single-Model Uncertainty
 
 A single model's softmax entropy tells you where *that* model is unsure, but it conflates two very different situations: genuine class ambiguity, and a model that is confidently wrong. A committee separates them. If five independently trained checkpoints all assign 60% to "building" on a tile, the model family agrees — the tile is only mildly uncertain and probably not worth a label. If three checkpoints say "building" and two say "greenhouse", the tile sits exactly on a boundary the committee has not resolved, and one human label there corrects several models at once.
 
-This matters for geospatial data specifically because uncertainty is spatially structured. Terrain, sensor geometry, seasonal illumination, and class frequency all vary smoothly across a scene, so disagreement clusters into contiguous patches rather than scattering randomly. A naive top-K selection would hand annotators twenty tiles from the same confusing field. The batch selector below treats spatial redundancy as a first-class constraint, spreading the label budget across distinct regions so each retraining round sees maximally diverse examples. The committee approach also composes cleanly with the [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) you already log per prediction — disagreement is a complementary axis, not a replacement.
+This matters for geospatial data specifically because uncertainty is spatially structured. Terrain, sensor geometry, seasonal illumination, and class frequency all vary smoothly across a scene, so disagreement clusters into contiguous patches rather than scattering randomly. A naive top-K selection would hand annotators twenty tiles from the same confusing field. The batch selector below treats spatial redundancy as a first-class constraint, spreading the label budget across distinct regions so each retraining round sees maximally diverse examples. The committee approach also composes cleanly with the [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) you already log per prediction — disagreement is a complementary axis, not a replacement.
 
 <svg viewBox="0 0 720 300" role="img" aria-label="Diagram: a committee of model checkpoints votes on unlabeled tiles, disagreement is scored, and tiles are ordered into a ranked annotation queue" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Query-by-committee tile prioritization flow</title>
@@ -201,7 +201,7 @@ def vote_entropy(committee: np.ndarray) -> float:
 
 ### Step 3 — Compute Average KL Divergence from Consensus
 
-Vote entropy ignores confidence: a 51/49 split and a 99/1 split both cast one vote each way. Average KL divergence fixes that by comparing every member's *full* distribution against the committee mean (the consensus). This is the soft-disagreement signal, closely related to the [entropy and margin scores used for segmentation masks](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/), but measured *between* models rather than within one.
+Vote entropy ignores confidence: a 51/49 split and a 99/1 split both cast one vote each way. Average KL divergence fixes that by comparing every member's *full* distribution against the committee mean (the consensus). This is the soft-disagreement signal, closely related to the [entropy and margin scores used for segmentation masks](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/), but measured *between* models rather than within one.
 
 ```python
 def mean_kl_disagreement(committee: np.ndarray, eps: float = 1e-12) -> float:
@@ -345,9 +345,9 @@ Fix: run a quality mask before scoring and drop tiles exceeding a cloud or nodat
 
 ## Related
 
-- [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the broader topic area covering entropy, margin, and BALD scoring for ranking unlabeled tiles
-- [Entropy vs Margin Sampling for Segmentation Masks](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/) — single-model per-pixel uncertainty scoring that pairs naturally with committee disagreement
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation uncertainty values that complement disagreement when triaging a queue
-- [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) — how tile prioritization feeds retraining triggers and drift detection across the whole loop
+- [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the broader topic area covering entropy, margin, and BALD scoring for ranking unlabeled tiles
+- [Entropy vs Margin Sampling for Segmentation Masks](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/) — single-model per-pixel uncertainty scoring that pairs naturally with committee disagreement
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation uncertainty values that complement disagreement when triaging a queue
+- [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) — how tile prioritization feeds retraining triggers and drift detection across the whole loop
 
-This guide covers one selection strategy within [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/), which is itself part of [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/).
+This guide covers one selection strategy within [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/), which is itself part of [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/).

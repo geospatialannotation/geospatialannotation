@@ -2,7 +2,7 @@
 title: "Converting Shapefiles to GeoParquet for Annotation"
 description: "Convert legacy Shapefiles to GeoParquet for annotation pipelines with geopandas — preserving CRS, handling field-name truncation, and validating geometry integrity across the roundtrip."
 slug: "converting-shapefiles-to-geoparquet-for-annotation"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Spatial Data Formats for ML Annotation", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/"},
-        {"@type": "ListItem", "position": 4, "name": "Converting Shapefiles to GeoParquet for Annotation", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Spatial Data Formats for ML Annotation", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/"},
+        {"@type": "ListItem", "position": 4, "name": "Converting Shapefiles to GeoParquet for Annotation", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/"}
       ]
     },
     {
@@ -85,7 +85,7 @@ schema:
 
 # Converting Shapefiles to GeoParquet for Annotation
 
-Legacy annotation deliverables almost always arrive as Shapefiles — a fragile bundle of `.shp`, `.shx`, `.dbf`, and `.prj` files that must stay together, whose attribute names are clipped to ten characters, and whose [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) lives in a plain-text `.prj` file that anything can overwrite. Converting to GeoParquet fixes all three problems at once. The reliable path is short: read the Shapefile with `geopandas`, confirm or assign the CRS from the `.prj`, repair any truncated or duplicated field names, then write GeoParquet — which embeds the CRS directly as file metadata, removes the 10-character `.dbf` field-name limit, and collapses the multi-file sidecar cluster into one self-describing file. Finish by validating the roundtrip so you can prove no geometry or projection information was lost.
+Legacy annotation deliverables almost always arrive as Shapefiles — a fragile bundle of `.shp`, `.shx`, `.dbf`, and `.prj` files that must stay together, whose attribute names are clipped to ten characters, and whose [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) lives in a plain-text `.prj` file that anything can overwrite. Converting to GeoParquet fixes all three problems at once. The reliable path is short: read the Shapefile with `geopandas`, confirm or assign the CRS from the `.prj`, repair any truncated or duplicated field names, then write GeoParquet — which embeds the CRS directly as file metadata, removes the 10-character `.dbf` field-name limit, and collapses the multi-file sidecar cluster into one self-describing file. Finish by validating the roundtrip so you can prove no geometry or projection information was lost.
 
 ## Why the Shapefile Sidecar Cluster Fails ML Pipelines
 
@@ -197,7 +197,7 @@ def ensure_crs(gdf: gpd.GeoDataFrame, expected_epsg: int) -> gpd.GeoDataFrame:
 gdf = ensure_crs(gdf, expected_epsg=4326)
 ```
 
-Assigning the wrong code when coordinate values disagree with the `.prj` is its own diagnostic problem; if the numbers look like they belong to a different projection than the file claims, work through [fixing legacy Shapefile .prj mismatches](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/) before you convert. The first time your annotations pass through code, the authority code should be one you have verified — here `[EPSG:4326](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/)` — not one guessed from the filename.
+Assigning the wrong code when coordinate values disagree with the `.prj` is its own diagnostic problem; if the numbers look like they belong to a different projection than the file claims, work through [fixing legacy Shapefile .prj mismatches](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/) before you convert. The first time your annotations pass through code, the authority code should be one you have verified — here `[EPSG:4326](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/)` — not one guessed from the filename.
 
 ## Step 3 — Repair Truncated and Duplicate Field Names
 
@@ -331,9 +331,9 @@ Fix: keep the object as a `GeoDataFrame` and use `gdf.to_parquet` (geopandas), w
 
 ## Related
 
-- [Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC](/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/) — the topic area this guide belongs to, comparing raster and vector formats and when each fits an annotation pipeline
-- [Fixing Legacy Shapefile .prj Mismatches](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/) — diagnose and repair a `.prj` that disagrees with the actual coordinate values before you convert
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — how CRS contracts, datum handling, and reprojection are managed across an entire annotation pipeline
-- [How to Structure GeoJSON for ML Training Datasets](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) — a complementary vector-label format for cases where human-readable text export matters more than columnar speed
+- [Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/) — the topic area this guide belongs to, comparing raster and vector formats and when each fits an annotation pipeline
+- [Fixing Legacy Shapefile .prj Mismatches](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/) — diagnose and repair a `.prj` that disagrees with the actual coordinate values before you convert
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — how CRS contracts, datum handling, and reprojection are managed across an entire annotation pipeline
+- [How to Structure GeoJSON for ML Training Datasets](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) — a complementary vector-label format for cases where human-readable text export matters more than columnar speed
 
-This guide is one focused conversion within [Spatial Data Formats for ML Annotation](/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This guide is one focused conversion within [Spatial Data Formats for ML Annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).

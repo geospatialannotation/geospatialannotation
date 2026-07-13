@@ -2,7 +2,7 @@
 title: "Enforcing the COCO JSON Schema in CI"
 description: "Validate COCO annotation JSON against a strict schema inside CI — category/image/annotation cross-references, bbox bounds, and segmentation RLE integrity — with a runnable jsonschema gate."
 slug: "enforcing-coco-json-schema-in-ci"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "Validating Annotation Export Formats: COCO, YOLO, and GeoJSON", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/"},
-        {"@type": "ListItem", "position": 4, "name": "Enforcing the COCO JSON Schema in CI", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "Validating Annotation Export Formats: COCO, YOLO, and GeoJSON", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/"},
+        {"@type": "ListItem", "position": 4, "name": "Enforcing the COCO JSON Schema in CI", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/"}
       ]
     },
     {
@@ -94,7 +94,7 @@ JSON Schema is a language for describing the *form* of a document — which keys
 
 Consider an export where an annotation carries `"category_id": 7` but the `categories` array only defines ids 1 through 5. The document is perfectly well-shaped; every field has the right type. Yet `pycocotools` will raise a `KeyError` the instant it builds its category index, and a training loop that ignores the exception will learn against a phantom class. The same blind spot hides duplicate `image_id` values, a `bbox` whose corner falls twenty pixels outside a 512-pixel tile, and an empty `segmentation: []` on a polygon annotation that a mask-based loss will silently skip. These are exactly the failures that a validation gate exists to stop, and none of them are shape errors.
 
-This matters more for geospatial data than for consumer photo datasets. Aerial and satellite exports are tiled, stitched, and reprojected by pipelines that touch pixel coordinates directly, so an off-by-one in image dimensions or a `bbox` clipped at a tile seam is common. When the geotransform and CRS are carried alongside the pixels — as covered in [embedding geotransform metadata in COCO exports](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) — a bounds error is not just a bad label, it reprojects to the wrong place on Earth. The gate below treats that geometry as a first-class check rather than an afterthought.
+This matters more for geospatial data than for consumer photo datasets. Aerial and satellite exports are tiled, stitched, and reprojected by pipelines that touch pixel coordinates directly, so an off-by-one in image dimensions or a `bbox` clipped at a tile seam is common. When the geotransform and CRS are carried alongside the pixels — as covered in [embedding geotransform metadata in COCO exports](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) — a bounds error is not just a bad label, it reprojects to the wrong place on Earth. The gate below treats that geometry as a first-class check rather than an afterthought.
 
 <svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The COCO object graph showing images, annotations, and categories with the referential-integrity, bounds, and segmentation checks applied to each edge" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>COCO object graph with CI validation checks</title>
@@ -362,7 +362,7 @@ Each check maps to a specific COCO field, a pass condition, and the exit behavio
 | bbox bounds | `bbox` vs `width`/`height` | `0 ≤ x`, `0 ≤ y`, `x+w ≤ width`, `y+h ≤ height` | `bbox:` escapes image | 1 |
 | Segmentation | `segmentation`, `iscrowd` | Non-empty when `iscrowd == 0` | `seg:` empty segmentation | 1 |
 
-This gate sits naturally alongside the geometry and CRS assertions described in [CI/CD gates for annotation datasets](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/); run the shape and reference checks first because they are the cheapest, then layer geometry validation on the survivors.
+This gate sits naturally alongside the geometry and CRS assertions described in [CI/CD gates for annotation datasets](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/); run the shape and reference checks first because they are the cheapest, then layer geometry validation on the survivors.
 
 ## Common Errors and Fixes
 
@@ -388,9 +388,9 @@ Fix: return `1` from `main` whenever `total` errors is non-zero so the runner ma
 
 ## Related
 
-- [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the topic area this gate belongs to, covering schema contracts, geometry checks, and CRS sidecar verification across every export format
-- [COCO vs GeoParquet for Annotation Export](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/) — a decision guide on when COCO's JSON graph is the right export target versus a columnar spatial format
-- [CI/CD Gates for Annotation Datasets](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — wire this validator into a broader gate stack with geometry validation, CRS assertions, and class-balance checks
-- [Embedding Geotransform Metadata in COCO Exports](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) — attach the affine transform and EPSG code so validated pixel detections can be reprojected to real-world coordinates
+- [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) — the topic area this gate belongs to, covering schema contracts, geometry checks, and CRS sidecar verification across every export format
+- [COCO vs GeoParquet for Annotation Export](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/) — a decision guide on when COCO's JSON graph is the right export target versus a columnar spatial format
+- [CI/CD Gates for Annotation Datasets](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — wire this validator into a broader gate stack with geometry validation, CRS assertions, and class-balance checks
+- [Embedding Geotransform Metadata in COCO Exports](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) — attach the affine transform and EPSG code so validated pixel detections can be reprojected to real-world coordinates
 
-This guide is one specialised check within [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/), part of the broader [Labeling Workflows & Toolchain Integration for Geospatial AI](/labeling-workflows-toolchain-integration/) topic area.
+This guide is one specialised check within [Validating Annotation Export Formats: COCO, YOLO, and GeoJSON](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/), part of the broader [Labeling Workflows & Toolchain Integration for Geospatial AI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) topic area.

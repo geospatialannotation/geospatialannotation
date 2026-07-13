@@ -2,7 +2,7 @@
 title: "Resolving Sync Conflicts in Distributed Annotation"
 description: "Detect and resolve conflicting edits when multiple annotation sites push to the same versioned dataset — three-way merge on GeoJSON features, feature-id reconciliation, and a last-writer-wins guard."
 slug: "resolving-sync-conflicts-in-distributed-annotation"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Syncing Annotations Across Cloud Remotes", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/"},
-        {"@type": "ListItem", "position": 4, "name": "Resolving Sync Conflicts in Distributed Annotation", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Syncing Annotations Across Cloud Remotes", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/"},
+        {"@type": "ListItem", "position": 4, "name": "Resolving Sync Conflicts in Distributed Annotation", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ When two annotation sites edit the same versioned dataset and both push, a naive
 
 ## Why Silent Clobbering Corrupts Training Data
 
-Distributed annotation teams rarely edit in lockstep. One site refines building footprints in a northern tile while another relabels vehicles in a southern tile of the same GeoJSON collection. Both branch from the same snapshot, both edit, both push. If your sync layer resolves this by keeping the last-uploaded object — the default for object stores and for a careless [DVC](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) workflow that tracks the file as one opaque blob — one site's entire session vanishes with no error. The dataset still validates, still loads, still trains. It is simply missing labels, and the loss surfaces only as unexplained recall degradation weeks later.
+Distributed annotation teams rarely edit in lockstep. One site refines building footprints in a northern tile while another relabels vehicles in a southern tile of the same GeoJSON collection. Both branch from the same snapshot, both edit, both push. If your sync layer resolves this by keeping the last-uploaded object — the default for object stores and for a careless [DVC](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) workflow that tracks the file as one opaque blob — one site's entire session vanishes with no error. The dataset still validates, still loads, still trains. It is simply missing labels, and the loss surfaces only as unexplained recall degradation weeks later.
 
 A two-way diff does not save you either. Given only *ours* and *theirs*, a diff cannot distinguish "they added feature X" from "we deleted feature X" — both look like feature X being present on one side and absent on the other. Without the shared base version as a reference point, every merge decision is a guess. The three-way merge exists precisely to remove that ambiguity: by comparing each side against the common ancestor, an added feature, a removed feature, and a modified feature become three distinct, detectable events.
 
@@ -138,7 +138,7 @@ Two structural preconditions make this work. First, features must carry a **stab
 
 ## Step-by-Step Implementation
 
-The workflow below loads three FeatureCollections, classifies every feature against the base, auto-merges non-overlapping changes, isolates true conflicts, and writes both a merged file and a conflict report. It assumes each feature stores a `feature_id` string and an `edited_at` ISO timestamp in its properties. Coordinates are geographic; the merge is CRS-agnostic as long as all three files share one [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — mixing `EPSG:4326` on one side with a projected CRS on another would make identical geometries compare as modified, so normalise CRS before merging.
+The workflow below loads three FeatureCollections, classifies every feature against the base, auto-merges non-overlapping changes, isolates true conflicts, and writes both a merged file and a conflict report. It assumes each feature stores a `feature_id` string and an `edited_at` ISO timestamp in its properties. Coordinates are geographic; the merge is CRS-agnostic as long as all three files share one [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — mixing `EPSG:4326` on one side with a projected CRS on another would make identical geometries compare as modified, so normalise CRS before merging.
 
 Install the pinned dependencies once:
 
@@ -347,13 +347,13 @@ Root cause: some features predate the timestamp convention. Fix: backfill `edite
 Root cause: the merge started from the changesets alone and never seeded from base. Fix: initialise the result with every base feature first (Step 3 does this), then apply changes on top so untouched features always survive.
 
 **Two sites both push a feature with the same id but different geometry**
-Root cause: non-unique id generation across sites. Fix: mint UUIDs with a site prefix or a UUID4 source, and treat any residual collision as a conflict rather than overwriting — the same discipline that [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) uses to keep identities stable.
+Root cause: non-unique id generation across sites. Fix: mint UUIDs with a site prefix or a UUID4 source, and treat any residual collision as a conflict rather than overwriting — the same discipline that [tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) uses to keep identities stable.
 
 ## Related
 
-- [Debugging Annotation Drift Across Dataset Versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — trace how features changed between snapshots, the diff foundation this merge builds on
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — content-addressed identities that make base-versus-side comparison deterministic
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version the datasets whose concurrent edits create these conflicts in the first place
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep the feature ids and edit timestamps the merge depends on attached to every export
+- [Debugging Annotation Drift Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — trace how features changed between snapshots, the diff foundation this merge builds on
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — content-addressed identities that make base-versus-side comparison deterministic
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version the datasets whose concurrent edits create these conflicts in the first place
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep the feature ids and edit timestamps the merge depends on attached to every export
 
-This guide is part of the broader [Syncing Annotations Across Cloud Remotes](/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/) topic area within [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/).
+This guide is part of the broader [Syncing Annotations Across Cloud Remotes](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/) topic area within [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/).

@@ -291,10 +291,23 @@ img, svg { max-width: 100%; height: auto; }
   color: var(--muted);
   font-size: 0.85rem;
   display: flex;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px;
 }
+.site-footer__social {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 160ms ease;
+}
+.site-footer__social:hover,
+.site-footer__social:focus-visible { color: var(--sky-700); }
+.site-footer__social svg { display: block; }
 
 /* =========================================================================
    Hero / Homepage

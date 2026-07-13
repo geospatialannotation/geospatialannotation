@@ -2,7 +2,7 @@
 title: "Rasterizing Vector Labels for Segmentation Masks"
 description: "Rasterize GeoJSON polygon labels into aligned segmentation masks with rasterio.features.rasterize — matching the image geotransform, handling overlaps and class priority, and validating pixel alignment."
 slug: "rasterizing-vector-labels-for-segmentation-masks"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"},
-        {"@type": "ListItem", "position": 4, "name": "Rasterizing Vector Labels for Segmentation Masks", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/rasterizing-vector-labels-for-segmentation-masks/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"},
+        {"@type": "ListItem", "position": 4, "name": "Rasterizing Vector Labels for Segmentation Masks", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/rasterizing-vector-labels-for-segmentation-masks/"}
       ]
     },
     {
@@ -92,7 +92,7 @@ Semantic segmentation models train on dense per-pixel class arrays, but human an
 
 A rasterization bug never raises an exception. `rasterize` happily returns an array of the shape you asked for whether or not the geometries landed where they should, so a mask that is shifted by a few pixels, flipped in the vertical axis, or burned on the wrong grid looks completely normal in a file listing. The damage surfaces only as a stubborn accuracy ceiling: the model is being taught that the roof pixels are sky and the road pixels are grass, and it dutifully learns the offset. Because the error is systematic rather than random, more training data does not wash it out — it reinforces it.
 
-The alignment contract has two halves. The vector coordinates must be expressed in the same [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) as the raster, and the burn must use the raster's own affine transform to convert those world coordinates into row and column indices. Skip the reprojection and the polygons land off the tile entirely; skip the transform and `rasterize` falls back to the identity matrix, treating a UTM easting of 500000 as pixel column 500000. Both failures produce a file, and only a deliberate overlay check tells them apart from a correct mask.
+The alignment contract has two halves. The vector coordinates must be expressed in the same [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) as the raster, and the burn must use the raster's own affine transform to convert those world coordinates into row and column indices. Skip the reprojection and the polygons land off the tile entirely; skip the transform and `rasterize` falls back to the identity matrix, treating a UTM easting of 500000 as pixel column 500000. Both failures produce a file, and only a deliberate overlay check tells them apart from a correct mask.
 
 <svg viewBox="0 0 640 300" role="img" aria-label="Diagram showing vector polygons and an image pixel grid combined through rasterize into a class-indexed mask aligned to the image transform" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Rasterizing vector labels onto the image grid</title>
@@ -211,7 +211,7 @@ def read_grid(image_path: str) -> RasterGrid:
 
 ### Step 2 — Reproject Vector Labels to the Raster CRS
 
-Load the GeoJSON with `geopandas` and force it into the raster's CRS. Even when the labels claim to be in the imagery's projection, an explicit `to_crs` guards against silent axis-order and datum surprises. This mirrors the schema discipline covered in [how to structure GeoJSON for ML training datasets](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/):
+Load the GeoJSON with `geopandas` and force it into the raster's CRS. Even when the labels claim to be in the imagery's projection, an explicit `to_crs` guards against silent axis-order and datum surprises. This mirrors the schema discipline covered in [how to structure GeoJSON for ML training datasets](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/):
 
 ```python
 import geopandas as gpd
@@ -366,7 +366,7 @@ The five parameters below decide whether the mask aligns and how edges and overl
 
 **Mask is entirely `fill` value even though the GeoJSON has polygons**
 Root cause: CRS mismatch — the vector coordinates and the imagery transform are in different projections, so the geometries fall outside the raster extent and nothing burns.
-Fix: call `gdf.to_crs(grid.crs)` before `build_shapes`, and confirm `gdf.total_bounds` intersects the raster bounds. A first `EPSG:4326` label set over `EPSG:32633` imagery is the classic case — reproject rather than assume the codes match, as detailed on the [coordinate reference systems](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) guide.
+Fix: call `gdf.to_crs(grid.crs)` before `build_shapes`, and confirm `gdf.total_bounds` intersects the raster bounds. A first `EPSG:4326` label set over `EPSG:32633` imagery is the classic case — reproject rather than assume the codes match, as detailed on the [coordinate reference systems](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) guide.
 
 **Mask is shifted by one row or column against the imagery**
 Root cause: a hand-built transform that assumes pixel-corner versus pixel-centre origin, or a `height`/`width` swapped into `out_shape` as `(width, height)`.
@@ -382,9 +382,9 @@ Fix: rasterize narrow classes in a separate pass with `all_touched=True` and com
 
 ## Related
 
-- [How to Structure GeoJSON for ML Training Datasets](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) — the upstream vector schema and class-field conventions the rasterizer consumes
-- [Vector vs Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — where vector polygons and raster masks each fit in an annotation pipeline
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the reprojection contract that keeps vectors and pixels on one grid
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — evaluating the masks and detections this rasterization feeds
+- [How to Structure GeoJSON for ML Training Datasets](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) — the upstream vector schema and class-field conventions the rasterizer consumes
+- [Vector vs Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — where vector polygons and raster masks each fit in an annotation pipeline
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the reprojection contract that keeps vectors and pixels on one grid
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — evaluating the masks and detections this rasterization feeds
 
-This guide is one specialised task within [Vector vs Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This guide is one specialised task within [Vector vs Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).

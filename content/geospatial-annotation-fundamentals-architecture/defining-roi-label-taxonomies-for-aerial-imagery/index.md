@@ -2,7 +2,7 @@
 title: "Defining ROI Label Taxonomies for Aerial Imagery"
 description: "A production workflow for designing, validating, and automating ROI label taxonomies for aerial and satellite imagery — covering schema engineering, Pydantic validation, CI/CD integration, and spatial quality gates."
 slug: "defining-roi-label-taxonomies-for-aerial-imagery"
-type: "cluster"
+type: "guide"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -30,9 +30,9 @@ dateModified: "2026-06-24"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Defining ROI Label Taxonomies for Aerial Imagery", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Defining ROI Label Taxonomies for Aerial Imagery", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/"}
       ]
     },
     {
@@ -91,7 +91,7 @@ dateModified: "2026-06-24"
 
 # Defining ROI Label Taxonomies for Aerial Imagery
 
-Without a structured ontology, annotation teams produce inconsistent labels, model training suffers from class imbalance, and downstream inference pipelines break under schema drift. A concrete failure mode: a six-class land-cover taxonomy that allows annotators to choose between `vegetation` and `ground_cover` based on visual prominence produces Cohen's Kappa scores below 0.6, making validation metrics meaningless and gradient descent unstable. This guide provides a production-ready workflow for designing, validating, and automating ROI taxonomies tailored to aerial and satellite imagery, aligned with the broader [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) framework.
+Without a structured ontology, annotation teams produce inconsistent labels, model training suffers from class imbalance, and downstream inference pipelines break under schema drift. A concrete failure mode: a six-class land-cover taxonomy that allows annotators to choose between `vegetation` and `ground_cover` based on visual prominence produces Cohen's Kappa scores below 0.6, making validation metrics meaningless and gradient descent unstable. This guide provides a production-ready workflow for designing, validating, and automating ROI taxonomies tailored to aerial and satellite imagery, aligned with the broader [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) framework.
 
 ## Prerequisites & Toolchain Alignment
 
@@ -119,7 +119,7 @@ pip install "geopandas==0.14.4" "shapely==2.0.4" "pydantic==2.7.1" \
 **Spatial prerequisites:**
 
 - Orthorectified aerial tiles at GSD ≤ 0.5 m with documented acquisition metadata (sensor type, sun elevation, cloud cover).
-- All source imagery and annotation outputs aligned to a single [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — projection mismatches silently corrupt spatial joins, area calculations, and IoU metrics. Enforce `EPSG:4326` for storage and a local metric CRS (e.g., `EPSG:32633` for UTM zone 33N) for all area or distance computations.
+- All source imagery and annotation outputs aligned to a single [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — projection mismatches silently corrupt spatial joins, area calculations, and IoU metrics. Enforce `EPSG:4326` for storage and a local metric CRS (e.g., `EPSG:32633` for UTM zone 33N) for all area or distance computations.
 - GeoJSON (`RFC 7946`), Parquet, or COCO-compatible annotation outputs. GeoJSON is the most interoperable format for vector ROI storage.
 
 **Domain prerequisite:** a preliminary class hierarchy aligned with project objectives before opening the annotation interface — retrofitting taxonomy structure onto existing annotations is expensive and error-prone.
@@ -273,11 +273,11 @@ A flat taxonomy rarely scales across complex aerial scenes. Implement a parent-c
 
 This structure enables multi-task learning architectures and allows models to predict at varying confidence thresholds. During inference, aggregate child-class probabilities to validate parent-class consistency — a useful automated sanity check for label quality.
 
-When deciding which geometry type to attach to each hierarchy level, consult [best practices for polygon vs bounding box annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) to align annotation effort with model architecture requirements. Fine-grained subclasses typically require polygon outlines; coarse parent classes can use bounding boxes for faster annotation throughput.
+When deciding which geometry type to attach to each hierarchy level, consult [best practices for polygon vs bounding box annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) to align annotation effort with model architecture requirements. Fine-grained subclasses typically require polygon outlines; coarse parent classes can use bounding boxes for faster annotation throughput.
 
 ### Step 3 — Standardize Attribute and Metadata Payloads
 
-ROIs require more than geometry and a class name. Attach standardized attributes to support filtering, versioning, and [confidence scoring](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) downstream:
+ROIs require more than geometry and a class name. Attach standardized attributes to support filtering, versioning, and [confidence scoring](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) downstream:
 
 ```python
 # Canonical attribute schema for every ROI feature
@@ -296,7 +296,7 @@ ROIs require more than geometry and a class name. Attach standardized attributes
 }
 ```
 
-When deciding between [vector vs raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) for storing these attributes, evaluate your pipeline's spatial query patterns — vector GeoJSON supports attribute filtering directly, while raster masks require a separate sidecar metadata file.
+When deciding between [vector vs raster annotation workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) for storing these attributes, evaluate your pipeline's spatial query patterns — vector GeoJSON supports attribute filtering directly, while raster masks require a separate sidecar metadata file.
 
 ### Step 4 — Implement Programmatic Schema Validation
 
@@ -466,7 +466,7 @@ jobs:
           "
 ```
 
-When the taxonomy evolves — adding a subclass, deprecating a parent — bump `taxonomy.json` version, run a migration script to backfill `taxonomy_version` in existing annotations, and add a backward-compatibility shim in your training data loader. Pair this with [DVC pipelines](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) to snapshot annotation state at each taxonomy version, enabling clean rollbacks if a schema change corrupts downstream training runs.
+When the taxonomy evolves — adding a subclass, deprecating a parent — bump `taxonomy.json` version, run a migration script to backfill `taxonomy_version` in existing annotations, and add a backward-compatibility shim in your training data loader. Pair this with [DVC pipelines](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) to snapshot annotation state at each taxonomy version, enabling clean rollbacks if a schema change corrupts downstream training runs.
 
 ## Spatial Parameters & Configuration Reference
 
@@ -480,7 +480,7 @@ When the taxonomy evolves — adding a subclass, deprecating a parent — bump `
 | `crs_storage` | EPSG code | `EPSG:4326` | GeoJSON spec requires geographic CRS for storage; reproject to metric CRS for area validation |
 | `crs_compute` | EPSG code | UTM zone for AOI | Use for IoU, area, and buffer computations to avoid angular distortion |
 | `iou_threshold_coarse` | float | 0.40–0.55 | Appropriate for large land-cover classes (field, water body) |
-| `iou_threshold_fine` | float | 0.65–0.75 | Required for structure-level objects (building, road segment); see [IoU threshold reference](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) |
+| `iou_threshold_fine` | float | 0.65–0.75 | Required for structure-level objects (building, road segment); see [IoU threshold reference](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) |
 
 ## Edge Cases & Spatial Gotchas
 
@@ -524,7 +524,7 @@ def validate_min_area(
 
 ## Integration & Automation Hooks
 
-**[Label Studio](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) integration.** Export taxonomy classes as a Label Studio XML config block. Use Label Studio's pre-annotation API to push taxonomy-validated predictions back into the review queue, reducing cold-annotation throughput:
+**[Label Studio](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) integration.** Export taxonomy classes as a Label Studio XML config block. Use Label Studio's pre-annotation API to push taxonomy-validated predictions back into the review queue, reducing cold-annotation throughput:
 
 ```python
 import label_studio_sdk
@@ -545,7 +545,7 @@ project.create_prediction(
 )
 ```
 
-**[QGIS plugin](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) hook.** Store `taxonomy.json` on a shared network path and load it into the QGIS annotation form at session start. Use a QGIS Python plugin to enforce dropdown class selection — preventing free-text entry that bypasses schema validation.
+**[QGIS plugin](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) hook.** Store `taxonomy.json` on a shared network path and load it into the QGIS annotation form at session start. Use a QGIS Python plugin to enforce dropdown class selection — preventing free-text entry that bypasses schema validation.
 
 **DVC pipeline snapshot.** Lock annotation state at each taxonomy version with a DVC stage. Any taxonomy version bump triggers a full re-validation run:
 
@@ -631,7 +631,7 @@ Beyond structural validation, implement statistical gates to monitor annotation 
 
 **Inter-Annotator Agreement (IAA).** Calculate Cohen's Kappa for overlapping ROI assignments using `sklearn.metrics.cohen_kappa_score`. Values below 0.75 indicate ambiguous class definitions requiring ontology refinement. Trigger an alert and open an ontology review when IAA drops below this threshold across any two annotators.
 
-**Class distribution monitoring.** Track ROI counts per class across batches. Sudden spikes or drops signal annotator confusion or imagery bias. Alert when any class falls below 5% or exceeds 40% of the total ROI count in a batch, as these imbalances propagate directly to model precision/recall on underrepresented classes. Pair this with the [SHA-based annotation change tracking](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to audit which specific commits shifted the distribution.
+**Class distribution monitoring.** Track ROI counts per class across batches. Sudden spikes or drops signal annotator confusion or imagery bias. Alert when any class falls below 5% or exceeds 40% of the total ROI count in a batch, as these imbalances propagate directly to model precision/recall on underrepresented classes. Pair this with the [SHA-based annotation change tracking](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to audit which specific commits shifted the distribution.
 
 **Spatial consistency checks.** Validate that adjacent ROIs do not overlap unless explicitly permitted by the taxonomy (e.g., multi-layer `vegetation_canopy` over `impervious_surface`). Use `geopandas.overlay()` to detect illegal intersections:
 
@@ -658,10 +658,10 @@ def check_illegal_overlaps(
 
 ## Related
 
-- [Best practices for polygon vs bounding box annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) — geometry type selection per taxonomy class
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS enforcement and projection validation
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation confidence models and active learning queues
-- [Vector vs Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — storage format trade-offs for taxonomy-bearing annotations
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — versioning taxonomy files alongside annotation snapshots
+- [Best practices for polygon vs bounding box annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) — geometry type selection per taxonomy class
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS enforcement and projection validation
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation confidence models and active learning queues
+- [Vector vs Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — storage format trade-offs for taxonomy-bearing annotations
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — versioning taxonomy files alongside annotation snapshots
 
-This workflow is one component of the broader [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) framework, which covers the full pipeline from CRS contracts through label schema design to training data export.
+This workflow is one component of the broader [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) framework, which covers the full pipeline from CRS contracts through label schema design to training data export.

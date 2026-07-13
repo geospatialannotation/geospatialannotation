@@ -2,7 +2,7 @@
 title: "Applying Datum Transformation Grids with pyproj"
 description: "Install and apply NTv2/GTX datum-shift grids in pyproj so NAD27→WGS84 and other datum transforms are centimetre-accurate, avoiding the silent metre-scale error of a fallback Helmert transform."
 slug: "applying-datum-transformation-grids-with-pyproj"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
-        {"@type": "ListItem", "position": 4, "name": "Applying Datum Transformation Grids with pyproj", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
+        {"@type": "ListItem", "position": 4, "name": "Applying Datum Transformation Grids with pyproj", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/"}
       ]
     },
     {
@@ -89,7 +89,7 @@ A datum shift such as NAD27 to NAD83, or NAD27 to WGS84, is not a simple rotatio
 
 ## Why a Missing Grid Silently Corrupts Labels
 
-Annotation pipelines routinely ingest legacy vector data — county parcels, historical survey lines, older aerial mosaics — that carries a pre-1983 datum, then reproject it into the [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) used for training. If the datum transform is wrong by two metres, every polygon vertex lands two metres from its true position. At a ground sample distance of 20 cm/pixel that is a ten-pixel offset — enough to shift a building footprint off its roof and turn correct annotations into systematically mislabelled training data. The failure is insidious because nothing errors out: the code runs, coordinates come back, and only a control-point check reveals the drift.
+Annotation pipelines routinely ingest legacy vector data — county parcels, historical survey lines, older aerial mosaics — that carries a pre-1983 datum, then reproject it into the [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) used for training. If the datum transform is wrong by two metres, every polygon vertex lands two metres from its true position. At a ground sample distance of 20 cm/pixel that is a ten-pixel offset — enough to shift a building footprint off its roof and turn correct annotations into systematically mislabelled training data. The failure is insidious because nothing errors out: the code runs, coordinates come back, and only a control-point check reveals the drift.
 
 The root cause is how PROJ ranks operations. For a given datum pair there may be several candidate pipelines, each with a published accuracy. The most accurate uses a grid; coarser ones use a seven-parameter Helmert transform or assume the datums coincide. PROJ prefers the most accurate operation whose grid is present. Remove the grid and it quietly drops to the next candidate. Two machines with different grid sets therefore compute different coordinates for identical input, which also breaks reproducibility across a team.
 
@@ -254,7 +254,7 @@ print(f"grid vs fallback: {delta:.2f} m")
 
 ## Common Datum Pairs and Their Grids
 
-The error-without-grid column is the ground distance you inherit if PROJ falls back. First reproject into a metric CRS such as [`EPSG:32614`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (UTM 14N) before measuring any of these residuals as distances.
+The error-without-grid column is the ground distance you inherit if PROJ falls back. First reproject into a metric CRS such as [`EPSG:32614`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (UTM 14N) before measuring any of these residuals as distances.
 
 | Source → target | Region | Grid file (kind) | Error without grid |
 |---|---|---|---|
@@ -291,9 +291,9 @@ Fix: add the matching GTX geoid grid (for example `us_noaa_g2018u0.tif`) and run
 
 ## Related
 
-- [CRS Roundtrip Testing with pyproj](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/) — assert that a reproject-out-and-back cycle stays under tolerance, the natural companion check to a verified datum grid
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — why area and overlap must be computed in a metric CRS after any datum correction
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the broader topic area covering CRS contracts, axis order, and reprojection across a pipeline
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — record the exact datum, grid file, and operation description alongside every versioned export
+- [CRS Roundtrip Testing with pyproj](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/) — assert that a reproject-out-and-back cycle stays under tolerance, the natural companion check to a verified datum grid
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — why area and overlap must be computed in a metric CRS after any datum correction
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the broader topic area covering CRS contracts, axis order, and reprojection across a pipeline
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — record the exact datum, grid file, and operation description alongside every versioned export
 
-This guide is one specialised task within [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This guide is one specialised task within [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).

@@ -2,7 +2,7 @@
 title: "Preserving Metadata Across Dataset Versions"
 description: "A production workflow for extracting, serializing, and versioning geospatial metadata — CRS, affine transforms, acquisition timestamps, and annotation provenance — so spatial context survives every pipeline iteration."
 slug: preserving-metadata-across-dataset-versions
-type: cluster
+type: "guide"
 breadcrumb:
   - label: "Dataset Versioning & Spatial Data Sync"
     url: "/dataset-versioning-spatial-data-sync/"
@@ -28,8 +28,8 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/" },
-        { "@type": "ListItem", "position": 2, "name": "Preserving Metadata Across Dataset Versions", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/" }
+        { "@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/" },
+        { "@type": "ListItem", "position": 2, "name": "Preserving Metadata Across Dataset Versions", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/" }
       ]
     },
     {
@@ -70,7 +70,7 @@ dateModified: "2026-06-25"
 
 # Preserving Metadata Across Dataset Versions
 
-Geospatial ML pipelines fail silently when [coordinate reference systems](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving this metadata is not optional hygiene — it is a structural requirement for reproducible training, regulatory compliance, and model auditability.
+Geospatial ML pipelines fail silently when [coordinate reference systems](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving this metadata is not optional hygiene — it is a structural requirement for reproducible training, regulatory compliance, and model auditability.
 
 The failure scenario is routine: an annotation team delivers a new batch of GeoTIFF tiles. A data engineer runs a tiling script. PIL or OpenCV strips the GeoTIFF headers. Training ingests tiles that are now `EPSG:4326`-free pixel arrays. A downstream inference job applies `EPSG:32633` UTM coordinates. IoU metrics collapse because every bounding box is offset by hundreds of meters. No exception is raised.
 
@@ -152,9 +152,9 @@ System dependencies:
 
 Spatial knowledge prerequisites:
 
-- Familiarity with [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — specifically `EPSG:4326` vs projected CRS semantics
+- Familiarity with [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — specifically `EPSG:4326` vs projected CRS semantics
 - Understanding of affine transforms: `(x_pixel, y_pixel) → (x_geo, y_geo)` mapping encoded in rasterio's `Transform` object
-- Basic DVC concepts covered in [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) for the storage and remote caching layer this workflow feeds into
+- Basic DVC concepts covered in [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) for the storage and remote caching layer this workflow feeds into
 
 Storage layout assumed throughout:
 
@@ -174,7 +174,7 @@ The downstream impact is concrete:
 
 - **Projection mismatch:** a model trained on `EPSG:4326` coordinate space receives `EPSG:32633` UTM tiles during inference, causing spatial offsets of hundreds of meters
 - **Temporal drift:** acquisition timestamps are lost, breaking time-series models that depend on seasonal or diurnal patterns in multi-date stacks
-- **Annotation misalignment:** bounding boxes or polygon masks shift when affine transforms are applied during augmentation without updating the geotransform, causing the label geometry to disagree with the pixel geometry. This type of failure is closely related to the [annotation drift problems](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) that manifest across dataset versions
+- **Annotation misalignment:** bounding boxes or polygon masks shift when affine transforms are applied during augmentation without updating the geotransform, causing the label geometry to disagree with the pixel geometry. This type of failure is closely related to the [annotation drift problems](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) that manifest across dataset versions
 - **Provenance gaps:** sensor ID, flight altitude, or annotation batch identifiers disappear, preventing post-hoc audits of model performance by data source
 
 Addressing these failures requires treating metadata as a first-class versioned artifact, not a byproduct stored in binary headers that survive only when the right driver flags are set.
@@ -316,7 +316,7 @@ def write_metadata_sidecar(
 
 ### Step 4: Compute SHA-256 Hashes and Build the Version Manifest
 
-Generate SHA-256 signatures for both the data file and its metadata sidecar. Store these as a paired entry in a centralized `manifest.json`. For teams managing large-scale annotation campaigns, [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) provides proven methodology for detecting silent label corruption using the same manifest structure.
+Generate SHA-256 signatures for both the data file and its metadata sidecar. Store these as a paired entry in a centralized `manifest.json`. For teams managing large-scale annotation campaigns, [tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) provides proven methodology for detecting silent label corruption using the same manifest structure.
 
 ```python
 import json
@@ -359,7 +359,7 @@ def update_manifest(
 
 ### Step 5: Commit, Validate, and Automate Sync
 
-Push data and metadata to your version control layer. Validate that CRS, extent, and annotation counts match across environments before any training job proceeds. This pattern integrates with the broader [dataset versioning and spatial data sync](/dataset-versioning-spatial-data-sync/) workflow, ensuring every pipeline stage consumes identical spatial context regardless of compute node or cloud region.
+Push data and metadata to your version control layer. Validate that CRS, extent, and annotation counts match across environments before any training job proceeds. This pattern integrates with the broader [dataset versioning and spatial data sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) workflow, ensuring every pipeline stage consumes identical spatial context regardless of compute node or cloud region.
 
 ```python
 def validate_sidecar_consistency(
@@ -413,7 +413,7 @@ def validate_sidecar_consistency(
 
 **Timestamp timezone drift.** GDAL's `TIFFTAG_DATETIME` stores local time without a UTC offset, and EXIF acquisition time is similarly ambiguous. If your sensor metadata reports `2024-08-14 06:30:00` without a timezone, you cannot know whether that is UTC, UTC+2, or local mission time. Mitigation: at ingest, require all timestamps to carry an explicit UTC offset; if missing, record them as `"unknown"` rather than assuming UTC.
 
-**Affine transform corruption during augmentation.** Random rotation augmentations applied at the pixel level without updating the affine transform produce annotation files whose polygon coordinates no longer align with the rotated image. This is the most common source of IoU collapse in augmented geospatial datasets. Mitigation: apply `rasterio.transform.AffineTransformer` or `pyproj.Transformer` to every annotation geometry after any spatial augmentation. When evaluating how labels shift against detection windows, use the [IoU threshold guidelines for geospatial object detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) to set acceptance criteria.
+**Affine transform corruption during augmentation.** Random rotation augmentations applied at the pixel level without updating the affine transform produce annotation files whose polygon coordinates no longer align with the rotated image. This is the most common source of IoU collapse in augmented geospatial datasets. Mitigation: apply `rasterio.transform.AffineTransformer` or `pyproj.Transformer` to every annotation geometry after any spatial augmentation. When evaluating how labels shift against detection windows, use the [IoU threshold guidelines for geospatial object detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) to set acceptance criteria.
 
 **Sidecar-data desync from partial commits.** A batch job that writes the raster but crashes before writing the sidecar leaves the manifest in a half-updated state. The next run will find a data SHA that has no matching sidecar SHA, which the validation step correctly rejects — but only if `validate_sidecar_consistency` is called before the training job starts. Wire this check into the CI gate, not just the ingestion script.
 
@@ -425,7 +425,7 @@ def validate_sidecar_consistency(
 
 ### DVC Integration
 
-Track the `metadata/` directory alongside data files so every `dvc repro` run captures sidecar state. The [DVC pipeline configuration for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) covers remote storage setup and caching strategies that complement this metadata tracking approach.
+Track the `metadata/` directory alongside data files so every `dvc repro` run captures sidecar state. The [DVC pipeline configuration for geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) covers remote storage setup and caching strategies that complement this metadata tracking approach.
 
 ```yaml
 # dvc.yaml
@@ -492,7 +492,7 @@ jobs:
 
 ### Label Studio Provenance Injection
 
-When exporting annotated tasks from [Label Studio integrated with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/), inject the dataset version tag and sidecar hash into each annotation's `meta` field so the training pipeline can trace every label back to its source version:
+When exporting annotated tasks from [Label Studio integrated with geospatial workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/), inject the dataset version tag and sidecar hash into each annotation's `meta` field so the training pipeline can trace every label back to its source version:
 
 ```python
 import json
@@ -586,12 +586,12 @@ def test_crs_normalization_roundtrip() -> None:
 
 ---
 
-This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) pipeline.
+This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) pipeline.
 
 **Related**
 
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — storage orchestration and remote caching that consumes these metadata sidecars
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — manifest-based drift detection for annotation files, complementing the raster metadata approach here
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — what to do when metadata validation catches a version with silent CRS corruption
-- [Debugging Annotation Drift Across Dataset Versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — diagnosing the label shift that surfaces when affine transforms are not updated after augmentation
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts underlying the normalization steps in this workflow
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — storage orchestration and remote caching that consumes these metadata sidecars
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — manifest-based drift detection for annotation files, complementing the raster metadata approach here
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — what to do when metadata validation catches a version with silent CRS corruption
+- [Debugging Annotation Drift Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) — diagnosing the label shift that surfaces when affine transforms are not updated after augmentation
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — foundational CRS concepts underlying the normalization steps in this workflow

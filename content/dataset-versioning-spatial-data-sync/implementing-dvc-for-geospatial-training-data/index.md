@@ -2,7 +2,7 @@
 title: "Implementing DVC for Geospatial Training Data"
 description: "Step-by-step guide to configuring DVC for satellite imagery, LiDAR, and vector annotation datasets — covering remote storage setup, pipeline orchestration, rollback, and CI/CD integration for spatial ML workflows."
 slug: "implementing-dvc-for-geospatial-training-data"
-type: "cluster"
+type: "guide"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -30,9 +30,9 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/" },
-        { "@type": "ListItem", "position": 3, "name": "Implementing DVC for Geospatial Training Data", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/" },
+        { "@type": "ListItem", "position": 3, "name": "Implementing DVC for Geospatial Training Data", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/" }
       ]
     },
     {
@@ -86,13 +86,13 @@ dateModified: "2026-06-25"
 
 Geospatial ML pipelines fail in ways that generic data science tooling cannot anticipate. A satellite scene reprojected to the wrong datum, a batch of annotation GeoJSON files silently truncated to five decimal places, or an interrupted multipart upload to object storage — any of these can corrupt a training run while leaving the Git history looking perfectly clean. Standard Git workflows cannot address these problems because the assets themselves — multi-gigabyte GeoTIFFs, LiDAR point clouds, drone orthomosaics, and vector annotations with embedded CRS contracts — far exceed repository size limits and carry spatial semantics that version numbers alone cannot capture.
 
-DVC (Data Version Control) bridges this gap by decoupling binary asset tracking from code versioning. Integrated into the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) architecture, DVC gives teams a content-addressable cache for terabyte-scale rasters, deterministic pipeline orchestration for preprocessing stages, and safe rollback paths when spatial assets degrade.
+DVC (Data Version Control) bridges this gap by decoupling binary asset tracking from code versioning. Integrated into the broader [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) architecture, DVC gives teams a content-addressable cache for terabyte-scale rasters, deterministic pipeline orchestration for preprocessing stages, and safe rollback paths when spatial assets degrade.
 
 ---
 
 ## Prerequisites & Toolchain Alignment
 
-Before configuring DVC for spatial workloads, verify every component below. Mismatched GDAL and rasterio versions are a common source of silent [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) handling differences between local and CI environments.
+Before configuring DVC for spatial workloads, verify every component below. Mismatched GDAL and rasterio versions are a common source of silent [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) handling differences between local and CI environments.
 
 | Component | Minimum version | Notes |
 |---|---|---|
@@ -270,13 +270,13 @@ tile_size: 512
 overlap: 64
 ```
 
-Run the full pipeline with `dvc repro`. DVC evaluates dependency hashes and re-executes only stages where inputs, scripts, or parameters have changed. Experiment variants — different `tile_size` values, alternative `resample_method` settings — can be tracked with `dvc exp run --set-param tile_size=1024` without branching Git history. For a complete treatment of pipeline automation, see [using DVC pipelines for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/).
+Run the full pipeline with `dvc repro`. DVC evaluates dependency hashes and re-executes only stages where inputs, scripts, or parameters have changed. Experiment variants — different `tile_size` values, alternative `resample_method` settings — can be tracked with `dvc exp run --set-param tile_size=1024` without branching Git history. For a complete treatment of pipeline automation, see [using DVC pipelines for automated dataset snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/).
 
 ### Step 4 — Track Vector Annotations and Validate Label Consistency
 
 Vector annotations (GeoJSON, Shapefile, COCO JSON) introduce versioning complexity that rasters do not have. Floating-point coordinates may shift due to software rounding, topology cleaning, or CRS reprojection even when the visual label looks identical. DVC tracks raw file hashes — it cannot distinguish semantic annotation changes from accidental coordinate truncation.
 
-Pair DVC with [SHA-256 manifests](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to catch precision-level drift:
+Pair DVC with [SHA-256 manifests](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to catch precision-level drift:
 
 ```bash
 # Generate manifest before committing annotation updates
@@ -375,7 +375,7 @@ If cache corruption is widespread, rebuild from raw sources:
 dvc repro --force
 ```
 
-Never delete `.dvc` metadata files manually — always use `dvc remove` or `git checkout` to maintain consistency between Git history and DVC cache state. For enterprise-grade recovery patterns including automated integrity checks and fallback remote routing, see [rollback strategies for corrupted spatial datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/).
+Never delete `.dvc` metadata files manually — always use `dvc remove` or `git checkout` to maintain consistency between Git history and DVC cache state. For enterprise-grade recovery patterns including automated integrity checks and fallback remote routing, see [rollback strategies for corrupted spatial datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/).
 
 ### Step 6 — Scale for Satellite Imagery and Multi-Temporal Stacks
 
@@ -421,7 +421,7 @@ def read_chip_from_vrt(
     return data, transform
 ```
 
-For guidance on handling petabyte-class archives or STAC catalog integration with DVC, see [how to version control large satellite imagery datasets](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/).
+For guidance on handling petabyte-class archives or STAC catalog integration with DVC, see [how to version control large satellite imagery datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/).
 
 ---
 
@@ -541,7 +541,7 @@ Cache DVC objects between CI runs by adding a `cache` key that hashes `.dvc/conf
 
 ### Label Studio Export Hook
 
-When [integrating Label Studio with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/), trigger a `dvc add` + `git commit` automatically after each export by hooking into Label Studio's webhook system:
+When [integrating Label Studio with geospatial workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/), trigger a `dvc add` + `git commit` automatically after each export by hooking into Label Studio's webhook system:
 
 ```python
 # scripts/ls_export_hook.py
@@ -605,15 +605,15 @@ def assert_raster_contract(
     print(f"Contract passed: {path}")
 ```
 
-To [preserve geospatial metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — including acquisition date, sensor ID, and cloud cover percentage — store critical metadata in a companion `metadata.yaml` or STAC catalog entry rather than relying on GDAL-embedded tags that DVC cannot inspect.
+To [preserve geospatial metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — including acquisition date, sensor ID, and cloud cover percentage — store critical metadata in a companion `metadata.yaml` or STAC catalog entry rather than relying on GDAL-embedded tags that DVC cannot inspect.
 
 ---
 
 ## Related
 
-- [How to version control large satellite imagery datasets](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/) — VRT, COG, and STAC patterns for petabyte-class raster archives
-- [Tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — complement DVC content-addressing with geometry-level integrity checks
-- [Rollback strategies for corrupted spatial datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — enterprise recovery patterns including partial cache failures and fallback remotes
-- [Preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — STAC catalog and sidecar YAML strategies for sensor and acquisition provenance
+- [How to version control large satellite imagery datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/) — VRT, COG, and STAC patterns for petabyte-class raster archives
+- [Tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — complement DVC content-addressing with geometry-level integrity checks
+- [Rollback strategies for corrupted spatial datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — enterprise recovery patterns including partial cache failures and fallback remotes
+- [Preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — STAC catalog and sidecar YAML strategies for sensor and acquisition provenance
 
-This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) pipeline for geospatial ML teams.
+This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) pipeline for geospatial ML teams.

@@ -2,7 +2,7 @@
 title: "Converting Label Studio Exports to YOLOv8 Format"
 description: "Step-by-step guide to transforming Label Studio JSON exports into YOLOv8 normalized bounding-box format for geospatial tile datasets — covering coordinate math, directory layout, data.yaml generation, and common conversion errors."
 slug: "converting-label-studio-exports-to-yolov8-format"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "Automating Pre-Labeling with Foundation Models", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/"},
-        {"@type": "ListItem", "position": 4, "name": "Converting Label Studio Exports to YOLOv8 Format", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "Automating Pre-Labeling with Foundation Models", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/"},
+        {"@type": "ListItem", "position": 4, "name": "Converting Label Studio Exports to YOLOv8 Format", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/"}
       ]
     },
     {
@@ -86,7 +86,7 @@ schema:
 
 # Converting Label Studio Exports to YOLOv8 Format
 
-Converting [Label Studio](https://labelstud.io/) exports to YOLOv8 format requires parsing the exported JSON payload, remapping string class labels to zero-based integer indices, and transforming percentage-based bounding box coordinates into YOLO's normalized `[class_id, x_center, y_center, width, height]` structure. Label Studio stores box coordinates as percentages (0–100) relative to the original image; YOLOv8 expects values in the 0–1 range representing center points and box dimensions relative to the full tile. For [geospatial annotation workflows](/labeling-workflows-toolchain-integration/) that tile GeoTIFFs or orthomosaics into fixed-resolution chips, this conversion runs as a post-processing step and writes the standard `images/` and `labels/` directory layout plus a `data.yaml` configuration file ready for `yolo train`.
+Converting [Label Studio](https://labelstud.io/) exports to YOLOv8 format requires parsing the exported JSON payload, remapping string class labels to zero-based integer indices, and transforming percentage-based bounding box coordinates into YOLO's normalized `[class_id, x_center, y_center, width, height]` structure. Label Studio stores box coordinates as percentages (0–100) relative to the original image; YOLOv8 expects values in the 0–1 range representing center points and box dimensions relative to the full tile. For [geospatial annotation workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) that tile GeoTIFFs or orthomosaics into fixed-resolution chips, this conversion runs as a post-processing step and writes the standard `images/` and `labels/` directory layout plus a `data.yaml` configuration file ready for `yolo train`.
 
 ## Why Coordinate Precision Matters for Raster Chips
 
@@ -146,7 +146,7 @@ A naive division by 100 is only correct when Label Studio's stored `original_wid
 
 Open your project in Label Studio, navigate to **Export → JSON**, and download `tasks.json`. Each task contains an `annotations` array; each annotation result of type `rectanglelabels` carries the fields `x`, `y`, `width`, `height` (all percentages, 0–100, top-left anchor) and `rectanglelabels` (the class name list).
 
-If your project used [foundation model pre-labeling](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) before human review, confirm that annotators accepted or corrected the model suggestions. Unreviewed model outputs live in the `predictions` key, not `annotations`, and require a separate fallback path in the conversion script.
+If your project used [foundation model pre-labeling](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) before human review, confirm that annotators accepted or corrected the model suggestions. Unreviewed model outputs live in the `predictions` key, not `annotations`, and require a separate fallback path in the conversion script.
 
 ### Step 2 — Audit Tile Dimensions Against Label Studio Metadata
 
@@ -198,7 +198,7 @@ def audit_tile_dimensions(
     return mismatches
 ```
 
-This is especially important when [tracking annotation changes across dataset versions](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/): a silent dimension mismatch introduced at any pipeline stage will corrupt every downstream training run without producing an obvious error message.
+This is especially important when [tracking annotation changes across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/): a silent dimension mismatch introduced at any pipeline stage will corrupt every downstream training run without producing an obvious error message.
 
 ### Step 3 — Coordinate Transformation Formula
 
@@ -350,7 +350,7 @@ model.val(data="path/to/output/data.yaml", split="train")
 
 Alternatively use the CLI: `yolo val model=yolov8n.pt data=path/to/data.yaml split=train`.
 
-For teams using [DVC to version geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), pin `data.yaml` and the `labels/` directory as tracked outputs of the conversion stage so coordinate bugs are traceable to a specific export commit and revertible without re-annotating.
+For teams using [DVC to version geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), pin `data.yaml` and the `labels/` directory as tracked outputs of the conversion stage so coordinate bugs are traceable to a specific export commit and revertible without re-annotating.
 
 ## Format Parameters and Coordinate Thresholds
 
@@ -381,11 +381,11 @@ All bounding boxes offset by ~0.01–0.05 normalized units
 
 ---
 
-This page covers the export and conversion step within the broader [automating pre-labeling with foundation models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) workflow, where foundation model outputs feed Label Studio before the human review and export cycle described here.
+This page covers the export and conversion step within the broader [automating pre-labeling with foundation models](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) workflow, where foundation model outputs feed Label Studio before the human review and export cycle described here.
 
 **Related**
 
-- [Automating Pre-Labeling with Foundation Models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) — upstream pipeline that populates Label Studio with model-generated annotations before export
-- [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — project configuration, storage backends, and task queue setup
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-control the converted dataset so coordinate errors are traceable to specific export commits
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — embed geotransform and CRS metadata alongside YOLO label files
+- [Automating Pre-Labeling with Foundation Models](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) — upstream pipeline that populates Label Studio with model-generated annotations before export
+- [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — project configuration, storage backends, and task queue setup
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-control the converted dataset so coordinate errors are traceable to specific export commits
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — embed geotransform and CRS metadata alongside YOLO label files

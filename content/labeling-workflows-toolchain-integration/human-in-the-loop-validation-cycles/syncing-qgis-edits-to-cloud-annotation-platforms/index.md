@@ -2,7 +2,7 @@
 title: "Syncing QGIS Edits to Cloud Annotation Platforms"
 description: "A step-by-step guide to building a deterministic PyQGIS extract-transform-upload pipeline that syncs QGIS desktop edits to cloud annotation APIs with idempotency controls, schema validation, and retry logic."
 slug: "syncing-qgis-edits-to-cloud-annotation-platforms"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -27,15 +27,15 @@ dateModified: "2026-06-24"
       "datePublished": "2025-03-10",
       "dateModified": "2026-06-24",
       "author": { "@type": "Organization", "name": "Geospatial Annotation" },
-      "url": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/"
+      "url": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/"
     },
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/" },
-        { "@type": "ListItem", "position": 3, "name": "Human-in-the-Loop Validation Cycles", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/" },
-        { "@type": "ListItem", "position": 4, "name": "Syncing QGIS Edits to Cloud Annotation Platforms", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/" }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/" },
+        { "@type": "ListItem", "position": 3, "name": "Human-in-the-Loop Validation Cycles", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/" },
+        { "@type": "ListItem", "position": 4, "name": "Syncing QGIS Edits to Cloud Annotation Platforms", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/" }
       ]
     },
     {
@@ -92,11 +92,11 @@ dateModified: "2026-06-24"
 
 # Syncing QGIS Edits to Cloud Annotation Platforms
 
-Syncing QGIS edits to a cloud annotation platform requires a deterministic **extract-transform-upload** pipeline built in PyQGIS. The correct approach reads only the pending changes from `QgsVectorLayerEditBuffer`, reprojects all geometries to [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS 84), maps QGIS field names to the platform's JSON schema, and pushes authenticated batch payloads with per-request idempotency keys and exponential backoff. This eliminates manual shapefile handoffs, prevents silent geometry corruption, and keeps desktop GIS work traceable within the [human-in-the-loop validation cycle](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/).
+Syncing QGIS edits to a cloud annotation platform requires a deterministic **extract-transform-upload** pipeline built in PyQGIS. The correct approach reads only the pending changes from `QgsVectorLayerEditBuffer`, reprojects all geometries to [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS 84), maps QGIS field names to the platform's JSON schema, and pushes authenticated batch payloads with per-request idempotency keys and exponential backoff. This eliminates manual shapefile handoffs, prevents silent geometry corruption, and keeps desktop GIS work traceable within the [human-in-the-loop validation cycle](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/).
 
 ## Why This Matters in Geospatial Annotation Pipelines
 
-Cloud annotation APIs never accept native `.qgz` or `.shp` files — they expect structured GeoJSON payloads with explicit coordinate arrays, label dictionaries, and metadata tags. When teams skip a formal sync pipeline and export manually, three failure modes appear consistently: mixed coordinate reference systems across batches cause geometry offsets that collapse IoU scores; `NaN` float attributes silently break strict JSON parsers and drop entire feature batches; and duplicate uploads from manual re-runs corrupt the annotation record without warning. A scripted, idempotent pipeline closes all three gaps and feeds directly into the [dataset versioning](/dataset-versioning-spatial-data-sync/) audit trail.
+Cloud annotation APIs never accept native `.qgz` or `.shp` files — they expect structured GeoJSON payloads with explicit coordinate arrays, label dictionaries, and metadata tags. When teams skip a formal sync pipeline and export manually, three failure modes appear consistently: mixed coordinate reference systems across batches cause geometry offsets that collapse IoU scores; `NaN` float attributes silently break strict JSON parsers and drop entire feature batches; and duplicate uploads from manual re-runs corrupt the annotation record without warning. A scripted, idempotent pipeline closes all three gaps and feeds directly into the [dataset versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) audit trail.
 
 ## Pipeline Architecture
 
@@ -146,7 +146,7 @@ Skipping any phase introduces silent failures. The transform step is especially 
 
 ### Step 1 — Extract Pending Edits from the Edit Buffer
 
-Query only modified and added features from the active editing session. Reading the full layer generates redundant payloads and risks overwriting annotations that other team members have already reviewed during the [validation cycle](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/).
+Query only modified and added features from the active editing session. Reading the full layer generates redundant payloads and risks overwriting annotations that other team members have already reviewed during the [validation cycle](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/).
 
 ```python
 from qgis.core import QgsProject
@@ -172,7 +172,7 @@ def get_pending_feature_ids(layer_name: str) -> list[int]:
 
 ### Step 2 — Reproject and Validate Geometries
 
-Transform all coordinates to `EPSG:4326` before serialising to GeoJSON. Cloud annotation APIs enforce the GeoJSON specification's WGS 84 requirement; submitting features in a projected CRS such as `EPSG:32633` causes silent coordinate drift that can shift polygon vertices by hundreds of metres on the platform map. This CRS contract is the same one described in the broader guide to [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/).
+Transform all coordinates to `EPSG:4326` before serialising to GeoJSON. Cloud annotation APIs enforce the GeoJSON specification's WGS 84 requirement; submitting features in a projected CRS such as `EPSG:32633` causes silent coordinate drift that can shift polygon vertices by hundreds of metres on the platform map. This CRS contract is the same one described in the broader guide to [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/).
 
 ```python
 import json
@@ -206,7 +206,7 @@ def reproject_and_validate(geom, source_crs) -> dict | None:
 
 ### Step 3 — Map Attributes to the Platform Schema
 
-Flatten QGIS field values, sanitise floats, and rename fields to match the target annotation API's expected property names. Mismatched field names cause silent attribute drops; `NaN` floats break JSON serialisation in the strict parsers used by [Label Studio](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) and similar platforms.
+Flatten QGIS field values, sanitise floats, and rename fields to match the target annotation API's expected property names. Mismatched field names cause silent attribute drops; `NaN` floats break JSON serialisation in the strict parsers used by [Label Studio](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) and similar platforms.
 
 ```python
 import math
@@ -239,7 +239,7 @@ Define `FIELD_MAP` per project and confirm the platform schema against its OpenA
 
 ### Step 4 — Batch Upload with Idempotency and Retry
 
-Upload in configurable batches with per-batch `Idempotency-Key` headers and exponential backoff. Idempotency keys prevent duplicate ingestion when network retries fire; without them, a single transient `502` can result in the same feature appearing twice in the annotation record and corrupting [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) aggregated at the platform level.
+Upload in configurable batches with per-batch `Idempotency-Key` headers and exponential backoff. Idempotency keys prevent duplicate ingestion when network retries fire; without them, a single transient `502` can result in the same feature appearing twice in the annotation record and corrupting [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) aggregated at the platform level.
 
 ```python
 import time
@@ -375,16 +375,16 @@ cfg = {k: v for k, v in auth_mgr.availableAuthMethodConfigs().items()
        if v.name() == "cloud_annotation_api"}
 ```
 
-For delta recovery — resuming a failed mid-batch sync without re-uploading already-accepted features — maintain a local SQLite log of synced feature IDs alongside their `sync_timestamp`. On restart, exclude IDs present in the log from `pending_ids` before calling `upload_batch`. This log also feeds the [SHA hashing audit trail](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) that version-stamps each feature payload for rollback and change tracking.
+For delta recovery — resuming a failed mid-batch sync without re-uploading already-accepted features — maintain a local SQLite log of synced feature IDs alongside their `sync_timestamp`. On restart, exclude IDs present in the log from `pending_ids` before calling `upload_batch`. This log also feeds the [SHA hashing audit trail](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) that version-stamps each feature payload for rollback and change tracking.
 
 ---
 
-This integration is one component of the broader [Human-in-the-Loop Validation Cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) workflow, which covers the full reviewer feedback loop from pre-labeling through quality gates.
+This integration is one component of the broader [Human-in-the-Loop Validation Cycles](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) workflow, which covers the full reviewer feedback loop from pre-labeling through quality gates.
 
 **Related**
 
-- [Human-in-the-Loop Validation Cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — parent page covering the full reviewer feedback loop
-- [QGIS Plugin Ecosystem for Annotation Teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — toolchain context: which QGIS plugins complement a PyQGIS sync script
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS contracts that govern the `EPSG:4326` requirement in this pipeline
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — version-stamp each feature payload before upload for audit and rollback
-- [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) — the top-level section covering the full annotation toolchain
+- [Human-in-the-Loop Validation Cycles](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — parent page covering the full reviewer feedback loop
+- [QGIS Plugin Ecosystem for Annotation Teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — toolchain context: which QGIS plugins complement a PyQGIS sync script
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the CRS contracts that govern the `EPSG:4326` requirement in this pipeline
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — version-stamp each feature payload before upload for audit and rollback
+- [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) — the top-level section covering the full annotation toolchain

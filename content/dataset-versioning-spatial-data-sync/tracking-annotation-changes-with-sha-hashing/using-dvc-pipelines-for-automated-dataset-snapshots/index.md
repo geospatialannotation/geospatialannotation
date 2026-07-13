@@ -2,7 +2,7 @@
 title: "Using DVC Pipelines for Automated Dataset Snapshots"
 description: "Define declarative DVC pipeline stages that validate CRS consistency, compute SHA-256 checksums, and archive geospatial annotations to content-addressable remote storage — eliminating manual version control bottlenecks in spatial ML workflows."
 slug: using-dvc-pipelines-for-automated-dataset-snapshots
-type: long_tail
+type: "tutorial"
 breadcrumb:
   - label: "Dataset Versioning & Spatial Data Sync"
     url: "/dataset-versioning-spatial-data-sync/"
@@ -30,9 +30,9 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 2, "name": "Tracking Annotation Changes with SHA Hashing", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/"},
-        {"@type": "ListItem", "position": 3, "name": "Using DVC Pipelines for Automated Dataset Snapshots", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/"}
+        {"@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 2, "name": "Tracking Annotation Changes with SHA Hashing", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/"},
+        {"@type": "ListItem", "position": 3, "name": "Using DVC Pipelines for Automated Dataset Snapshots", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/"}
       ]
     },
     {
@@ -81,11 +81,11 @@ dateModified: "2026-06-25"
 
 # Using DVC Pipelines for Automated Dataset Snapshots
 
-A declarative `dvc.yaml` pipeline turns annotation archival from a manual chore into a reproducible, hash-gated stage. DVC normalises all inputs to a consistent [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — by default `EPSG:4326` — validates spatial integrity, computes SHA-256 checksums for every changed asset, then pushes only the modified chunks to remote storage. The precise geometry, projection, and label schema used in each training run become permanently traceable without zip archives, timestamp-based backups, or guesswork.
+A declarative `dvc.yaml` pipeline turns annotation archival from a manual chore into a reproducible, hash-gated stage. DVC normalises all inputs to a consistent [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — by default `EPSG:4326` — validates spatial integrity, computes SHA-256 checksums for every changed asset, then pushes only the modified chunks to remote storage. The precise geometry, projection, and label schema used in each training run become permanently traceable without zip archives, timestamp-based backups, or guesswork.
 
 ## Why Annotation Drift Breaks Geospatial Training Pipelines
 
-A single reprojected raster, shifted polygon vertex, or corrected `.prj` file can silently invalidate months of training metrics without triggering any Git diff on binary assets. Teams that version spatial data only via Git LFS hit two compounding problems: large binary blobs slow every clone, and LFS provides no built-in mechanism to assert geometric consistency before archival. The result is annotation drift — where the dataset a model was trained on differs from the dataset recorded in the experiment tracker, making rollback guesswork. [Tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) solves the detection problem; DVC pipelines solve the enforcement problem by making the hash check a mandatory gate before any output artifact is written.
+A single reprojected raster, shifted polygon vertex, or corrected `.prj` file can silently invalidate months of training metrics without triggering any Git diff on binary assets. Teams that version spatial data only via Git LFS hit two compounding problems: large binary blobs slow every clone, and LFS provides no built-in mechanism to assert geometric consistency before archival. The result is annotation drift — where the dataset a model was trained on differs from the dataset recorded in the experiment tracker, making rollback guesswork. [Tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) solves the detection problem; DVC pipelines solve the enforcement problem by making the hash check a mandatory gate before any output artifact is written.
 
 ## Step-by-Step DVC Pipeline Implementation
 
@@ -387,7 +387,7 @@ DVC writes a `.dvc` pointer file containing only the hash — the binary never e
 
 ### Step 5 — Automate Snapshots in CI/CD
 
-A GitHub Actions workflow that gates pull requests on pipeline success prevents annotation drift from reaching production training jobs. The `metadata.json` manifest output integrates with experiment trackers such as MLflow — see [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) for how to embed CRS, geometry type, and label schema into versioned manifests consumed by training scripts.
+A GitHub Actions workflow that gates pull requests on pipeline success prevents annotation drift from reaching production training jobs. The `metadata.json` manifest output integrates with experiment trackers such as MLflow — see [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) for how to embed CRS, geometry type, and label schema into versioned manifests consumed by training scripts.
 
 ```yaml
 # .github/workflows/annotation-snapshot.yml
@@ -456,12 +456,12 @@ jobs:
 
 ---
 
-This workflow is one component of the broader [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) strategy for deterministic spatial data lineage.
+This workflow is one component of the broader [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) strategy for deterministic spatial data lineage.
 
 **Related**
 
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — parent: how SHA-256 digests surface annotation drift in geospatial datasets
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — full DVC setup for spatial ML, from remote config to `.dvc` file conventions
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — embedding CRS, geometry type, and label schema into versioned manifests consumed by training scripts
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — recovering a known-good snapshot hash when a pipeline stage writes corrupt outputs
-- [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) — content-addressable storage, rollback, and sync strategies across annotation environments
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — parent: how SHA-256 digests surface annotation drift in geospatial datasets
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — full DVC setup for spatial ML, from remote config to `.dvc` file conventions
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — embedding CRS, geometry type, and label schema into versioned manifests consumed by training scripts
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — recovering a known-good snapshot hash when a pipeline stage writes corrupt outputs
+- [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) — content-addressable storage, rollback, and sync strategies across annotation environments

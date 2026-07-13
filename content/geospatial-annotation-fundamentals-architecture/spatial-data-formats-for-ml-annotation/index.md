@@ -2,7 +2,7 @@
 title: "Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC"
 description: "Choose and validate the right spatial data formats for an annotation pipeline: Cloud-Optimized GeoTIFF for imagery, GeoParquet for vector labels, and STAC for cataloging — with conversion and integrity checks."
 slug: "spatial-data-formats-for-ml-annotation"
-type: "cluster"
+type: "guide"
 breadcrumb: "Geospatial Annotation Fundamentals & Architecture > Spatial Data Formats for ML Annotation"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,9 +29,9 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Spatial Data Formats for ML Annotation", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Spatial Data Formats for ML Annotation", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ schema:
 
 A team ingests a few hundred gigabytes of aerial imagery as plain striped GeoTIFFs and stores its vector labels as Shapefiles on a shared bucket. It works for the first sprint. Then the dataset grows to tens of thousands of scenes, and three failures land in the same week. The annotation tool takes twelve seconds to open a single 2 GB scene because every tile read pulls the whole file across the network. A batch of newly exported labels silently loses attribute values because Shapefile `.dbf` columns truncate field names at ten characters and collapse `annotation_confidence` and `annotation_class` into the same key. And when an auditor asks which sensor and acquisition date produced a given label, nobody can answer, because the provenance lived only in a spreadsheet that stopped being updated months ago.
 
-None of these are annotation-quality problems. They are format problems. This guide shows how three modern spatial formats — Cloud-Optimized GeoTIFF for imagery, GeoParquet for vector labels, and SpatioTemporal Asset Catalog (STAC) for the index — replace that fragile stack, and how to produce and validate each one with runnable Python. It sits inside the broader [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) foundation, which frames why explicit data contracts matter at every stage of a spatial ML pipeline.
+None of these are annotation-quality problems. They are format problems. This guide shows how three modern spatial formats — Cloud-Optimized GeoTIFF for imagery, GeoParquet for vector labels, and SpatioTemporal Asset Catalog (STAC) for the index — replace that fragile stack, and how to produce and validate each one with runnable Python. It sits inside the broader [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) foundation, which frames why explicit data contracts matter at every stage of a spatial ML pipeline.
 
 ---
 
@@ -156,7 +156,7 @@ pip install \
 
 **Format contracts to agree on up front**
 
-Every asset in the pipeline should declare the same projection. The first time a batch mixes projections is the first time labels land in the wrong place, so document a canonical [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — usually a local UTM zone such as [`EPSG:32633`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — and require imagery, labels, and catalog to agree on it. Decide a tile block size (512 pixels is a safe default), an overview resampling method, and a STAC identifier scheme that ties each label file back to the scene it annotates.
+Every asset in the pipeline should declare the same projection. The first time a batch mixes projections is the first time labels land in the wrong place, so document a canonical [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — usually a local UTM zone such as [`EPSG:32633`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — and require imagery, labels, and catalog to agree on it. Decide a tile block size (512 pixels is a safe default), an overview resampling method, and a STAC identifier scheme that ties each label file back to the scene it annotates.
 
 ---
 
@@ -274,7 +274,7 @@ if __name__ == "__main__":
     read_and_check("data/labels/scene_0421.parquet")
 ```
 
-The full attribute names `annotation_class` and `annotation_confidence` round-trip intact — the exact failure the Shapefile stack could not survive. If your labels start life as Shapefiles, the dedicated walkthrough on [converting Shapefiles to GeoParquet for annotation](/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) covers CRS preservation and field-name recovery across the roundtrip.
+The full attribute names `annotation_class` and `annotation_confidence` round-trip intact — the exact failure the Shapefile stack could not survive. If your labels start life as Shapefiles, the dedicated walkthrough on [converting Shapefiles to GeoParquet for annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) covers CRS preservation and field-name recovery across the roundtrip.
 
 ### Catalog Assets with STAC
 
@@ -384,11 +384,11 @@ The formats compose cleanly only when their projections agree. A COG in one UTM 
 
 ### Serving COGs to Label Studio
 
-When you connect [Label Studio integrated with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) to a bucket of COGs, the tiling backend issues range requests against each scene, so a valid COG is the difference between an annotator waiting on a full download and one panning smoothly. Gate the ingest step with `assert_valid_cog` so no striped GeoTIFF ever reaches the labeling queue, and expose the STAC Collection so tasks can be created directly from catalog Items rather than a hand-maintained file list.
+When you connect [Label Studio integrated with geospatial workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) to a bucket of COGs, the tiling backend issues range requests against each scene, so a valid COG is the difference between an annotator waiting on a full download and one panning smoothly. Gate the ingest step with `assert_valid_cog` so no striped GeoTIFF ever reaches the labeling queue, and expose the STAC Collection so tasks can be created directly from catalog Items rather than a hand-maintained file list.
 
 ### Versioning formatted assets with DVC
 
-Once imagery is in COGs and labels in GeoParquet, track them with [DVC for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/). Content-addressed storage plays well with these formats: a COG's bytes are stable across re-exports when you fix the compression and overview settings, and GeoParquet's deterministic column layout gives reproducible hashes. Commit the STAC catalog alongside the data so every dataset version resolves to the exact imagery and labels its Items reference.
+Once imagery is in COGs and labels in GeoParquet, track them with [DVC for geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/). Content-addressed storage plays well with these formats: a COG's bytes are stable across re-exports when you fix the compression and overview settings, and GeoParquet's deterministic column layout gives reproducible hashes. Commit the STAC catalog alongside the data so every dataset version resolves to the exact imagery and labels its Items reference.
 
 ---
 
@@ -436,7 +436,7 @@ if __name__ == "__main__":
     check_label_integrity("data/labels/scene_0421.parquet")
 ```
 
-Wire the COG validator, the catalog validator, and the geometry check into one pre-training gate. If any asset fails, the batch never enters the training queue — the cheapest place to catch a format defect is before it becomes a corrupted label a model learns from. Reprojection edge cases, such as reconciling a Shapefile whose `.prj` disagrees with its coordinates, are covered in depth by the [coordinate reference systems](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) guide.
+Wire the COG validator, the catalog validator, and the geometry check into one pre-training gate. If any asset fails, the batch never enters the training queue — the cheapest place to catch a format defect is before it becomes a corrupted label a model learns from. Reprojection edge cases, such as reconciling a Shapefile whose `.prj` disagrees with its coordinates, are covered in depth by the [coordinate reference systems](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) guide.
 
 ---
 
@@ -462,9 +462,9 @@ That is the intended design. COG carries the imagery, GeoParquet carries the vec
 
 ## Related
 
-- [Converting Shapefiles to GeoParquet for Annotation](/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) — a step-by-step migration off legacy Shapefiles, preserving CRS and recovering truncated field names
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — how to normalize the projections these formats embed so imagery and labels stay aligned
-- [Vector vs Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — when labels belong in GeoParquet vectors versus rasterized COG masks
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-controlling COGs, GeoParquet, and the STAC catalog together
+- [Converting Shapefiles to GeoParquet for Annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/) — a step-by-step migration off legacy Shapefiles, preserving CRS and recovering truncated field names
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — how to normalize the projections these formats embed so imagery and labels stay aligned
+- [Vector vs Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — when labels belong in GeoParquet vectors versus rasterized COG masks
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-controlling COGs, GeoParquet, and the STAC catalog together
 
-This guide is part of the broader [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) foundation that underpins every production ML pipeline working with spatial data.
+This guide is part of the broader [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) foundation that underpins every production ML pipeline working with spatial data.

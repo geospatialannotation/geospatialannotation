@@ -9,8 +9,8 @@
     "clean": "rm -rf _site",
     "qa:codeblocks": "python3 scripts/qa-codeblocks.py",
     "qa:links": "python3 scripts/qa-links.py",
-    "qa:seo": "python3 scripts/qa-seo.py",
-    "qa": "npm run qa:codeblocks && npm run qa:links && npm run qa:seo",
+    "qa:meta": "python3 scripts/qa-meta.py",
+    "qa": "npm run qa:codeblocks && npm run qa:links && npm run qa:meta",
     "deploy": "npm run clean && npm run build && wrangler pages deploy _site --project-name=geospatialannotation-com --branch=main --commit-dirty=true",
     "deploy:preview": "npm run clean && npm run build && wrangler pages deploy _site --project-name=geospatialannotation-com --commit-dirty=true",
     "wrangler:whoami": "wrangler whoami"

@@ -2,7 +2,7 @@
 title: "Debugging Annotation Drift Across Dataset Versions"
 description: "A step-by-step guide to isolating and quantifying annotation drift in versioned geospatial datasets — covering geometric, schema, statistical, and serialization failure modes with runnable Python code."
 slug: "debugging-annotation-drift-across-dataset-versions"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Dataset Versioning & Spatial Data Sync"
     url: "/dataset-versioning-spatial-data-sync/"
@@ -30,9 +30,9 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/" },
-        { "@type": "ListItem", "position": 2, "name": "Rollback Strategies for Corrupted Spatial Datasets", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/" },
-        { "@type": "ListItem", "position": 3, "name": "Debugging Annotation Drift Across Dataset Versions", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/" }
+        { "@type": "ListItem", "position": 1, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/" },
+        { "@type": "ListItem", "position": 2, "name": "Rollback Strategies for Corrupted Spatial Datasets", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/" },
+        { "@type": "ListItem", "position": 3, "name": "Debugging Annotation Drift Across Dataset Versions", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/" }
       ]
     },
     {
@@ -90,7 +90,7 @@ dateModified: "2026-06-25"
 
 # Debugging Annotation Drift Across Dataset Versions
 
-When two versions of a geospatial annotation dataset produce different model metrics without a deliberate data change, annotation drift is the most likely culprit. Resolve it by computing deterministic spatial and semantic deltas between consecutive version snapshots — using geometry tolerance checks in a shared metric [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), attribute alignment, and statistical distribution profiling — before allowing the data to enter training queues. Drift originates from four distinct failure modes: reprojection-induced coordinate shifts, schema mutations between annotation tool releases, label taxonomy revisions from updated annotator guidelines, and precision loss during format serialization. Identifying the mode first determines which threshold and remediation path to apply.
+When two versions of a geospatial annotation dataset produce different model metrics without a deliberate data change, annotation drift is the most likely culprit. Resolve it by computing deterministic spatial and semantic deltas between consecutive version snapshots — using geometry tolerance checks in a shared metric [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), attribute alignment, and statistical distribution profiling — before allowing the data to enter training queues. Drift originates from four distinct failure modes: reprojection-induced coordinate shifts, schema mutations between annotation tool releases, label taxonomy revisions from updated annotator guidelines, and precision loss during format serialization. Identifying the mode first determines which threshold and remediation path to apply.
 
 ## Why Annotation Drift Breaks Geospatial ML Pipelines
 
@@ -99,7 +99,7 @@ Even a sub-pixel coordinate shift in `EPSG:4326` can collapse IoU scores below t
 The three practical consequences of undetected drift:
 
 1. **Silent model degradation** — accuracy drops surface in production before the dataset is flagged as corrupted.
-2. **Unreproducible training runs** — the same [DVC pipeline](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stage produces different outputs when the upstream data has drifted undetected.
+2. **Unreproducible training runs** — the same [DVC pipeline](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) stage produces different outputs when the upstream data has drifted undetected.
 3. **Wasted rollback effort** — without knowing the drift type, engineers revert entire dataset versions when only a subset of features or labels is affected.
 
 ## Root Cause Taxonomy for Geospatial Annotation Drift
@@ -163,7 +163,7 @@ Annotation drift in production ML pipelines falls into four diagnostic categorie
 
 ### Step 1 — Lock Immutable Baselines
 
-Never diff live data streams. Export fixed snapshots of both versions and verify [SHA-256 checksums](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) before any comparison to confirm the snapshots are stable:
+Never diff live data streams. Export fixed snapshots of both versions and verify [SHA-256 checksums](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) before any comparison to confirm the snapshots are stable:
 
 ```python
 import hashlib
@@ -243,7 +243,7 @@ print(matched[["hausdorff_dist", "centroid_shift_m"]].describe())
 
 ### Step 4 — Align Attributes and Detect Label Mutations
 
-Join spatially matched features and compare label columns, [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/), and custom metadata. Explicit class ID remapping checks prevent silent training degradation when a tool upgrade silently reassigns integer class IDs:
+Join spatially matched features and compare label columns, [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/), and custom metadata. Explicit class ID remapping checks prevent silent training degradation when a tool upgrade silently reassigns integer class IDs:
 
 ```python
 label_col: str = "class_id"
@@ -306,7 +306,7 @@ print(f"Features with label drift     : {len(drifted_label):,} / {len(matched):,
 print(f"Unmatched v1 features         : {unmatched_count:,}")
 ```
 
-If drift is isolated to a single tile batch or exporter run, a targeted feature-level correction avoids a full dataset revert. If geometric drift is widespread, escalate to a [full version rollback](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/).
+If drift is isolated to a single tile batch or exporter run, a targeted feature-level correction avoids a full dataset revert. If geometric drift is widespread, escalate to a [full version rollback](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/).
 
 ## Drift Detection Thresholds by Imagery Resolution
 
@@ -331,7 +331,7 @@ Root cause: annotation tool update converted polygon features to bounding boxes 
 
 **High Jensen-Shannon distance with low geometric drift**
 
-Root cause: annotator guideline revision changed the class distribution without altering feature geometries. Fix: treat this as a label taxonomy issue, not a pipeline bug — version the guidelines alongside the data using [DVC pipeline stages](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) so guideline changes produce a traceable commit.
+Root cause: annotator guideline revision changed the class distribution without altering feature geometries. Fix: treat this as a label taxonomy issue, not a pipeline bug — version the guidelines alongside the data using [DVC pipeline stages](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) so guideline changes produce a traceable commit.
 
 **`hausdorff_dist` is `NaN` for a subset of rows**
 
@@ -339,12 +339,12 @@ Root cause: `sjoin_nearest` matched a feature to a null or empty geometry in v2.
 
 ---
 
-This workflow is one diagnostic component of the broader [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) guide, which covers choosing between partial feature rollback, full version revert, and re-annotation.
+This workflow is one diagnostic component of the broader [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) guide, which covers choosing between partial feature rollback, full version revert, and re-annotation.
 
 **Related**
 
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — choosing between partial feature rollback, full version revert, and re-annotation
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — building the stable checksum baseline that makes drift detection reliable
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — versioning pipelines and data together so drift is always attributable to a specific commit
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — understanding why CRS choices upstream produce geometric drift downstream
-- [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) — the parent section covering the full versioning lifecycle
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — choosing between partial feature rollback, full version revert, and re-annotation
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — building the stable checksum baseline that makes drift detection reliable
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — versioning pipelines and data together so drift is always attributable to a specific commit
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — understanding why CRS choices upstream produce geometric drift downstream
+- [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) — the parent section covering the full versioning lifecycle

@@ -2,7 +2,7 @@
 title: "Step-by-Step CVAT Setup for Drone Imagery Annotation"
 description: "Deploy CVAT via Docker Compose, tile GeoTIFF orthomosaics with GDAL, automate task ingestion via cvat-sdk, and reconstruct geospatial coordinates after export — a complete production workflow for drone imagery annotation pipelines."
 slug: "step-by-step-cvat-setup-for-drone-imagery-annotation"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Labeling Workflows & Toolchain Integration"
     url: "/labeling-workflows-toolchain-integration/"
@@ -30,9 +30,9 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 2, "name": "Integrating Label Studio with Geospatial Workflows", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/"},
-        {"@type": "ListItem", "position": 3, "name": "Step-by-Step CVAT Setup for Drone Imagery Annotation", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/"}
+        {"@type": "ListItem", "position": 1, "name": "Labeling Workflows & Toolchain Integration", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 2, "name": "Integrating Label Studio with Geospatial Workflows", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/"},
+        {"@type": "ListItem", "position": 3, "name": "Step-by-Step CVAT Setup for Drone Imagery Annotation", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/"}
       ]
     },
     {
@@ -72,11 +72,11 @@ dateModified: "2026-06-25"
 
 # Step-by-Step CVAT Setup for Drone Imagery Annotation
 
-Deploy CVAT v2.14+ via Docker Compose, tile GeoTIFF orthomosaics into 2048 × 2048 JPEG frames using `gdal_retile.py`, automate task ingestion with `cvat-sdk`, then reconstruct projected [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) coordinates from exported pixel offsets using a sidecar affine manifest. The key constraint: CVAT's browser canvas treats every upload as a plain raster — GeoTIFF projection tags are silently discarded at ingest, so spatial context must be preserved externally from the start.
+Deploy CVAT v2.14+ via Docker Compose, tile GeoTIFF orthomosaics into 2048 × 2048 JPEG frames using `gdal_retile.py`, automate task ingestion with `cvat-sdk`, then reconstruct projected [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) coordinates from exported pixel offsets using a sidecar affine manifest. The key constraint: CVAT's browser canvas treats every upload as a plain raster — GeoTIFF projection tags are silently discarded at ingest, so spatial context must be preserved externally from the start.
 
 ## Why Naïve GeoTIFF Uploads Break Drone Annotation Pipelines
 
-Drone survey orthomosaics arrive as large GeoTIFF files (5–40 GB) referenced to a UTM zone such as `EPSG:32632` or a local equivalent. Uploading a raw GeoTIFF directly to CVAT produces three failure modes that compound each other: CRS loss (the geotransform is stripped, leaving pixel-only coordinates with no route back to the geodetic frame), browser OOM (Chrome's ~4 GB canvas cap causes frames above roughly 4096 × 4096 pixels to render blank or crash the tab silently), and annotation drift across tile boundaries that makes post-export [vector vs raster annotation](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) validation fragile. The four-step workflow below eliminates all three before annotation starts.
+Drone survey orthomosaics arrive as large GeoTIFF files (5–40 GB) referenced to a UTM zone such as `EPSG:32632` or a local equivalent. Uploading a raw GeoTIFF directly to CVAT produces three failure modes that compound each other: CRS loss (the geotransform is stripped, leaving pixel-only coordinates with no route back to the geodetic frame), browser OOM (Chrome's ~4 GB canvas cap causes frames above roughly 4096 × 4096 pixels to render blank or crash the tab silently), and annotation drift across tile boundaries that makes post-export [vector vs raster annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) validation fragile. The four-step workflow below eliminates all three before annotation starts.
 
 <svg viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four-stage CVAT drone annotation pipeline from raw GeoTIFF to georeferenced GeoJSON" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>CVAT Drone Annotation Pipeline</title>
@@ -206,7 +206,7 @@ with MANIFEST.open("w", newline="") as fh:
 print(f"Manifest written: {MANIFEST}")
 ```
 
-Store `crs_manifest.csv` alongside the tile directory and track it in your [DVC-versioned dataset repository](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) so spatial context is never decoupled from the annotation asset.
+Store `crs_manifest.csv` alongside the tile directory and track it in your [DVC-versioned dataset repository](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) so spatial context is never decoupled from the annotation asset.
 
 ## Step 3 — Automate Project and Task Creation with `cvat-sdk`
 
@@ -275,7 +275,7 @@ For datasets exceeding 10 GB, upload tiles to S3 first and pass presigned URLs a
 
 ## Step 4 — Export Annotations and Reconstruct Geospatial Coordinates
 
-CVAT COCO exports contain pixel coordinates relative to each tile. Reconstruction joins them with the manifest and applies the stored affine transform, converting pixel offsets back to the survey's source CRS. Assign per-annotation [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) at this stage to make the output compatible with active-learning review queues.
+CVAT COCO exports contain pixel coordinates relative to each tile. Reconstruction joins them with the manifest and applies the stored affine transform, converting pixel offsets back to the survey's source CRS. Assign per-annotation [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) at this stage to make the output compatible with active-learning review queues.
 
 ```python
 # reconstruct_geo.py — requires geopandas>=0.14.3, pandas>=2.2.2
@@ -378,7 +378,7 @@ assert residual < 1e-6, f"Affine roundtrip failed: {residual:.3e} px"
 print(f"Roundtrip OK — residual {residual:.2e} px, GSD {abs(row.pixel_size_x):.4f} m/px")
 ```
 
-Wire this into your annotation export step so a corrupted manifest fails the pipeline before geometries reach the [DVC-versioned dataset repository](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) rather than after a model has already trained on drifted labels.
+Wire this into your annotation export step so a corrupted manifest fails the pipeline before geometries reach the [DVC-versioned dataset repository](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) rather than after a model has already trained on drifted labels.
 
 ## Key Thresholds Reference
 
@@ -411,12 +411,12 @@ Database bloat slows task listing after several months
 
 ---
 
-This workflow is one component of the broader [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) guide, which covers platform comparison, Label Studio ML backend setup, and export pipeline design.
+This workflow is one component of the broader [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) guide, which covers platform comparison, Label Studio ML backend setup, and export pipeline design.
 
 **Related**
 
-- [Integrating Label Studio with Geospatial Workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — parent page: platform comparison and export pipeline design
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contracts, datum transforms, and projection-safe IoU computation
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-control the tile manifest and annotation exports alongside imagery
-- [Converting Label Studio Exports to YOLOv8 Format](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/) — adapt the spatial reconstruction output for YOLO-based object detection training
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — assign per-annotation scores at reconstruction time to feed active-learning queues
+- [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — parent page: platform comparison and export pipeline design
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contracts, datum transforms, and projection-safe IoU computation
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-control the tile manifest and annotation exports alongside imagery
+- [Converting Label Studio Exports to YOLOv8 Format](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/) — adapt the spatial reconstruction output for YOLO-based object detection training
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — assign per-annotation scores at reconstruction time to feed active-learning queues

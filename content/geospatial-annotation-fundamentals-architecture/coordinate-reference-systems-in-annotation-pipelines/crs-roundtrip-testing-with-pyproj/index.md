@@ -2,7 +2,7 @@
 title: "CRS Roundtrip Testing with pyproj"
 description: "Write a CRS roundtrip test that reprojects geometries out and back and asserts coordinate drift stays under tolerance — catching axis-order bugs and lossy transforms before they corrupt training labels."
 slug: "crs-roundtrip-testing-with-pyproj"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
-        {"@type": "ListItem", "position": 4, "name": "CRS Roundtrip Testing with pyproj", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Coordinate Reference Systems in Annotation Pipelines", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"},
+        {"@type": "ListItem", "position": 4, "name": "CRS Roundtrip Testing with pyproj", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/"}
       ]
     },
     {
@@ -89,7 +89,7 @@ A CRS roundtrip test reprojects a set of known control points from the source co
 
 ## Why Roundtrip Drift Predicts Corrupted Labels
 
-Reprojection sits on the critical path of almost every annotation pipeline: imagery arrives in one [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), annotators draw in another, and the training exporter writes a third. Every hop is a `Transformer` call, and a wrong one does not raise — it returns plausible numbers that are quietly off by metres. A polygon shifted two metres north still looks like a valid building footprint in a viewer, but it now disagrees with the pixels it is supposed to label, and the model learns the offset as signal.
+Reprojection sits on the critical path of almost every annotation pipeline: imagery arrives in one [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), annotators draw in another, and the training exporter writes a third. Every hop is a `Transformer` call, and a wrong one does not raise — it returns plausible numbers that are quietly off by metres. A polygon shifted two metres north still looks like a valid building footprint in a viewer, but it now disagrees with the pixels it is supposed to label, and the model learns the offset as signal.
 
 The roundtrip is powerful because it is self-checking. A correct forward transform composed with a correct inverse is the identity, so the returned coordinate must equal the original to within numerical noise. Any measurable residual means one of the two directions is wrong, and the magnitude tells you which failure class you hit. A residual of tens of degrees is an axis swap. A residual of one to ten metres is a missing grid falling back to an approximate shift. A residual of a few millimetres on a supposedly exact transform points at a lossy intermediate step. You do not need ground truth to run the check — the source coordinate is its own reference — which is what makes it cheap enough to run on every commit.
 
@@ -158,7 +158,7 @@ pip install pyproj==3.6.1 numpy==1.26.4 pytest==8.2.2
 
 ### Step 1 — Define Control Points and CRS Pairs
 
-Control points are ordinary coordinates in the source CRS, chosen to span the extent of your annotation tiles. Use the corners and the centre rather than a single point, because datum residuals vary across an area. Coordinates here are `(lon, lat)` in `[EPSG:4326](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/)`:
+Control points are ordinary coordinates in the source CRS, chosen to span the extent of your annotation tiles. Use the corners and the centre rather than a single point, because datum residuals vary across an area. Coordinates here are `(lon, lat)` in `[EPSG:4326](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/)`:
 
 ```python
 from dataclasses import dataclass
@@ -252,7 +252,7 @@ def assert_roundtrip(case: RoundtripCase) -> float:
 
 ### Step 5 — Wrap It as a pytest Gate
 
-Parametrize over every CRS pair your pipeline touches so a single test file guards the whole reprojection surface. Add the grid-based cases you rely on — the [datum transformation grids applied with pyproj](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/) determine whether those cases hit their tight tolerance or fall back and fail:
+Parametrize over every CRS pair your pipeline touches so a single test file guards the whole reprojection surface. Add the grid-based cases you rely on — the [datum transformation grids applied with pyproj](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/) determine whether those cases hit their tight tolerance or fall back and fail:
 
 ```python
 import pytest
@@ -305,9 +305,9 @@ Fix: convert the residual to ground metres before comparison, as `degrees_to_met
 
 ## Related
 
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the parent guide covering CRS contracts, datum management, and reprojection patterns that a roundtrip test defends
-- [Applying Datum Transformation Grids with pyproj](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/) — install and verify the NTv2/GTX grids whose absence a roundtrip test is designed to expose
-- [CI/CD gates for annotation datasets](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — wire the pytest roundtrip check into a pipeline that blocks a bad reprojection from reaching training
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — a companion reprojection-sensitive calculation that assumes the transforms a roundtrip test validates
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — the parent guide covering CRS contracts, datum management, and reprojection patterns that a roundtrip test defends
+- [Applying Datum Transformation Grids with pyproj](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/) — install and verify the NTv2/GTX grids whose absence a roundtrip test is designed to expose
+- [CI/CD gates for annotation datasets](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — wire the pytest roundtrip check into a pipeline that blocks a bad reprojection from reaching training
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — a companion reprojection-sensitive calculation that assumes the transforms a roundtrip test validates
 
-This guide covers one focused check within [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This guide covers one focused check within [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).

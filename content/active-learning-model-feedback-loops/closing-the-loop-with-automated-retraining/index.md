@@ -2,7 +2,7 @@
 title: "Closing the Loop with Automated Model Retraining"
 description: "Wire newly reviewed annotations into an automated retraining loop: DVC-triggered pipelines, checkpoint promotion gates, and evaluation guards that stop a bad batch from degrading a deployed geospatial model."
 slug: "closing-the-loop-with-automated-retraining"
-type: "cluster"
+type: "guide"
 breadcrumb: "Active Learning & Model Feedback Loops > Closing the Loop with Automated Model Retraining"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,9 +29,9 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"},
-        {"@type": "ListItem", "position": 3, "name": "Closing the Loop with Automated Model Retraining", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"},
+        {"@type": "ListItem", "position": 3, "name": "Closing the Loop with Automated Model Retraining", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ schema:
 
 A geospatial detection team hits this wall constantly: annotators keep validating fresh satellite tiles, the reviewed labels pile up in a bucket, and yet the model in production has not changed in three months. Nobody wired the last step. The deployed checkpoint keeps mis-detecting the exact objects the new annotations were created to fix — new construction it reads as bare ground, a solar farm it labels as water — because those corrections never re-entered training. The labeling budget is spent, the model stays stale, and every inference run reproduces the same errors at scale.
 
-Closing that gap is the whole point of an [active learning loop](/active-learning-model-feedback-loops/): the model tells you which tiles to label, annotators label them, and the loop must then feed those labels back into a new model version safely. This guide covers the return path — how to turn a stream of validated annotations into a retrained checkpoint that only reaches production if it demonstrably does not regress. The hard part is not the training call; it is the promotion gate and the rollback that protect a live model from a bad batch.
+Closing that gap is the whole point of an [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/): the model tells you which tiles to label, annotators label them, and the loop must then feed those labels back into a new model version safely. This guide covers the return path — how to turn a stream of validated annotations into a retrained checkpoint that only reaches production if it demonstrably does not regress. The hard part is not the training call; it is the promotion gate and the rollback that protect a live model from a bad batch.
 
 <svg viewBox="0 0 900 320" role="img" aria-label="Retraining promotion pipeline: new annotations flow into a dataset version, a candidate is trained, an evaluation gate decides between promote and reject with rollback" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;display:block;margin:1.5rem auto;">
   <title>Retraining Promotion Pipeline</title>
@@ -154,7 +154,7 @@ pip install "dvc[s3]==3.51.2" torch==2.3.1 geopandas==0.14.4 pyarrow==16.1.0
 pip install mlflow==2.14.1
 ```
 
-The loop assumes your training data is already under [DVC versioning](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), so that each dataset revision is content-addressed and every model can be traced to the exact tiles it saw. It also assumes annotations arrive pre-normalized to a single coordinate reference system — mixing projections silently shifts geometry and poisons a retraining set. Because distance-sensitive evaluation such as IoU depends on a metric CRS, keep the pipeline on a local UTM zone rather than [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/).
+The loop assumes your training data is already under [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), so that each dataset revision is content-addressed and every model can be traced to the exact tiles it saw. It also assumes annotations arrive pre-normalized to a single coordinate reference system — mixing projections silently shifts geometry and poisons a retraining set. Because distance-sensitive evaluation such as IoU depends on a metric CRS, keep the pipeline on a local UTM zone rather than [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/).
 
 **Baseline checklist before wiring the loop:**
 
@@ -364,7 +364,7 @@ def rollback(
     print(f"ROLLED BACK: production → {last_good_ckpt.name}, data → {last_good_data_rev}")
 ```
 
-Detailed recovery playbooks for the data side of that restore live in the guide on [rollback strategies for corrupted spatial datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/); the loop here reuses the same revision-pinning discipline for the model side.
+Detailed recovery playbooks for the data side of that restore live in the guide on [rollback strategies for corrupted spatial datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/); the loop here reuses the same revision-pinning discipline for the model side.
 
 ---
 
@@ -391,7 +391,7 @@ Fine-tuning a network on a small, homogeneous batch of new tiles will overwrite 
 
 ### Label noise from fresh annotations
 
-Newly validated tiles are not automatically trustworthy. A single annotator's systematic error — a mislabeled class, a consistently loose bounding box — enters training as ground truth and the model dutifully learns it. Before assembling the increment, cross-check fresh labels against model predictions and flag tiles where a high-confidence prediction disagrees sharply with the new label for a second review. Calibrated [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) make that disagreement signal meaningful rather than noisy.
+Newly validated tiles are not automatically trustworthy. A single annotator's systematic error — a mislabeled class, a consistently loose bounding box — enters training as ground truth and the model dutifully learns it. Before assembling the increment, cross-check fresh labels against model predictions and flag tiles where a high-confidence prediction disagrees sharply with the new label for a second review. Calibrated [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) make that disagreement signal meaningful rather than noisy.
 
 ### Eval-set contamination via spatial autocorrelation
 
@@ -407,7 +407,7 @@ The most expensive failure is a candidate that clears the overall gate while col
 
 ### DVC pipeline stage
 
-Express the loop as pipeline stages so each dataset revision deterministically produces one candidate, and DVC's dependency hashing skips retraining when neither data nor code changed. The child guide on [triggering retraining from new annotations with DVC](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/) walks through the full trigger wiring; the stage skeleton is:
+Express the loop as pipeline stages so each dataset revision deterministically produces one candidate, and DVC's dependency hashing skips retraining when neither data nor code changed. The child guide on [triggering retraining from new annotations with DVC](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/) walks through the full trigger wiring; the stage skeleton is:
 
 ```yaml
 # dvc.yaml
@@ -529,10 +529,10 @@ Yes for the gate decision, but keep a human in the promotion path for the first 
 
 ## Related
 
-- [Triggering Retraining from New Annotations with DVC](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/) — the DVC trigger stage that detects validated batches and launches the loop
-- [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — how the loop chooses which tiles to send for labeling in the first place
-- [Detecting Distribution Drift in Spatial Datasets](/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — the drift signal that fires the retraining trigger before a model decays
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the content-addressed dataset versioning every retraining run depends on
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — restoring a known-good data revision when a candidate regresses in production
+- [Triggering Retraining from New Annotations with DVC](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/) — the DVC trigger stage that detects validated batches and launches the loop
+- [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — how the loop chooses which tiles to send for labeling in the first place
+- [Detecting Distribution Drift in Spatial Datasets](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — the drift signal that fires the retraining trigger before a model decays
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the content-addressed dataset versioning every retraining run depends on
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — restoring a known-good data revision when a candidate regresses in production
 
-This guide is part of the broader [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) topic area, which connects tile selection, retraining, and drift detection into one feedback system.
+This guide is part of the broader [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) topic area, which connects tile selection, retraining, and drift detection into one feedback system.

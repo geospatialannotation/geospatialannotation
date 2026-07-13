@@ -2,7 +2,7 @@
 title: "Calibrating Confidence Scores with Temperature Scaling"
 description: "Calibrate over-confident model probabilities on geospatial detections with temperature scaling, so confidence scores driving the active-learning queue reflect true accuracy — with a PyTorch fit routine and reliability check."
 slug: "calibrating-confidence-scores-with-temperature-scaling"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Confidence Scoring for Geospatial Labels", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/"},
-        {"@type": "ListItem", "position": 4, "name": "Calibrating Confidence Scores with Temperature Scaling", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Confidence Scoring for Geospatial Labels", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/"},
+        {"@type": "ListItem", "position": 4, "name": "Calibrating Confidence Scores with Temperature Scaling", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/"}
       ]
     },
     {
@@ -85,11 +85,11 @@ schema:
 
 # Calibrating Confidence Scores with Temperature Scaling
 
-Modern deep detectors are systematically over-confident: a raw softmax probability of 0.95 does not mean the prediction is correct 95% of the time — empirically it may be right only 70% of the time. When those inflated numbers become the [confidence score](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) that ranks your active-learning queue, they mis-rank it: the model reports near-certainty on tiles it actually gets wrong, so the annotator's effort flows to the wrong places. Temperature scaling fixes this by fitting a single scalar `T` on a held-out validation set that softens the logits so that reported confidence matches empirical accuracy — measured by Expected Calibration Error (ECE) — **without changing a single prediction**. It is a one-parameter, post-hoc fit that runs in seconds and leaves accuracy, precision, and recall exactly as they were.
+Modern deep detectors are systematically over-confident: a raw softmax probability of 0.95 does not mean the prediction is correct 95% of the time — empirically it may be right only 70% of the time. When those inflated numbers become the [confidence score](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) that ranks your active-learning queue, they mis-rank it: the model reports near-certainty on tiles it actually gets wrong, so the annotator's effort flows to the wrong places. Temperature scaling fixes this by fitting a single scalar `T` on a held-out validation set that softens the logits so that reported confidence matches empirical accuracy — measured by Expected Calibration Error (ECE) — **without changing a single prediction**. It is a one-parameter, post-hoc fit that runs in seconds and leaves accuracy, precision, and recall exactly as they were.
 
 ## Why Miscalibrated Confidence Corrupts the Annotation Queue
 
-A geospatial detector emits a logit vector per detection; the softmax turns it into a probability distribution, and the maximum probability is the confidence attached to that box or mask. Two failure modes follow from taking that number at face value. First, prioritisation breaks. [Uncertainty sampling for geospatial active learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) selects tiles where the model is least sure, but if a wrong prediction still reports 0.9 confidence, that genuinely hard tile is buried below easy ones and never reaches a human. Second, thresholds become meaningless across sensors. A 0.7 cutoff that admits good detections at 10 cm/pixel drone imagery over-admits at coarser satellite resolution, because the two domains have different confidence distributions even at identical true accuracy.
+A geospatial detector emits a logit vector per detection; the softmax turns it into a probability distribution, and the maximum probability is the confidence attached to that box or mask. Two failure modes follow from taking that number at face value. First, prioritisation breaks. [Uncertainty sampling for geospatial active learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) selects tiles where the model is least sure, but if a wrong prediction still reports 0.9 confidence, that genuinely hard tile is buried below easy ones and never reaches a human. Second, thresholds become meaningless across sensors. A 0.7 cutoff that admits good detections at 10 cm/pixel drone imagery over-admits at coarser satellite resolution, because the two domains have different confidence distributions even at identical true accuracy.
 
 Calibration is the property that, among all predictions reporting confidence `p`, a fraction `p` are actually correct. Over-confidence is the gap between the reported confidence and that empirical accuracy. The reliability diagram below plots confidence on the x-axis against accuracy on the y-axis: a perfectly calibrated model sits on the diagonal, an over-confident one bows below it, and temperature scaling pulls the curve back onto the line.
 
@@ -298,7 +298,7 @@ Running the routine on the synthetic over-confident set produces the representat
 | Brier score | 0.402 | 0.318 | −21% |
 | Fitted temperature `T` | — | 2.11 | over-confident (T > 1) |
 
-The arg-max accuracy is byte-for-byte identical before and after — only the confidence magnitudes moved. That is the whole point: you gain trustworthy uncertainty for the queue without touching detection quality. ECE is the headline number to watch because it is the metric the reliability diagram visualises, but NLL and Brier matter as guards: it is possible to lower ECE while leaving the per-example ranking of confidences noisier, and tracking all three catches that. Re-fit the temperature on a fresh validation slice whenever the model is retrained or the sensor mix changes, and store `T` in the dataset version manifest so the exact calibration used for any queue can be reproduced later. Feeding these calibrated scores into the [active learning loop](/active-learning-model-feedback-loops/) makes each retraining round select genuinely informative tiles instead of loud but wrong ones.
+The arg-max accuracy is byte-for-byte identical before and after — only the confidence magnitudes moved. That is the whole point: you gain trustworthy uncertainty for the queue without touching detection quality. ECE is the headline number to watch because it is the metric the reliability diagram visualises, but NLL and Brier matter as guards: it is possible to lower ECE while leaving the per-example ranking of confidences noisier, and tracking all three catches that. Re-fit the temperature on a fresh validation slice whenever the model is retrained or the sensor mix changes, and store `T` in the dataset version manifest so the exact calibration used for any queue can be reproduced later. Feeding these calibrated scores into the [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) makes each retraining round select genuinely informative tiles instead of loud but wrong ones.
 
 ## Common Errors and Fixes
 
@@ -324,9 +324,9 @@ Fix: clamp probabilities with `clamp_min(1e-12)` before taking the log, as in th
 
 ## Related
 
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — the topic area this guide sits under, covering how per-annotation confidence is produced, thresholded, and consumed downstream
-- [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the first consumer of calibrated scores: ranking unlabeled tiles by entropy, margin, and BALD so annotators label what most improves the model
-- [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) — the end-to-end loop where calibrated confidence drives tile selection, retraining triggers, and drift detection
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — pairs calibrated confidence with projection-aware IoU for trustworthy match scoring during evaluation
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — the topic area this guide sits under, covering how per-annotation confidence is produced, thresholded, and consumed downstream
+- [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the first consumer of calibrated scores: ranking unlabeled tiles by entropy, margin, and BALD so annotators label what most improves the model
+- [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) — the end-to-end loop where calibrated confidence drives tile selection, retraining triggers, and drift detection
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — pairs calibrated confidence with projection-aware IoU for trustworthy match scoring during evaluation
 
-This guide covers one calibration technique within [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/).
+This guide covers one calibration technique within [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/), which is itself part of [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/).

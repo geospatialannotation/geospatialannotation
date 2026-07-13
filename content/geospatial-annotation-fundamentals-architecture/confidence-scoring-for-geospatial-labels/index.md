@@ -2,7 +2,7 @@
 title: "Confidence Scoring for Geospatial Labels"
 description: "Build a production-ready confidence scoring pipeline for geospatial annotations. Covers inter-annotator IoU, geometry validity signals, calibrated probability aggregation, and dynamic QA routing thresholds for spatial ML workflows."
 slug: "confidence-scoring-for-geospatial-labels"
-type: "cluster"
+type: "guide"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -25,14 +25,14 @@ dateModified: "2026-06-25"
       "datePublished": "2025-01-15",
       "dateModified": "2026-06-25",
       "author": {"@type": "Organization", "name": "GeoSpatialAnnotation"},
-      "publisher": {"@type": "Organization", "name": "GeoSpatialAnnotation", "url": "https://geospatialannotation.com"}
+      "publisher": {"@type": "Organization", "name": "GeoSpatialAnnotation", "url": "https://www.geospatialannotation.com"}
     },
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Confidence Scoring for Geospatial Labels", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Confidence Scoring for Geospatial Labels", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/"}
       ]
     },
     {
@@ -100,7 +100,7 @@ dateModified: "2026-06-25"
 
 When a pre-labeling model trained on Sentinel-2 imagery is applied to a new SAR dataset, its raw softmax outputs appear confident — but those probabilities are miscalibrated for the new sensor modality. If your pipeline treats every model output above `0.5` as a valid training label, the resulting dataset is silently contaminated: noisy polygons enter the training shard, loss curves stall, and the root cause is invisible until model accuracy collapses on held-out evaluation tiles weeks later.
 
-Confidence scoring addresses this by transforming raw annotation outputs — annotator agreement, geometry quality, and model probabilities — into a composite quality signal that controls training inclusion, active learning prioritization, and QA routing. In production [geospatial annotation fundamentals & architecture](/geospatial-annotation-fundamentals-architecture/) pipelines, not all labeled polygons, bounding boxes, or raster masks carry equal reliability. A systematic confidence scoring framework isolates high-fidelity training samples, triggers targeted human review, and maintains reproducible dataset versions tied to explicit quality gates.
+Confidence scoring addresses this by transforming raw annotation outputs — annotator agreement, geometry quality, and model probabilities — into a composite quality signal that controls training inclusion, active learning prioritization, and QA routing. In production [geospatial annotation fundamentals & architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) pipelines, not all labeled polygons, bounding boxes, or raster masks carry equal reliability. A systematic confidence scoring framework isolates high-fidelity training samples, triggers targeted human review, and maintains reproducible dataset versions tied to explicit quality gates.
 
 ## Prerequisites & Toolchain Alignment
 
@@ -121,8 +121,8 @@ scikit-learn==1.4.2
 
 **Spatial knowledge prerequisites:**
 
-- Understanding of [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), particularly the distinction between geographic (`EPSG:4326`) and local projected CRS (e.g., a UTM zone), since IoU calculations on unprojected coordinates produce distorted area measurements proportional to latitude.
-- Familiarity with the geometric differences between [vector and raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), as pixel-level quantization in raster masks can artificially depress boundary agreement metrics when compared against vector polygons.
+- Understanding of [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), particularly the distinction between geographic (`EPSG:4326`) and local projected CRS (e.g., a UTM zone), since IoU calculations on unprojected coordinates produce distorted area measurements proportional to latitude.
+- Familiarity with the geometric differences between [vector and raster annotation workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), as pixel-level quantization in raster masks can artificially depress boundary agreement metrics when compared against vector polygons.
 - Access to annotation logs or database exports containing per-label metadata: annotator IDs, timestamps, tool versions, and optional model-assisted prediction probabilities.
 
 ---
@@ -192,7 +192,7 @@ The diagram below shows how raw annotations flow from ingestion through scoring 
 
 Load raw annotations into a `GeoDataFrame`. Strip invalid geometries, enforce a unified CRS, and align attribute schemas. Missing metadata fields should be imputed with neutral baseline values (e.g., `confidence=0.5`) rather than dropped, preserving dataset completeness.
 
-Geometry validation is non-negotiable at this stage. Self-intersecting polygons or unclosed rings will corrupt downstream spatial joins and [IoU threshold calculations](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/). Use `shapely`'s validity checks to flag or repair topological errors before scoring begins. All geometries must be re-projected to a local metric CRS — never compute areas or overlaps in `EPSG:4326` (degrees).
+Geometry validation is non-negotiable at this stage. Self-intersecting polygons or unclosed rings will corrupt downstream spatial joins and [IoU threshold calculations](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/). Use `shapely`'s validity checks to flag or repair topological errors before scoring begins. All geometries must be re-projected to a local metric CRS — never compute areas or overlaps in `EPSG:4326` (degrees).
 
 ```python
 import geopandas as gpd
@@ -268,7 +268,7 @@ The diagram below illustrates how each signal type targets a distinct source of 
 
 **Model-assisted probability:** If using semi-automated labeling via a foundation model or pre-labeling classifier, extract raw softmax or sigmoid probabilities. These provide a strong prior but require calibration — a model predicting `0.92` on a new sensor modality may reflect an empirical accuracy of only `0.74`.
 
-When evaluating raster masks alongside vector outputs, account for pixel-level quantization, which can artificially depress boundary agreement metrics. Consult the [vector vs. raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) trade-off analysis before mixing signal types.
+When evaluating raster masks alongside vector outputs, account for pixel-level quantization, which can artificially depress boundary agreement metrics. Consult the [vector vs. raster annotation workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) trade-off analysis before mixing signal types.
 
 ```python
 import numpy as np
@@ -344,7 +344,7 @@ Once composite scores are computed, route labels into three tiers. Thresholds be
 | Medium confidence | 0.60 – 0.84 | Retain for training with down-weighting via focal loss; flag for periodic review |
 | Low confidence | < 0.60 | Exclude from training until manually verified; route to QA queue with automated context |
 
-Hard-coding a universal threshold across all classes biases your training distribution. [Defining ROI label taxonomies for aerial imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) typically reveals that certain classes — shadowed rooftops, transitional vegetation, partially occluded vehicles — inherently produce lower inter-annotator agreement. Maintain a per-class threshold YAML and reload it per pipeline run.
+Hard-coding a universal threshold across all classes biases your training distribution. [Defining ROI label taxonomies for aerial imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) typically reveals that certain classes — shadowed rooftops, transitional vegetation, partially occluded vehicles — inherently produce lower inter-annotator agreement. Maintain a per-class threshold YAML and reload it per pipeline run.
 
 ```python
 def route_by_confidence(
@@ -395,7 +395,7 @@ def route_by_confidence(
 
 **Over-reliance on model-assisted probability on OOD scenes:** A pre-labeling model calibrated on one sensor modality (e.g., Sentinel-2 multispectral) will be overconfident when applied to a new modality (e.g., SAR intensity). Reduce the `model_prob` weight or apply domain-specific recalibration before scoring new sensor data.
 
-**Annotator behavior drift:** Confidence distributions shift as annotation teams scale, tools are updated, or labeling guidelines change. Schedule quarterly recalibration runs using recent QA-reviewed samples drawn from the [SHA-hashed annotation change log](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to maintain scoring fidelity over time.
+**Annotator behavior drift:** Confidence distributions shift as annotation teams scale, tools are updated, or labeling guidelines change. Schedule quarterly recalibration runs using recent QA-reviewed samples drawn from the [SHA-hashed annotation change log](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) to maintain scoring fidelity over time.
 
 **Self-intersecting polygons after tool export:** Some annotation tools export geometries that pass UI validation but contain topological errors (butterfly ties, dangling edges). `shapely.validation.make_valid()` corrects most cases, but verify the repaired geometry area has not changed by more than 1–2% compared to the original.
 
@@ -425,7 +425,7 @@ Maintain a per-class threshold configuration (e.g., a JSON or YAML mapping of `c
 
 ## Integration & Automation Hooks
 
-Confidence scoring integrates naturally into [DVC pipelines for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/). Define each scoring stage as a DVC stage so that parameter changes (e.g., weight adjustments) automatically trigger pipeline reruns and produce a new dataset version with its own SHA digest — traceable via the [SHA-hashing annotation change tracking](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) workflow.
+Confidence scoring integrates naturally into [DVC pipelines for geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/). Define each scoring stage as a DVC stage so that parameter changes (e.g., weight adjustments) automatically trigger pipeline reruns and produce a new dataset version with its own SHA digest — traceable via the [SHA-hashing annotation change tracking](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) workflow.
 
 ```yaml
 # dvc.yaml — confidence scoring stage
@@ -500,12 +500,12 @@ def validate_scored_gdf(gdf: gpd.GeoDataFrame) -> None:
 
 ---
 
-This workflow is one component of the broader [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) pipeline, covering everything from CRS contracts and label taxonomy design through geometry validation and export.
+This workflow is one component of the broader [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) pipeline, covering everything from CRS contracts and label taxonomy design through geometry validation and export.
 
 ## Related
 
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS selection, reprojection, and the PROJ/GDAL stack required before spatial scoring
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — per-class IoU cutoffs by mission type and GSD range
-- [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — class hierarchy design and the class-level threshold decisions that feed into confidence routing
-- [Vector vs. Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — how annotation modality choice affects boundary agreement signals
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — version-controlled audit trail for scored datasets
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS selection, reprojection, and the PROJ/GDAL stack required before spatial scoring
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — per-class IoU cutoffs by mission type and GSD range
+- [Defining ROI Label Taxonomies for Aerial Imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — class hierarchy design and the class-level threshold decisions that feed into confidence routing
+- [Vector vs. Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — how annotation modality choice affects boundary agreement signals
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — version-controlled audit trail for scored datasets

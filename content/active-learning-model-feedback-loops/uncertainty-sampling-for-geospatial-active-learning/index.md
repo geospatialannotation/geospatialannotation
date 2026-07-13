@@ -2,7 +2,7 @@
 title: "Uncertainty Sampling for Geospatial Active Learning"
 description: "How to rank unlabeled satellite and drone tiles by model uncertainty — entropy, margin, and BALD scoring — so annotators label the tiles that most improve a geospatial detector or segmenter."
 slug: "uncertainty-sampling-for-geospatial-active-learning"
-type: "cluster"
+type: "guide"
 breadcrumb: "Active Learning & Model Feedback Loops > Uncertainty Sampling for Geospatial Active Learning"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,9 +29,9 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops for Geospatial Annotation", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"},
-        {"@type": "ListItem", "position": 3, "name": "Uncertainty Sampling for Geospatial Active Learning", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops for Geospatial Annotation", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"},
+        {"@type": "ListItem", "position": 3, "name": "Uncertainty Sampling for Geospatial Active Learning", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ schema:
 
 A building-footprint detector trained on 4,000 hand-labeled drone tiles plateaus at 0.71 mAP and refuses to improve. The team keeps labeling — another thousand tiles, then another — drawn at random from the unlabeled pool. Validation barely moves. The reason is structural: a random draw over a large aerial survey is dominated by easy, redundant scenes. Empty pasture, bare parking lots, and repeated views of the same suburban grid make up most of the pool, so most of each new batch teaches the model things it already knows. The rare tiles the detector actually struggles with — dense informal settlements, buildings under tree canopy, half-constructed roofs — arrive one every few hundred labels, far too slowly to shift the metric.
 
-Uncertainty sampling replaces the random draw with a targeted one. Instead of asking "what should we label next?" and answering by coin flip, it runs the current model over the unlabeled pool, measures how confused the model is on each tile, and sends annotators to the tiles where confusion is highest. Those are precisely the tiles near the decision boundary — the ones whose labels carry the most information. This guide is one topic within [active learning and model feedback loops](/active-learning-model-feedback-loops/) for geospatial annotation, and it covers the scoring end of that loop: how to compute per-tile uncertainty for detectors and segmenters, how to stop the queue from collapsing onto one neighbourhood, and how to hand a ranked batch to your labeling tool.
+Uncertainty sampling replaces the random draw with a targeted one. Instead of asking "what should we label next?" and answering by coin flip, it runs the current model over the unlabeled pool, measures how confused the model is on each tile, and sends annotators to the tiles where confusion is highest. Those are precisely the tiles near the decision boundary — the ones whose labels carry the most information. This guide is one topic within [active learning and model feedback loops](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) for geospatial annotation, and it covers the scoring end of that loop: how to compute per-tile uncertainty for detectors and segmenters, how to stop the queue from collapsing onto one neighbourhood, and how to hand a ranked batch to your labeling tool.
 
 ---
 
@@ -160,7 +160,7 @@ pip install \
   pyproj==3.6.1
 ```
 
-You need a model that emits per-class probabilities — a classifier head, a detector's class logits, or a segmentation decoder — plus a tiling scheme that maps each model output back to a georeferenced footprint. Every tile carries a stable `tile_id`, an affine geotransform, and an [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) or projected coordinate reference system so the queue can be reprojected into whatever the labeling tool expects. If your tiles do not yet carry consistent projection metadata, resolve that first; a queue that points annotators at the wrong footprint wastes the very effort this workflow is meant to save.
+You need a model that emits per-class probabilities — a classifier head, a detector's class logits, or a segmentation decoder — plus a tiling scheme that maps each model output back to a georeferenced footprint. Every tile carries a stable `tile_id`, an affine geotransform, and an [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) or projected coordinate reference system so the queue can be reprojected into whatever the labeling tool expects. If your tiles do not yet carry consistent projection metadata, resolve that first; a queue that points annotators at the wrong footprint wastes the very effort this workflow is meant to save.
 
 Two assumptions matter for the code that follows. First, probabilities are the softmax output of the model, shape `(num_classes,)` for a classifier or `(num_classes, H, W)` for a segmenter. Second, the unlabeled pool is enumerable — you can list tile identifiers and load each on demand. Both hold for the standard tile-store layout used across geospatial pipelines.
 
@@ -201,7 +201,7 @@ def normalized_entropy(probs: np.ndarray, eps: float = 1e-12) -> np.ndarray:
     return ent / np.log(k)
 ```
 
-For a classifier or detector, `probs` is one vector per tile and any of the three returns a scalar. The choice between them is not cosmetic: on the vector `[0.5, 0.3, 0.2]` from the diagram above, least-confidence returns 0.50, margin returns 0.80, and normalized entropy returns 0.94, because each score weighs the tail of the distribution differently. The detailed trade-off — when margin's focus on the top two classes helps and when entropy's whole-distribution view is worth its cost — is worked through in [entropy vs margin sampling for segmentation masks](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/).
+For a classifier or detector, `probs` is one vector per tile and any of the three returns a scalar. The choice between them is not cosmetic: on the vector `[0.5, 0.3, 0.2]` from the diagram above, least-confidence returns 0.50, margin returns 0.80, and normalized entropy returns 0.94, because each score weighs the tail of the distribution differently. The detailed trade-off — when margin's focus on the top two classes helps and when entropy's whole-distribution view is worth its cost — is worked through in [entropy vs margin sampling for segmentation masks](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/).
 
 ### Step 2 — Aggregate pixel scores to a tile score
 
@@ -279,7 +279,7 @@ def diverse_selection(
     return taken
 ```
 
-Capping per cluster forces the batch to spread across distinct visual conditions while still preferring the most uncertain tile available within each. A committee-based alternative, which ranks by how strongly independent models disagree rather than by any single model's confidence, is developed in [prioritizing annotation tiles by model disagreement](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/).
+Capping per cluster forces the batch to spread across distinct visual conditions while still preferring the most uncertain tile available within each. A committee-based alternative, which ranks by how strongly independent models disagree rather than by any single model's confidence, is developed in [prioritizing annotation tiles by model disagreement](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/).
 
 ### Step 4 — Produce a ranked annotation queue
 
@@ -339,7 +339,7 @@ The table below summarizes the levers introduced above, the range each produces,
 
 ### Calibration decides whether the ranking can be trusted
 
-Uncertainty scores are only as honest as the probabilities they read. Modern networks are systematically over-confident, so raw softmax entropy understates true uncertainty and the queue skews toward whichever classes the model shouts loudest. Because ranking needs only the relative order to hold, you rarely need to retrain — temperature scaling, a single learned scalar dividing the logits, is usually enough to restore a trustworthy order. Treat calibrated [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as a prerequisite, not a nicety, before you let a score drive human effort.
+Uncertainty scores are only as honest as the probabilities they read. Modern networks are systematically over-confident, so raw softmax entropy understates true uncertainty and the queue skews toward whichever classes the model shouts loudest. Because ranking needs only the relative order to hold, you rarely need to retrain — temperature scaling, a single learned scalar dividing the logits, is usually enough to restore a trustworthy order. Treat calibrated [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as a prerequisite, not a nicety, before you let a score drive human effort.
 
 ### Spatial autocorrelation collapses the batch
 
@@ -357,7 +357,7 @@ For a two-class detector the three scores are monotonic transforms of one anothe
 
 ## Integration & Automation Hooks
 
-The queue is only useful if it lands in front of annotators in priority order. The most direct hook is to import the ranked `GeoDataFrame` into [Label Studio configured for geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/), where the `uncertainty` column becomes the task ordering so the highest-value tiles surface first.
+The queue is only useful if it lands in front of annotators in priority order. The most direct hook is to import the ranked `GeoDataFrame` into [Label Studio configured for geospatial workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/), where the `uncertainty` column becomes the task ordering so the highest-value tiles surface first.
 
 ```python
 from __future__ import annotations
@@ -384,7 +384,7 @@ def queue_to_label_studio_tasks(gdf: gpd.GeoDataFrame, image_root: str) -> str:
     return json.dumps(tasks, indent=2)
 ```
 
-Wire this into a scheduled job that runs after each retraining round: score the current unlabeled pool, build the queue, push tasks, and let annotators drain them. As reviewed labels return, they become training data for the next round, which produces a sharper model, which in turn scores the pool differently — the feedback loop that [closing the loop with automated model retraining](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) automates end to end. Pair it with [detecting distribution drift in spatial datasets](/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) so a sudden shift in the imagery — a new sensor, a new season — triggers a fresh sampling round rather than silently degrading the model.
+Wire this into a scheduled job that runs after each retraining round: score the current unlabeled pool, build the queue, push tasks, and let annotators drain them. As reviewed labels return, they become training data for the next round, which produces a sharper model, which in turn scores the pool differently — the feedback loop that [closing the loop with automated model retraining](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) automates end to end. Pair it with [detecting distribution drift in spatial datasets](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) so a sudden shift in the imagery — a new sensor, a new season — triggers a fresh sampling round rather than silently degrading the model.
 
 ---
 
@@ -446,10 +446,10 @@ For two classes the three common scores are monotonic transforms of each other a
 
 ## Related
 
-- [Entropy vs Margin Sampling for Segmentation Masks](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/) — a head-to-head on per-pixel scoring with runnable NumPy and tile thresholds
-- [Prioritizing Annotation Tiles by Model Disagreement](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/) — query-by-committee ranking when a single model's confidence is untrustworthy
-- [Closing the Loop with Automated Model Retraining](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — turning a drained queue into a retraining trigger with evaluation guards
-- [Detecting Distribution Drift in Spatial Datasets](/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — catching sensor and seasonal shifts that should kick off a fresh sampling round
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — the calibration foundation that makes uncertainty rankings trustworthy
+- [Entropy vs Margin Sampling for Segmentation Masks](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/) — a head-to-head on per-pixel scoring with runnable NumPy and tile thresholds
+- [Prioritizing Annotation Tiles by Model Disagreement](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/prioritizing-tiles-by-model-disagreement/) — query-by-committee ranking when a single model's confidence is untrustworthy
+- [Closing the Loop with Automated Model Retraining](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — turning a drained queue into a retraining trigger with evaluation guards
+- [Detecting Distribution Drift in Spatial Datasets](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — catching sensor and seasonal shifts that should kick off a fresh sampling round
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — the calibration foundation that makes uncertainty rankings trustworthy
 
-This guide is part of the broader [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) topic area that keeps annotation effort focused where the model is weakest.
+This guide is part of the broader [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) topic area that keeps annotation effort focused where the model is weakest.

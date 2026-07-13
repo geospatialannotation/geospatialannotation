@@ -2,7 +2,7 @@
 title: "Triggering Retraining from New Annotations with DVC"
 description: "Set up a DVC pipeline stage that detects newly validated geospatial annotations and automatically launches a retraining job, with dependency hashing and a manifest-driven trigger."
 slug: "triggering-retraining-from-new-annotations-with-dvc"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"},
-        {"@type": "ListItem", "position": 3, "name": "Closing the Loop with Automated Model Retraining", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/"},
-        {"@type": "ListItem", "position": 4, "name": "Triggering Retraining from New Annotations with DVC", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"},
+        {"@type": "ListItem", "position": 3, "name": "Closing the Loop with Automated Model Retraining", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/"},
+        {"@type": "ListItem", "position": 4, "name": "Triggering Retraining from New Annotations with DVC", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/"}
       ]
     },
     {
@@ -85,7 +85,7 @@ schema:
 
 # Triggering Retraining from New Annotations with DVC
 
-To retrain automatically when reviewers approve fresh labels, define a [DVC](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) pipeline stage whose dependency is the validated-annotations directory. When new annotations land, the content hash of that directory changes; `dvc status` reports the stage as out of date; and `dvc repro` — run from a scheduled CI job or a local filesystem watcher — rebuilds the versioned dataset and launches the downstream training stage. Guard the whole thing with a manifest so you only fire above a minimum-new-annotations threshold, and a single corrected tile never burns a GPU-hour. This turns the human review step of an [active learning loop](/active-learning-model-feedback-loops/) into a hands-off retraining event without a bespoke orchestration server.
+To retrain automatically when reviewers approve fresh labels, define a [DVC](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) pipeline stage whose dependency is the validated-annotations directory. When new annotations land, the content hash of that directory changes; `dvc status` reports the stage as out of date; and `dvc repro` — run from a scheduled CI job or a local filesystem watcher — rebuilds the versioned dataset and launches the downstream training stage. Guard the whole thing with a manifest so you only fire above a minimum-new-annotations threshold, and a single corrected tile never burns a GPU-hour. This turns the human review step of an [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) into a hands-off retraining event without a bespoke orchestration server.
 
 ## Why Hash-Driven Triggers Beat Commit Hooks
 
@@ -139,7 +139,7 @@ stages:
           cache: false
 ```
 
-The `validate_annotations` stage matters: it is the boundary between raw reviewer edits and the hash that drives retraining. Only labels that pass geometry and CRS checks land in `annotations/validated`, so an invalid polygon never changes the dependency hash that fires training. Keep the tile size and target [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) in `params.yaml` — for example a metric projection such as [`EPSG:32633`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — so a projection change also invalidates the build without touching the pipeline code.
+The `validate_annotations` stage matters: it is the boundary between raw reviewer edits and the hash that drives retraining. Only labels that pass geometry and CRS checks land in `annotations/validated`, so an invalid polygon never changes the dependency hash that fires training. Keep the tile size and target [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) in `params.yaml` — for example a metric projection such as [`EPSG:32633`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — so a projection change also invalidates the build without touching the pipeline code.
 
 <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow from a dependency-hash change through dvc repro to the train stage" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Hash-change to retraining flow</title>
@@ -299,7 +299,7 @@ jobs:
           python -m pipeline.trigger_update   # write_manifest after success
 ```
 
-Exit code `78` is a neutral "nothing to do" that many CI systems treat as a non-failure skip; the `Retrain` step runs `dvc repro train`, which walks the dependency graph, rebuilds `build_dataset` because its annotations hash changed, then executes `train`. `dvc push` uploads both the new dataset version and the checkpoint so they are reproducible from the committed `dvc.lock`. This mirrors the snapshot mechanics in [using DVC pipelines for automated snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/), reused here as a retraining trigger rather than an archival one.
+Exit code `78` is a neutral "nothing to do" that many CI systems treat as a non-failure skip; the `Retrain` step runs `dvc repro train`, which walks the dependency graph, rebuilds `build_dataset` because its annotations hash changed, then executes `train`. `dvc push` uploads both the new dataset version and the checkpoint so they are reproducible from the committed `dvc.lock`. This mirrors the snapshot mechanics in [using DVC pipelines for automated snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/), reused here as a retraining trigger rather than an archival one.
 
 ## Threshold Reference
 
@@ -339,9 +339,9 @@ Fix: point both entry points at the DVC-tracked path and run `dvc checkout` befo
 
 ## Related
 
-- [Closing the Loop with Automated Model Retraining](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — the topic area covering checkpoint promotion gates and evaluation guards that this trigger feeds into
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — set up DVC remotes, tracking, and cache before wiring a retraining stage on top
-- [Using DVC Pipelines for Automated Dataset Snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) — the snapshot pipeline pattern this guide reuses as a retraining trigger
-- [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) — how automated retraining fits the wider loop of uncertainty sampling and drift detection
+- [Closing the Loop with Automated Model Retraining](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — the topic area covering checkpoint promotion gates and evaluation guards that this trigger feeds into
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — set up DVC remotes, tracking, and cache before wiring a retraining stage on top
+- [Using DVC Pipelines for Automated Dataset Snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) — the snapshot pipeline pattern this guide reuses as a retraining trigger
+- [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) — how automated retraining fits the wider loop of uncertainty sampling and drift detection
 
-This guide is part of the broader [Closing the Loop with Automated Model Retraining](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) topic area within [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/).
+This guide is part of the broader [Closing the Loop with Automated Model Retraining](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) topic area within [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/).

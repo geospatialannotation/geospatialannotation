@@ -2,7 +2,7 @@
 title: "Computing Stable Content Hashes for COGs"
 description: "Compute reproducible content hashes for Cloud-Optimized GeoTIFFs that ignore volatile metadata (timestamps, ordering) so identical imagery hashes identically across re-exports and machines."
 slug: "computing-stable-content-hashes-for-cogs"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Tracking Annotation Changes with SHA Hashing", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/"},
-        {"@type": "ListItem", "position": 4, "name": "Computing Stable Content Hashes for COGs", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Tracking Annotation Changes with SHA Hashing", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/"},
+        {"@type": "ListItem", "position": 4, "name": "Computing Stable Content Hashes for COGs", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/"}
       ]
     },
     {
@@ -91,7 +91,7 @@ A raw file SHA of a Cloud-Optimized GeoTIFF changes on almost every re-export, e
 
 The SHA-256 of a byte stream is only as stable as the bytes. A COG is a container: compressed pixel tiles, overview pyramids, and a metadata header (the image file directory, or IFD). The pixel tiles are deterministic for a given codec, but the header is not. `gdal_translate` stamps a `TIFFTAG_SOFTWARE` string that names the GDAL version; tag write order can differ between builds; and the byte offsets that point to each tile shift when overview blocks are laid out differently. None of that alters the imagery a model trains on, yet all of it alters the file hash.
 
-This matters most in a content-addressed workflow. When you track datasets with [DVC versioning](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), the tool records each file's MD5 or SHA to decide what changed and what to re-upload. If a nightly pipeline re-exports rasters from a source archive, a file-level hash flags every raster as modified, triggering needless re-uploads across cloud remotes and burying the one tile that genuinely changed. A content hash that ignores header noise lets the versioning layer see the truth: same pixels, same georeferencing, same identity.
+This matters most in a content-addressed workflow. When you track datasets with [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), the tool records each file's MD5 or SHA to decide what changed and what to re-upload. If a nightly pipeline re-exports rasters from a source archive, a file-level hash flags every raster as modified, triggering needless re-uploads across cloud remotes and burying the one tile that genuinely changed. A content hash that ignores header noise lets the versioning layer see the truth: same pixels, same georeferencing, same identity.
 
 The diagram below contrasts the two hashing strategies on two re-exports of one scene.
 
@@ -176,7 +176,7 @@ The leading version tag (`cog-content-hash-v1`) domain-separates this scheme, so
 
 ### Step 3 — Append Canonicalized Transform and EPSG
 
-Pixels alone are not the whole identity: two rasters can share pixel values while sitting at different map locations. Fold the georeferencing in, but *canonicalize* it first so formatting noise cannot leak in. Serialize the affine transform to six fixed-precision floats and reduce the CRS to its authority code. The first raster in your pipeline is typically stored in a projected CRS such as [`EPSG:32633`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/); reducing it to that integer code makes the hash independent of the exact WKT string GDAL happened to emit:
+Pixels alone are not the whole identity: two rasters can share pixel values while sitting at different map locations. Fold the georeferencing in, but *canonicalize* it first so formatting noise cannot leak in. Serialize the affine transform to six fixed-precision floats and reduce the CRS to its authority code. The first raster in your pipeline is typically stored in a projected CRS such as [`EPSG:32633`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/); reducing it to that integer code makes the hash independent of the exact WKT string GDAL happened to emit:
 
 ```python
 from rasterio.transform import Affine
@@ -238,7 +238,7 @@ def assert_reexport_stable(export_a: str, export_b: str) -> None:
     print("content hash stable:", content_hash_cog(export_a))
 ```
 
-The content hash now serves as a durable id in a manifest — the same manifest that drives [content-addressed sync across cloud remotes](/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/), where re-uploading a raster only because its header changed is pure waste.
+The content hash now serves as a durable id in a manifest — the same manifest that drives [content-addressed sync across cloud remotes](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/), where re-uploading a raster only because its header changed is pure waste.
 
 ## What Goes Into the Hash — and What Must Not
 
@@ -274,14 +274,14 @@ Fix: always iterate `range(1, dataset.count + 1)` in ascending order and record 
 
 **`content_hash_cog` raises on a raster with no CRS**
 Root cause: `dataset.crs` is `None` for an ungeoreferenced TIFF and `to_epsg()` cannot be called on it.
-Fix: the `_canonical_geo` guard handles this by emitting `crs=NONE`. If you require georeferencing, validate `dataset.crs is not None` before hashing and reject the file, which also catches the truncated headers described in [recovering from a corrupted COG export](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/recovering-from-a-corrupted-cog-export/).
+Fix: the `_canonical_geo` guard handles this by emitting `crs=NONE`. If you require georeferencing, validate `dataset.crs is not None` before hashing and reject the file, which also catches the truncated headers described in [recovering from a corrupted COG export](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/recovering-from-a-corrupted-cog-export/).
 
 ## Related
 
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — the topic area this guide belongs to, covering content-addressed change detection across a versioned annotation pipeline
-- [Recovering from a Corrupted COG Export](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/recovering-from-a-corrupted-cog-export/) — diagnose truncated IFDs and broken overviews that a content hash will also expose as unreadable
-- [Syncing Annotations Across Cloud Remotes](/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/) — use stable content ids so a re-export with a fresh header never triggers a needless re-upload
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the versioning layer that keys on file hashes and benefits most from a stable content id
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — why the EPSG authority code, not raw WKT, is the canonical CRS identity to fold into a hash
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — the topic area this guide belongs to, covering content-addressed change detection across a versioned annotation pipeline
+- [Recovering from a Corrupted COG Export](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/recovering-from-a-corrupted-cog-export/) — diagnose truncated IFDs and broken overviews that a content hash will also expose as unreadable
+- [Syncing Annotations Across Cloud Remotes](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/) — use stable content ids so a re-export with a fresh header never triggers a needless re-upload
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the versioning layer that keys on file hashes and benefits most from a stable content id
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — why the EPSG authority code, not raw WKT, is the canonical CRS identity to fold into a hash
 
-This guide is one detailed technique within [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/), which is itself part of [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/).
+This guide is one detailed technique within [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/), which is itself part of [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/).

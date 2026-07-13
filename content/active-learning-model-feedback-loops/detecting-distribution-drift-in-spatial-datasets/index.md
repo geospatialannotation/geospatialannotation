@@ -2,7 +2,7 @@
 title: "Detecting Distribution Drift in Spatial Datasets"
 description: "Detect covariate and label drift in geospatial training data across acquisition dates, sensors, and regions — spectral histograms, class-balance monitors, and PSI thresholds that trigger re-labeling before model decay."
 slug: "detecting-distribution-drift-in-spatial-datasets"
-type: "cluster"
+type: "guide"
 breadcrumb: "Active Learning & Model Feedback Loops > Detecting Distribution Drift in Spatial Datasets"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,9 +29,9 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"},
-        {"@type": "ListItem", "position": 3, "name": "Detecting Distribution Drift in Spatial Datasets", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"},
+        {"@type": "ListItem", "position": 3, "name": "Detecting Distribution Drift in Spatial Datasets", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ schema:
 
 A building-footprint segmenter trained on cloud-free summer imagery ships to production and scores well on the held-out test set. Six months later the same model starts missing rooftops — not because the weights changed, but because the incoming tiles did. Winter acquisitions carry snow cover, low sun angles, and long shadows; a newly onboarded sensor delivers a slightly different spectral response and a coarser ground sample distance. None of this raises an exception. The pipeline keeps producing predictions, the dashboards stay green, and accuracy quietly decays until a downstream consumer notices the maps are wrong. By then weeks of degraded inference have already propagated into derived products.
 
-This is distribution drift, and it is the failure mode that a monitoring layer inside an [active learning loop](/active-learning-model-feedback-loops/) exists to catch. The goal is to detect when the imagery or the label distribution feeding your model has moved away from what it was trained on, quantify how far it has moved, and raise a trigger that routes the divergent tiles back to annotators before model performance collapses. This guide builds that monitor end to end: per-band spectral histograms, Population Stability Index and Kolmogorov-Smirnov covariate scoring, class-prior comparison, and a banded threshold gate that emits a re-labeling signal.
+This is distribution drift, and it is the failure mode that a monitoring layer inside an [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) exists to catch. The goal is to detect when the imagery or the label distribution feeding your model has moved away from what it was trained on, quantify how far it has moved, and raise a trigger that routes the divergent tiles back to annotators before model performance collapses. This guide builds that monitor end to end: per-band spectral histograms, Population Stability Index and Kolmogorov-Smirnov covariate scoring, class-prior comparison, and a banded threshold gate that emits a re-labeling signal.
 
 ---
 
@@ -161,16 +161,16 @@ pip install numpy==1.26.4 pandas==2.2.2 scipy==1.13.1 rasterio==1.3.10 scikit-le
 **Monitoring contract to establish first:**
 
 - A frozen reference dataset, versioned so every drift report cites the exact snapshot it compared against.
-- A canonical [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) and ground sample distance that every batch is resampled to before statistics are computed.
+- A canonical [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) and ground sample distance that every batch is resampled to before statistics are computed.
 - Fixed histogram bin edges derived once from the reference, reused for every batch — comparing histograms with different edges is meaningless.
 - A minimum sample size per batch below which alerts are held as provisional.
-- A destination for the re-label trigger: the review queue that the [active learning loop](/active-learning-model-feedback-loops/) drains.
+- A destination for the re-label trigger: the review queue that the [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) drains.
 
 **What drift monitoring assumes about the data:**
 
 - Every tile carries a valid CRS and geotransform, so pixel statistics reflect scene content rather than a projection artefact.
 - Band ordering is consistent across sensors, or an explicit band-mapping table normalizes it.
-- Class labels use a stable [label taxonomy](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) so a "class-prior shift" is a real change in scene composition, not a renamed category.
+- Class labels use a stable [label taxonomy](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) so a "class-prior shift" is a real change in scene composition, not a renamed category.
 
 With those fixed, the monitor reduces to three questions asked on every batch: has the imagery changed (covariate drift), has the class mix changed (prior drift), and is the change large enough to act on (thresholding).
 
@@ -423,7 +423,7 @@ PSI is unstable on small samples: with a handful of tiles, an empty bin clipped 
 
 ### CRS and resolution mismatch posing as drift
 
-A batch delivered in a different [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) or at a coarser ground sample distance produces pixel statistics that diverge from the reference for reasons that have nothing to do with the scene. Reprojection resamples pixel values; a resolution change alters texture and edge density; both shift histograms and can trip the covariate gate on a pipeline configuration difference. Normalize CRS and GSD before any histogram is computed, and assert both in the monitor so a mismatch raises a configuration error rather than a false drift alert. A batch whose only "drift" is a projection artefact will waste an entire re-labeling cycle if it slips through.
+A batch delivered in a different [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) or at a coarser ground sample distance produces pixel statistics that diverge from the reference for reasons that have nothing to do with the scene. Reprojection resamples pixel values; a resolution change alters texture and edge density; both shift histograms and can trip the covariate gate on a pipeline configuration difference. Normalize CRS and GSD before any histogram is computed, and assert both in the monitor so a mismatch raises a configuration error rather than a false drift alert. A batch whose only "drift" is a projection artefact will waste an entire re-labeling cycle if it slips through.
 
 ### Multimodal bands and bin starvation
 
@@ -435,11 +435,11 @@ Bands with genuinely multimodal distributions — water versus land in a near-in
 
 ### Feed drift alerts into the active learning loop
 
-A drift report is only useful if it changes what gets annotated. When `trigger_relabel` is `True`, push the batch identifier and the top-contributing bands and classes into the review queue that the [active learning loop](/active-learning-model-feedback-loops/) consumes. Drift monitoring and uncertainty sampling are complementary signals: uncertainty finds tiles the current model is unsure about, while drift finds tiles that are unlike anything the model has seen. A tile flagged by both is the highest-value annotation target in the batch, so union the two queues and prioritize the intersection.
+A drift report is only useful if it changes what gets annotated. When `trigger_relabel` is `True`, push the batch identifier and the top-contributing bands and classes into the review queue that the [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) consumes. Drift monitoring and uncertainty sampling are complementary signals: uncertainty finds tiles the current model is unsure about, while drift finds tiles that are unlike anything the model has seen. A tile flagged by both is the highest-value annotation target in the batch, so union the two queues and prioritize the intersection.
 
 ### Version the reference alongside the dataset with DVC
 
-The reference distribution must move in lockstep with the model. Track it as an artefact under [DVC versioning](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) so every drift report cites the exact reference snapshot, and rebuild the reference as a pipeline stage immediately after each retraining. This keeps a subtle bug at bay: comparing new batches against a reference from two model generations ago will report drift that the current model has already absorbed.
+The reference distribution must move in lockstep with the model. Track it as an artefact under [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) so every drift report cites the exact reference snapshot, and rebuild the reference as a pipeline stage immediately after each retraining. This keeps a subtle bug at bay: comparing new batches against a reference from two model generations ago will report drift that the current model has already absorbed.
 
 ```yaml
 # dvc.yaml
@@ -530,10 +530,10 @@ Yes. A batch resampled to a different ground sample distance or reprojected into
 
 ## Related
 
-- [Monitoring Class-Balance Drift Across Image Tiles](/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/monitoring-class-balance-drift-across-tiles/) — a focused walkthrough of the class-prior PSI monitor with a full pandas implementation
-- [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the complementary signal that ranks tiles by model uncertainty rather than distributional distance
-- [Closing the Loop with Automated Model Retraining](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — where a confirmed drift trigger ultimately lands: an evaluation-gated retraining pipeline
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — versioning the frozen reference so every drift report is reproducible
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — normalizing CRS and resolution so projection artefacts do not masquerade as drift
+- [Monitoring Class-Balance Drift Across Image Tiles](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/monitoring-class-balance-drift-across-tiles/) — a focused walkthrough of the class-prior PSI monitor with a full pandas implementation
+- [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — the complementary signal that ranks tiles by model uncertainty rather than distributional distance
+- [Closing the Loop with Automated Model Retraining](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — where a confirmed drift trigger ultimately lands: an evaluation-gated retraining pipeline
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — versioning the frozen reference so every drift report is reproducible
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — normalizing CRS and resolution so projection artefacts do not masquerade as drift
 
-This guide is part of the broader [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) topic area that keeps annotation effort focused where the model is weakest.
+This guide is part of the broader [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) topic area that keeps annotation effort focused where the model is weakest.

@@ -2,7 +2,7 @@
 title: "Configuring DVC Remotes for Geospatial Data"
 description: "Configure DVC remotes for large geospatial datasets on S3, GCS, and Azure — chunked uploads for multi-GB COGs, cache sharing, and credential handling — with the exact dvc remote commands."
 slug: "configuring-dvc-remotes-for-geospatial-data"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Implementing DVC for Geospatial Training Data", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/"},
-        {"@type": "ListItem", "position": 4, "name": "Configuring DVC Remotes for Geospatial Data", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Implementing DVC for Geospatial Training Data", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/"},
+        {"@type": "ListItem", "position": 4, "name": "Configuring DVC Remotes for Geospatial Data", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/"}
       ]
     },
     {
@@ -85,13 +85,13 @@ schema:
 
 # Configuring DVC Remotes for Geospatial Data
 
-To version terabytes of satellite and drone imagery without stalling your team, configure a [DVC](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) remote — on S3, Google Cloud Storage, or Azure Blob — that is tuned for multi-gigabyte Cloud-Optimized GeoTIFFs rather than the small text files DVC ships defaults for. Three settings carry the load: raise `jobs` so DVC transfers file chunks in parallel, point a shared `cache.dir` with a reflink or symlink `cache.type` at fast local storage so huge rasters are never re-hashed or duplicated, and resolve credentials through environment variables or a cloud profile instead of writing keys into tracked config. The entire configuration is two commands — `dvc remote add` to register the bucket and `dvc remote modify` to tune it.
+To version terabytes of satellite and drone imagery without stalling your team, configure a [DVC](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) remote — on S3, Google Cloud Storage, or Azure Blob — that is tuned for multi-gigabyte Cloud-Optimized GeoTIFFs rather than the small text files DVC ships defaults for. Three settings carry the load: raise `jobs` so DVC transfers file chunks in parallel, point a shared `cache.dir` with a reflink or symlink `cache.type` at fast local storage so huge rasters are never re-hashed or duplicated, and resolve credentials through environment variables or a cloud profile instead of writing keys into tracked config. The entire configuration is two commands — `dvc remote add` to register the bucket and `dvc remote modify` to tune it.
 
 ## Why Remote Tuning Decides Whether Versioning Scales
 
 DVC's defaults are built for a repository of code and small artifacts, where a naive copy-and-hash checkout costs nothing. Geospatial training data breaks those assumptions. A single mosaic can exceed 20 GB, an annotated tile set can run to hundreds of thousands of COGs, and a working copy of the dataset may not fit twice on one disk. Left untuned, `dvc push` opens too few connections and crawls across a link that could saturate, while `dvc checkout` copies every raster into the workspace and computes a fresh content hash on each one — turning a five-minute pull into an hour.
 
-The fix is to align three layers with the shape of the data. Parallelism (`jobs`) matches transfer concurrency to the many-large-files profile. A shared cache with reflinks eliminates redundant copies and re-hashing so identical imagery costs disk space once. And credential handling through profiles keeps long-lived keys out of the config that every collaborator clones. Get these right once and the same remote serves an [annotation team](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) across sites; get them wrong and every pull is a bottleneck.
+The fix is to align three layers with the shape of the data. Parallelism (`jobs`) matches transfer concurrency to the many-large-files profile. A shared cache with reflinks eliminates redundant copies and re-hashing so identical imagery costs disk space once. And credential handling through profiles keeps long-lived keys out of the config that every collaborator clones. Get these right once and the same remote serves an [annotation team](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) across sites; get them wrong and every pull is a bottleneck.
 
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of a local DVC cache exchanging chunked Cloud-Optimized GeoTIFFs in parallel with an S3, GCS, or Azure remote" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Chunked parallel transfer between a local DVC cache and a cloud remote</title>
@@ -245,7 +245,7 @@ The table maps each remote to the exact `add`/`modify` keys that matter for mult
 | Azure Blob | `azure://container/dvc` | `jobs`, `account_name`, `connection_string` | Prefer `AZURE_STORAGE_CONNECTION_STRING` env var; block-blob multipart handles 20 GB+ mosaics without special flags |
 | Shared cache (all) | `dvc cache dir /data/dvc-cache` | `cache.type`, `cache.shared` | `reflink,symlink,copy` avoids re-hashing terabytes; keep cache on the same filesystem as the workspace so links resolve |
 
-A practical baseline for an imagery pipeline: `jobs 12`, `cache.type reflink,symlink,copy`, credentials from the environment, and the bucket in the same cloud region as your training compute. Preserving the acquisition and CRS metadata alongside these blobs is a separate concern covered in [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/).
+A practical baseline for an imagery pipeline: `jobs 12`, `cache.type reflink,symlink,copy`, credentials from the environment, and the bucket in the same cloud region as your training compute. Preserving the acquisition and CRS metadata alongside these blobs is a separate concern covered in [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/).
 
 ## Common Errors and Fixes
 
@@ -267,9 +267,9 @@ Fix: move the cache to the same volume as the workspace, or drop `symlink` from 
 
 ## Related
 
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the broader guide to initialising DVC, structuring stages, and versioning imagery that this remote configuration plugs into
-- [Integrating STAC Catalogs with Versioned Datasets](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/integrating-stac-catalogs-with-versioned-datasets/) — map each versioned snapshot on your remote back to STAC items so acquisition metadata and spatiotemporal queries stay reproducible
-- [Syncing Annotations Across Cloud Remotes](/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/) — keep labels consistent once several sites push to the same S3, GCS, or Azure remote, with conflict detection and content-addressed sync
-- [How to Version Control Large Satellite Imagery Datasets](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/) — companion walkthrough for tracking terabyte-scale imagery once the remote is in place
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the broader guide to initialising DVC, structuring stages, and versioning imagery that this remote configuration plugs into
+- [Integrating STAC Catalogs with Versioned Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/integrating-stac-catalogs-with-versioned-datasets/) — map each versioned snapshot on your remote back to STAC items so acquisition metadata and spatiotemporal queries stay reproducible
+- [Syncing Annotations Across Cloud Remotes](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/) — keep labels consistent once several sites push to the same S3, GCS, or Azure remote, with conflict detection and content-addressed sync
+- [How to Version Control Large Satellite Imagery Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/) — companion walkthrough for tracking terabyte-scale imagery once the remote is in place
 
-This guide is part of the broader [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) topic area within [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/).
+This guide is part of the broader [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) topic area within [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/).

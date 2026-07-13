@@ -2,7 +2,7 @@
 title: "Syncing Annotations Across Cloud Remotes"
 description: "Keep geospatial annotations consistent across S3, GCS, and Azure remotes: content-addressed sync, conflict detection, and multi-site coordination that avoids clobbering concurrent labeling work."
 slug: "syncing-annotations-across-cloud-remotes"
-type: "cluster"
+type: "guide"
 breadcrumb: "Dataset Versioning & Spatial Data Sync > Syncing Annotations Across Cloud Remotes"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,9 +29,9 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Syncing Annotations Across Cloud Remotes", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Syncing Annotations Across Cloud Remotes", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/"}
       ]
     },
     {
@@ -90,7 +90,7 @@ schema:
 
 Two annotation teams — one in Lisbon, one in Nairobi — spend a Tuesday labeling building footprints over the same city extent. Both pull the dataset in the morning, both work against a shared S3 bucket, and both run `sync` at the end of the day. The Nairobi run finishes ninety seconds after Lisbon's. Because the tool wrote the annotation index with an unconditional `PUT` to a fixed key, Nairobi's index overwrites Lisbon's. No error is raised, no exit code is non-zero, and the bucket reports success. The Lisbon team's entire day of GeoJSON — several hundred hand-drawn polygons — is now unreferenced garbage in the object store, discovered only a week later when a reviewer notices the count of labeled tiles has gone *down*.
 
-This failure is not a bug in any one tool. It is the default behaviour of every object store: a write to a key clobbers whatever was there, and there is no built-in notion of "only if you have seen the latest version." This guide, part of the broader [dataset versioning and spatial data sync](/dataset-versioning-spatial-data-sync/) practice, shows how to make multi-site annotation sync safe by construction — using content-addressed storage so features never overwrite each other, a manifest diff so divergence is detected before any write, an explicit push/pull ordering so partial uploads never orphan a pointer, and a lease plus generation number so concurrent sites serialize instead of racing.
+This failure is not a bug in any one tool. It is the default behaviour of every object store: a write to a key clobbers whatever was there, and there is no built-in notion of "only if you have seen the latest version." This guide, part of the broader [dataset versioning and spatial data sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) practice, shows how to make multi-site annotation sync safe by construction — using content-addressed storage so features never overwrite each other, a manifest diff so divergence is detected before any write, an explicit push/pull ordering so partial uploads never orphan a pointer, and a lease plus generation number so concurrent sites serialize instead of racing.
 
 <svg viewBox="0 0 860 400" role="img" aria-label="Two annotation sites syncing to a shared content-addressed remote with conflict detection on a single manifest pointer" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
   <title>Multi-site sync to a content-addressed remote with manifest conflict detection</title>
@@ -135,7 +135,7 @@ This failure is not a bug in any one tool. It is the default behaviour of every 
   <line x1="540" y1="200" x2="618" y2="200" stroke="currentColor" stroke-width="1.5" marker-end="url(#ar)" opacity="0.6"/>
 </svg>
 
-The rest of this guide builds each piece as runnable Python 3.10+ against pinned dependencies. The techniques compose with [DVC versioning](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) for large binary assets and with [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) for the per-feature identity that content addressing depends on.
+The rest of this guide builds each piece as runnable Python 3.10+ against pinned dependencies. The techniques compose with [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) for large binary assets and with [tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) for the per-feature identity that content addressing depends on.
 
 ---
 
@@ -162,7 +162,7 @@ pip install dvc==3.51.2 \
 
 **Spatial and versioning prerequisites:**
 
-- Every annotation feature carries a stable identifier and a declared coordinate reference system. If features arrive in mixed projections, normalize them first — the first stop for that is [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), and the canonical training projection is usually a local UTM zone rather than [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/).
+- Every annotation feature carries a stable identifier and a declared coordinate reference system. If features arrive in mixed projections, normalize them first — the first stop for that is [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), and the canonical training projection is usually a local UTM zone rather than [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/).
 - A per-feature content hash. This guide computes one inline, but the durable definition lives in the SHA hashing workflow linked above.
 
 **Baseline checklist before your first multi-site sync:**
@@ -295,7 +295,7 @@ def diff_manifests(local: Manifest, remote: Manifest) -> ManifestDiff:
     return ManifestDiff(added, removed, conflicting, unchanged)
 ```
 
-Because objects are immutable and hashed, a non-empty `conflicting` set is the only case that ever requires human or three-way-merge attention. The mechanics of resolving those cases — feature-id reconciliation and a last-writer-wins guard — are covered in depth in [resolving sync conflicts in distributed annotation](/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/).
+Because objects are immutable and hashed, a non-empty `conflicting` set is the only case that ever requires human or three-way-merge attention. The mechanics of resolving those cases — feature-id reconciliation and a last-writer-wins guard — are covered in depth in [resolving sync conflicts in distributed annotation](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/).
 
 ### Safe Multi-Remote Push/Pull Ordering
 
@@ -439,7 +439,7 @@ If two sites mint the same feature id for genuinely different objects, content a
 
 ### DVC as the binary and cache backend
 
-DVC already stores tracked files in a content-addressed cache and pushes them to a configured remote, which is the same model this guide applies to annotation features. Let [DVC](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) own the large raster and vector binaries, and keep the fine-grained per-feature manifest as a small tracked artifact alongside them. A `dvc push` moves the heavy objects; the manifest commit described above coordinates the label-level pointer.
+DVC already stores tracked files in a content-addressed cache and pushes them to a configured remote, which is the same model this guide applies to annotation features. Let [DVC](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) own the large raster and vector binaries, and keep the fine-grained per-feature manifest as a small tracked artifact alongside them. A `dvc push` moves the heavy objects; the manifest commit described above coordinates the label-level pointer.
 
 ```yaml
 # dvc.yaml
@@ -455,7 +455,7 @@ stages:
 
 ### SHA hashing as the identity source
 
-The `feature_hash` used here is one concrete instance of the identity scheme described in [tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/). Reuse a single canonicalization routine across both workflows so the hash that tracks a change is the same hash that addresses the object — otherwise a feature can be "changed" by one system and "identical" to the other.
+The `feature_hash` used here is one concrete instance of the identity scheme described in [tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/). Reuse a single canonicalization routine across both workflows so the hash that tracks a change is the same hash that addresses the object — otherwise a feature can be "changed" by one system and "identical" to the other.
 
 ### CI push gate
 
@@ -546,10 +546,10 @@ Read the manifest and every referenced object by exact key rather than relying o
 
 ## Related
 
-- [Resolving Sync Conflicts in Distributed Annotation](/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/) — three-way merge and feature-id reconciliation when the manifest diff reports a real conflict
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the content-addressed binary backend that carries heavy imagery under this sync model
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — the per-feature identity scheme that content addressing reuses
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — how versioned pointers let you recover when a sync commits bad state
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — normalizing projections so features hash consistently across sites
+- [Resolving Sync Conflicts in Distributed Annotation](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/) — three-way merge and feature-id reconciliation when the manifest diff reports a real conflict
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — the content-addressed binary backend that carries heavy imagery under this sync model
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — the per-feature identity scheme that content addressing reuses
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — how versioned pointers let you recover when a sync commits bad state
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — normalizing projections so features hash consistently across sites
 
-This guide is part of the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) practice that keeps geospatial training data reproducible from raw labels through to model input.
+This guide is part of the broader [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) practice that keeps geospatial training data reproducible from raw labels through to model input.

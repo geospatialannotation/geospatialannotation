@@ -2,7 +2,7 @@
 title: "How to Version Control Large Satellite Imagery Datasets"
 description: "Step-by-step guide to versioning multi-gigabyte satellite imagery with DVC and Cloud-Optimized GeoTIFF: decouple binary rasters from Git, configure S3/GCS remotes, and maintain full dataset lineage for reproducible ML training."
 slug: "how-to-version-control-large-satellite-imagery-datasets"
-type: "long_tail"
+type: "tutorial"
 breadcrumb: "How to Version Control Large Satellite Imagery Datasets"
 datePublished: "2025-03-12"
 dateModified: "2026-06-25"
@@ -72,7 +72,7 @@ dateModified: "2026-06-25"
 
 # How to Version Control Large Satellite Imagery Datasets
 
-To version control large satellite imagery datasets, decouple binary rasters from your Git repository. Store code, configuration, and lightweight annotation exports in Git, and use [Data Version Control (DVC)](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) to track multi-gigabyte raster files via cryptographic pointers. Convert raw scenes to Cloud-Optimized GeoTIFF (COG) or Zarr format before tracking so that remote storage supports HTTP range requests and chunked access. This keeps the repository lean, preserves full dataset lineage, and enables any team member or CI runner to reproduce a training snapshot exactly.
+To version control large satellite imagery datasets, decouple binary rasters from your Git repository. Store code, configuration, and lightweight annotation exports in Git, and use [Data Version Control (DVC)](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) to track multi-gigabyte raster files via cryptographic pointers. Convert raw scenes to Cloud-Optimized GeoTIFF (COG) or Zarr format before tracking so that remote storage supports HTTP range requests and chunked access. This keeps the repository lean, preserves full dataset lineage, and enables any team member or CI runner to reproduce a training snapshot exactly.
 
 ---
 
@@ -116,13 +116,13 @@ To version control large satellite imagery datasets, decouple binary rasters fro
 
 Satellite scenes routinely exceed hundreds of gigabytes per acquisition. Git stores a full binary copy of every version of every committed file. Committing raw `.tif` or `.jp2` files causes repository size to compound linearly with dataset evolution, exhausts local disk space on developer machines, and makes CI/CD runners fail with out-of-memory errors during clone.
 
-Git LFS partially mitigates file size but introduces different problems for spatial workloads: it lacks native support for [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) metadata as a versioned entity, has no concept of chunked raster access, and can generate significant egress costs when pulling historical commits. DVC solves this by committing only a `.dvc` pointer file — a small YAML containing the file's SHA-256 hash and storage path — while the binary lives in a scalable remote backend.
+Git LFS partially mitigates file size but introduces different problems for spatial workloads: it lacks native support for [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) metadata as a versioned entity, has no concept of chunked raster access, and can generate significant egress costs when pulling historical commits. DVC solves this by committing only a `.dvc` pointer file — a small YAML containing the file's SHA-256 hash and storage path — while the binary lives in a scalable remote backend.
 
 ## Why Imagery Scale Makes This a Pipeline Bottleneck
 
 At the scale typical in ML workflows — multi-temporal stacks for change detection, multi-sensor fusion campaigns, or high-resolution urban mapping — the naive approach of committing rasters to Git collapses in three predictable ways. First, repository clone time grows proportionally to total historical binary size, breaking CI/CD environment setup. Second, reproducing a past experiment requires reconstructing every dataset version from scratch because there is no content-addressable cache. Third, team members on bandwidth-constrained connections (field offices, overseas contractors) cannot participate in dataset pulls at all.
 
-The combination of DVC pointers in Git and COG-formatted rasters in object storage fixes all three problems: clones stay under a few megabytes regardless of dataset size, any historical version is reproducible by checking out the pointer file and running `dvc pull`, and remote caches mean that unchanged files are never re-transferred. This same mechanism also integrates cleanly with [SHA-based annotation tracking](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) so that raster and vector versions stay in lockstep.
+The combination of DVC pointers in Git and COG-formatted rasters in object storage fixes all three problems: clones stay under a few megabytes regardless of dataset size, any historical version is reproducible by checking out the pointer file and running `dvc pull`, and remote caches mean that unchanged files are never re-transferred. This same mechanism also integrates cleanly with [SHA-based annotation tracking](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) so that raster and vector versions stay in lockstep.
 
 ## Step-by-Step Implementation
 
@@ -291,9 +291,9 @@ if __name__ == "__main__":
 | Zarr chunk shape | `(1, 512, 512)` | Band × Y × X; aligns with GPU tile loaders |
 | DVC cache type | `symlink` (Linux) | Avoids duplicate disk usage on cache hit |
 | Remote transfer concurrency | `jobs=8` (via `dvc remote modify`) | Saturates typical gigabit egress |
-| Storage CRS | [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) | Store native; reproject in a DVC pipeline stage |
+| Storage CRS | [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) | Store native; reproject in a DVC pipeline stage |
 
-The first time imagery is ingested, record the source CRS explicitly in a `dataset_metadata.json` sidecar committed to Git. This prevents silent CRS drift when future contributors add scenes from different acquisition providers. See [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) for a schema that captures acquisition timestamp, sensor type, and spatial resolution alongside the CRS.
+The first time imagery is ingested, record the source CRS explicitly in a `dataset_metadata.json` sidecar committed to Git. This prevents silent CRS drift when future contributors add scenes from different acquisition providers. See [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) for a schema that captures acquisition timestamp, sensor type, and spatial resolution alongside the CRS.
 
 ## Common Errors and Fixes
 
@@ -311,11 +311,11 @@ The first time imagery is ingested, record the source CRS explicitly in a `datas
 
 ---
 
-This workflow is one component of the broader [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) guide, which covers multi-stage `dvc.yaml` orchestration, preprocessing locks, and experiment reproduction at scale.
+This workflow is one component of the broader [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) guide, which covers multi-stage `dvc.yaml` orchestration, preprocessing locks, and experiment reproduction at scale.
 
 **Related**
 
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — parent guide: DVC pipeline stages, remote auth, and `dvc repro` patterns
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep CRS, geotransform, and acquisition timestamp in sync with binary snapshots
-- [Tracking Annotation Changes with SHA Hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — extend content-addressable hashing to GeoJSON and COCO annotation exports
-- [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) — section overview covering the full versioning architecture
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — parent guide: DVC pipeline stages, remote auth, and `dvc repro` patterns
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep CRS, geotransform, and acquisition timestamp in sync with binary snapshots
+- [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — extend content-addressable hashing to GeoJSON and COCO annotation exports
+- [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) — section overview covering the full versioning architecture

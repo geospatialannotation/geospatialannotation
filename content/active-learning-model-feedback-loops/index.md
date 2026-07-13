@@ -2,7 +2,7 @@
 title: "Active Learning & Model Feedback Loops for Geospatial Annotation"
 description: "Engineer active learning loops for geospatial ML: uncertainty sampling on spatial tiles, automated retraining triggers, and distribution-drift detection that keep annotation effort focused where the model is weakest."
 slug: "active-learning-model-feedback-loops"
-type: "pillar"
+type: "overview"
 breadcrumb: "Active Learning & Model Feedback Loops"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,8 +29,8 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"}
       ]
     },
     {
@@ -91,13 +91,13 @@ Every geospatial ML program eventually hits the same wall: the imagery is effect
 
 Active learning is the discipline that decides *which* tiles are worth labeling next. Instead of drawing tiles at random, the current model scores the unlabeled pool, and the pipeline routes only the most informative tiles — the ones where the model is genuinely uncertain — to human annotators. Those newly labeled tiles retrain the model, the improved model rescores the pool, and the cycle repeats. This is the active learning loop, and treating it as a first-class, automated system rather than an ad-hoc "label some more when accuracy stalls" habit is what separates a pipeline that plateaus from one that keeps improving on a flat labeling budget.
 
-This is a genuinely distinct bottleneck from the mechanics of drawing polygons or wiring up an annotation tool. The upstream [labeling workflows and toolchain integration](/labeling-workflows-toolchain-integration/) get tiles in front of annotators and validated labels back out; active learning decides what should enter that queue in the first place, and closes the loop by feeding model performance back into selection. Get it right and a team of five annotators produces the model quality that a naive random-sampling program would need fifty to reach. Get it wrong — with spatial leakage, near-duplicate batches, or an ungated retrain — and the loop quietly amplifies its own biases until the deployed model decays. This guide covers the concepts, the six-stage loop with runnable code for each stage, the spatial failure modes that generic active-learning tutorials ignore, and the CI/CD plumbing that makes the loop run without a human babysitting it.
+This is a genuinely distinct bottleneck from the mechanics of drawing polygons or wiring up an annotation tool. The upstream [labeling workflows and toolchain integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) get tiles in front of annotators and validated labels back out; active learning decides what should enter that queue in the first place, and closes the loop by feeding model performance back into selection. Get it right and a team of five annotators produces the model quality that a naive random-sampling program would need fifty to reach. Get it wrong — with spatial leakage, near-duplicate batches, or an ungated retrain — and the loop quietly amplifies its own biases until the deployed model decays. This guide covers the concepts, the six-stage loop with runnable code for each stage, the spatial failure modes that generic active-learning tutorials ignore, and the CI/CD plumbing that makes the loop run without a human babysitting it.
 
 ## Core Concepts: Uncertainty, Query Strategies, and the Labeling Budget
 
 Active learning rests on a single premise: an unlabeled example is worth labeling in proportion to how much it would improve the model. Since we cannot measure that improvement without the label, we estimate it with a *query strategy* — a scoring function over unlabeled tiles that proxies informativeness.
 
-**Uncertainty sampling** is the workhorse strategy. It scores each tile by how unsure the current model is about its prediction. For a classifier or detector this is derived from the output probabilities: low-confidence predictions (a building the model calls 0.51 building / 0.49 shadow), high-entropy predictions, or predictions with a small margin between the top two classes. Uncertainty is cheap — it is a byproduct of ordinary inference — which is why it dominates production loops. Its reliability depends entirely on the model's probabilities being meaningful, which is why raw softmax outputs should be treated as suspect and the [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) driving the queue are worth calibrating before you trust them.
+**Uncertainty sampling** is the workhorse strategy. It scores each tile by how unsure the current model is about its prediction. For a classifier or detector this is derived from the output probabilities: low-confidence predictions (a building the model calls 0.51 building / 0.49 shadow), high-entropy predictions, or predictions with a small margin between the top two classes. Uncertainty is cheap — it is a byproduct of ordinary inference — which is why it dominates production loops. Its reliability depends entirely on the model's probabilities being meaningful, which is why raw softmax outputs should be treated as suspect and the [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) driving the queue are worth calibrating before you trust them.
 
 **Query-by-committee** replaces a single model's uncertainty with *disagreement* among an ensemble. Train several models on the same labeled data — different seeds, architectures, or bootstrap samples — and score each tile by how much the committee members disagree (vote entropy, or variance of predicted masks). A tile where every model agrees is uninformative even if the shared confidence is moderate; a tile that splits the committee is exactly where a new label resolves the most ambiguity. Committee methods cost more inference but are more robust to a single model's miscalibration.
 
@@ -107,7 +107,7 @@ Active learning rests on a single premise: an unlabeled example is worth labelin
 
 **The exploration/exploitation trade-off** is the tension underneath these terms. Exploitation means labeling near the current decision boundary — squeezing accuracy out of the region the model already half-understands. Exploration means labeling in parts of the feature space the model has barely seen — new sensors, new seasons, new geographies — where uncertainty may be low simply because the model is confidently wrong. A loop that only exploits over-fits to today's hard cases and goes blind to tomorrow's distribution shift. Deliberate exploration, whether by mixing in random or geographically stratified draws or by scoring representativeness, is what keeps the loop honest over many rounds.
 
-**Spatial redundancy of tiles** is the property that makes all of this sharper for geospatial data than for, say, a stream of independent photographs. Adjacent tiles from the same scene are strongly autocorrelated: they share illumination, sensor artifacts, land cover, and often the same objects straddling the tile boundary from your overlap padding. This means two things. First, the effective information content of a mosaic is far lower than its tile count suggests, so aggressive selection is not just efficient but necessary. Second, autocorrelation is a trap — it inflates apparent batch diversity's cost and, more dangerously, leaks between train and validation splits if you are not careful. Every technique below has to be defended against tiles that look different but carry the same signal. Because these tiles are compared in real-world units, the loop assumes a consistent [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/); a pool mixing [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) degrees with a UTM metric grid will produce nonsense distances in any diversity term.
+**Spatial redundancy of tiles** is the property that makes all of this sharper for geospatial data than for, say, a stream of independent photographs. Adjacent tiles from the same scene are strongly autocorrelated: they share illumination, sensor artifacts, land cover, and often the same objects straddling the tile boundary from your overlap padding. This means two things. First, the effective information content of a mosaic is far lower than its tile count suggests, so aggressive selection is not just efficient but necessary. Second, autocorrelation is a trap — it inflates apparent batch diversity's cost and, more dangerously, leaks between train and validation splits if you are not careful. Every technique below has to be defended against tiles that look different but carry the same signal. Because these tiles are compared in real-world units, the loop assumes a consistent [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/); a pool mixing [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) degrees with a UTM metric grid will produce nonsense distances in any diversity term.
 
 ## The Active Learning Loop: Six Stages from Unlabeled Pool to Retrained Model
 
@@ -258,7 +258,7 @@ Tune `lambda_div` toward 1.0 when your pool is highly redundant (dense drone ove
 
 ### Stage 5 — Route the Batch to Annotation and Validation
 
-The selected batch becomes a set of annotation tasks. In practice this means pushing the tile chips, plus the model's pre-labeled predictions as an editable starting point, into your annotation platform. Routing through [Label Studio](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) lets annotators correct model output rather than draw from scratch, which is the whole point of a pre-labeled active-learning batch. The completed labels then pass through the same [human-in-the-loop validation](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) that guards the rest of your pipeline before they are trusted as ground truth.
+The selected batch becomes a set of annotation tasks. In practice this means pushing the tile chips, plus the model's pre-labeled predictions as an editable starting point, into your annotation platform. Routing through [Label Studio](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) lets annotators correct model output rather than draw from scratch, which is the whole point of a pre-labeled active-learning batch. The completed labels then pass through the same [human-in-the-loop validation](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) that guards the rest of your pipeline before they are trusted as ground truth.
 
 ```python
 from __future__ import annotations
@@ -408,7 +408,7 @@ Active-learning tutorials written for photo classification quietly assume exampl
 
 ## CI/CD Integration: DVC-Triggered Retraining
 
-The loop only pays off if it runs without a human orchestrating each stage. The mechanism is dependency hashing: version the validated annotations with [DVC](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), and let a change in the annotation directory invalidate the training stage so a scheduler reruns it. Because DVC hashes the actual content, a round that adds newly validated tiles automatically marks the downstream training and evaluation stages as stale.
+The loop only pays off if it runs without a human orchestrating each stage. The mechanism is dependency hashing: version the validated annotations with [DVC](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), and let a change in the annotation directory invalidate the training stage so a scheduler reruns it. Because DVC hashes the actual content, a round that adds newly validated tiles automatically marks the downstream training and evaluation stages as stale.
 
 ```yaml
 # dvc.yaml — retraining fires when validated annotations change
@@ -490,10 +490,10 @@ Start with one region and a few hundred seed tiles, run the loop for three or fo
 
 **Related**
 
-- [Uncertainty Sampling for Geospatial Active Learning](/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — entropy, margin, and BALD scoring to rank unlabeled tiles by informativeness
-- [Closing the Loop with Automated Model Retraining](/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — DVC-triggered pipelines, checkpoint promotion gates, and evaluation guards
-- [Detecting Distribution Drift in Spatial Datasets](/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — spectral histograms, class-balance monitors, and PSI thresholds that trigger re-labeling
-- [Labeling Workflows & Toolchain Integration for Geospatial AI](/labeling-workflows-toolchain-integration/) — the annotation platforms and QA gates that turn a selected batch into validated labels
-- [Geospatial Annotation Fundamentals & Architecture](/geospatial-annotation-fundamentals-architecture/) — CRS contracts, label taxonomies, and confidence scoring that the loop depends on
+- [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — entropy, margin, and BALD scoring to rank unlabeled tiles by informativeness
+- [Closing the Loop with Automated Model Retraining](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — DVC-triggered pipelines, checkpoint promotion gates, and evaluation guards
+- [Detecting Distribution Drift in Spatial Datasets](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — spectral histograms, class-balance monitors, and PSI thresholds that trigger re-labeling
+- [Labeling Workflows & Toolchain Integration for Geospatial AI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) — the annotation platforms and QA gates that turn a selected batch into validated labels
+- [Geospatial Annotation Fundamentals & Architecture](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/) — CRS contracts, label taxonomies, and confidence scoring that the loop depends on
 
-This guide is the top of the broader [Active Learning & Model Feedback Loops](/active-learning-model-feedback-loops/) topic area; the related guides above go deeper on each stage of the loop it frames.
+This guide is the top of the broader [Active Learning & Model Feedback Loops](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) topic area; the related guides above go deeper on each stage of the loop it frames.

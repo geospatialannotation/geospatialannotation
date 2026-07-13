@@ -2,7 +2,7 @@
 title: "How to Structure GeoJSON for ML Training Datasets"
 description: "Enforce FeatureCollection root, EPSG:4326 coordinates, flat snake_case properties, and homogeneous geometry types so spatial annotations load directly into PyTorch and TorchGeo without custom parsing."
 slug: "how-to-structure-geojson-for-ml-training-datasets"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -31,10 +31,10 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
-        {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"},
-        {"@type": "ListItem", "position": 4, "name": "How to Structure GeoJSON for ML Training Datasets", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals & Architecture", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"},
+        {"@type": "ListItem", "position": 3, "name": "Vector vs Raster Annotation Workflows", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/"},
+        {"@type": "ListItem", "position": 4, "name": "How to Structure GeoJSON for ML Training Datasets", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/"}
       ]
     },
     {
@@ -84,7 +84,7 @@ dateModified: "2026-06-25"
 
 # How to Structure GeoJSON for ML Training Datasets
 
-Wrap all annotated features in a single `FeatureCollection`, enforce [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS84) coordinates throughout, and store model targets in a flat `properties` dictionary with consistent `snake_case` keys. Each `Feature` must contain exactly one `geometry` object and a `properties` object that maps directly to your label schema — classification IDs, segmentation mask references, or bounding box coordinates. Avoid nested dictionaries, mixed geometry types within a batch, or non-standard coordinate reference system declarations — these break batch loaders and spatial join operations in automated pipelines.
+Wrap all annotated features in a single `FeatureCollection`, enforce [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (WGS84) coordinates throughout, and store model targets in a flat `properties` dictionary with consistent `snake_case` keys. Each `Feature` must contain exactly one `geometry` object and a `properties` object that maps directly to your label schema — classification IDs, segmentation mask references, or bounding box coordinates. Avoid nested dictionaries, mixed geometry types within a batch, or non-standard coordinate reference system declarations — these break batch loaders and spatial join operations in automated pipelines.
 
 ## Where GeoJSON Structure Breaks ML Pipelines
 
@@ -94,9 +94,9 @@ GeoJSON's inherent flexibility is the root cause of most training-data failures.
 
 **Collation failures from mixed geometry.** PyTorch's default collation function tries to stack arrays of identical shape. A `Polygon` coordinate array is rank-3 (rings × vertices × 2), a `Point` is rank-1. Mixing both in a single batch raises a `RuntimeError` or silently drops features, corrupting ground-truth label counts without a traceable exception.
 
-**Feature leakage from nested properties.** Annotation tools frequently export metadata — annotator IDs, review timestamps, [confidence flags](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — nested inside `properties`. If a custom parser flattens these alongside training targets, the model receives annotator identity as a feature, producing inflated validation metrics that disappear at inference time.
+**Feature leakage from nested properties.** Annotation tools frequently export metadata — annotator IDs, review timestamps, [confidence flags](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — nested inside `properties`. If a custom parser flattens these alongside training targets, the model receives annotator identity as a feature, producing inflated validation metrics that disappear at inference time.
 
-Understanding where [vector vs raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) diverge explains why these issues are GeoJSON-specific: raster masks bake CRS and pixel alignment into the file format, while GeoJSON delegates both to the consuming application.
+Understanding where [vector vs raster annotation workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) diverge explains why these issues are GeoJSON-specific: raster masks bake CRS and pixel alignment into the file format, while GeoJSON delegates both to the consuming application.
 
 ## GeoJSON Normalization Pipeline
 
@@ -220,7 +220,7 @@ flatten during export to:
 {"vehicle_type": "car", "vehicle_occluded": false}
 ```
 
-Prefix non-training keys — annotation tool version, annotator ID, review timestamp — with `__meta_` and strip them during preprocessing. Maintain a separate label mapping file (JSON or YAML) that maps property keys to integer class IDs. This decouples annotation schema changes from model architecture updates and prevents accidental [annotation confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) from leaking into training targets.
+Prefix non-training keys — annotation tool version, annotator ID, review timestamp — with `__meta_` and strip them during preprocessing. Maintain a separate label mapping file (JSON or YAML) that maps property keys to integer class IDs. This decouples annotation schema changes from model architecture updates and prevents accidental [annotation confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) from leaking into training targets.
 
 ```python
 def flatten_properties(
@@ -287,7 +287,7 @@ class GeoJSONAnnotationDataset(Dataset):
         return torch.tensor(coords), torch.tensor(label)
 ```
 
-Avoid on-the-fly CRS transformations or property parsing inside `__getitem__`. Precompute and cache the normalized structure — this is where [dataset versioning with DVC](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) provides the most value: version the normalized file, not the raw export.
+Avoid on-the-fly CRS transformations or property parsing inside `__getitem__`. Precompute and cache the normalized structure — this is where [dataset versioning with DVC](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) provides the most value: version the normalized file, not the raw export.
 
 ## Spatial Parameters and Thresholds Reference
 
@@ -333,12 +333,12 @@ Cause: Self-intersecting polygon from a rushed annotation session. Fix: Run `sha
 
 ---
 
-This page is part of the [Vector vs Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) guide, which covers the full decision framework for choosing annotation formats in geospatial ML pipelines.
+This page is part of the [Vector vs Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) guide, which covers the full decision framework for choosing annotation formats in geospatial ML pipelines.
 
 **Related**
 
-- [Vector vs Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — parent guide covering format selection, topology trade-offs, and pipeline architecture
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contracts, datum shifts, and PROJ configuration for spatial ML
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation quality scores and how to separate them from training targets
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version the normalized FeatureCollection, not the raw export
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — COCO/YOLO/GeoJSON schema enforcement across pipeline updates
+- [Vector vs Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — parent guide covering format selection, topology trade-offs, and pipeline architecture
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contracts, datum shifts, and PROJ configuration for spatial ML
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation quality scores and how to separate them from training targets
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version the normalized FeatureCollection, not the raw export
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — COCO/YOLO/GeoJSON schema enforcement across pipeline updates

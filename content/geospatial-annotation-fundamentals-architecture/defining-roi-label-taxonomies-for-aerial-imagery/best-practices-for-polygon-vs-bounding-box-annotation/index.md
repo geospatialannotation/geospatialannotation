@@ -2,7 +2,7 @@
 title: "Best Practices for Polygon vs Bounding Box Annotation in Aerial Imagery"
 description: "Choose between polygon and bounding box annotation for aerial imagery: decision criteria, runnable Python validation code, spatial thresholds, and a hybrid active-learning pipeline that cuts manual labeling by 40–70%."
 slug: "best-practices-for-polygon-vs-bounding-box-annotation"
-type: "long_tail"
+type: "tutorial"
 breadcrumb: "Polygon vs Bounding Box"
 datePublished: "2024-03-15"
 dateModified: "2026-06-25"
@@ -76,7 +76,7 @@ dateModified: "2026-06-25"
 
 # Best practices for polygon vs bounding box annotation
 
-Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons when precise spatial extent, area calculation, or boundary-aware model training is required — for example, building footprint extraction, solar-array delineation, or regulatory land-cover mapping. The optimal strategy depends on your target architecture, annotation budget, and downstream inference constraints. When working within a [defined ROI label taxonomy for aerial imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/), assign annotation fidelity per class tier: reserve polygons for high-precision categories and use bounding boxes for auxiliary or rapidly changing objects. For most aerial imagery pipelines, bootstrap large-scale datasets with bounding boxes, then refine high-value classes with polygons where boundary precision directly impacts model performance, regulatory compliance, or geospatial analytics.
+Use bounding boxes for rapid, coarse localization when instance separation and throughput matter more than pixel-perfect edges. Use polygons when precise spatial extent, area calculation, or boundary-aware model training is required — for example, building footprint extraction, solar-array delineation, or regulatory land-cover mapping. The optimal strategy depends on your target architecture, annotation budget, and downstream inference constraints. When working within a [defined ROI label taxonomy for aerial imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/), assign annotation fidelity per class tier: reserve polygons for high-precision categories and use bounding boxes for auxiliary or rapidly changing objects. For most aerial imagery pipelines, bootstrap large-scale datasets with bounding boxes, then refine high-value classes with polygons where boundary precision directly impacts model performance, regulatory compliance, or geospatial analytics.
 
 ---
 
@@ -134,7 +134,7 @@ Use bounding boxes for rapid, coarse localization when instance separation and t
 
 ## Why geometry choice breaks geospatial pipelines
 
-Annotation geometry determines not just labeling speed but model behaviour, CRS-correctness of area calculations, and the validity of downstream geospatial analytics. Using bounding boxes where polygons are needed floods segmentation heads with background noise and prevents accurate footprint extraction. Conversely, forcing polygon annotation on every class stalls throughput, raises QA failure rates from self-intersecting rings, and inflates GPU memory during mask rasterization — effects that compound across [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) when geometries are stored in geographic degrees (`EPSG:4326`) rather than a local metric CRS, causing IoU metrics to distort at mid-latitudes.
+Annotation geometry determines not just labeling speed but model behaviour, CRS-correctness of area calculations, and the validity of downstream geospatial analytics. Using bounding boxes where polygons are needed floods segmentation heads with background noise and prevents accurate footprint extraction. Conversely, forcing polygon annotation on every class stalls throughput, raises QA failure rates from self-intersecting rings, and inflates GPU memory during mask rasterization — effects that compound across [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) when geometries are stored in geographic degrees (`EPSG:4326`) rather than a local metric CRS, causing IoU metrics to distort at mid-latitudes.
 
 ## Step-by-step implementation
 
@@ -191,7 +191,7 @@ def train_bbox_bootstrapper(data_yaml: Path, epochs: int = 50) -> Path:
 
 ### Step 3 — Route high-uncertainty instances to polygon annotators
 
-Use prediction confidence and box IoU variance to identify which instances need polygon refinement. This avoids blanket polygon annotation and focuses expert time on the highest-ambiguity objects. Per-annotation [confidence scores](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) are the key signal driving this routing decision.
+Use prediction confidence and box IoU variance to identify which instances need polygon refinement. This avoids blanket polygon annotation and focuses expert time on the highest-ambiguity objects. Per-annotation [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) are the key signal driving this routing decision.
 
 ```python
 # Python 3.10+ | ultralytics==8.2.0, numpy==1.26.4
@@ -235,7 +235,7 @@ def route_uncertain_predictions(
 
 ### Step 4 — Validate polygon topology with Shapely before export
 
-Self-intersecting polygons and duplicate vertices corrupt COCO masks and cause silent failures in Mask R-CNN dataloaders. Run this validation as a mandatory pre-export gate; the same check integrates into a [DVC pipeline step for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/).
+Self-intersecting polygons and duplicate vertices corrupt COCO masks and cause silent failures in Mask R-CNN dataloaders. Run this validation as a mandatory pre-export gate; the same check integrates into a [DVC pipeline step for automated dataset snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/).
 
 ```python
 # Python 3.10+ | shapely==2.0.6, geopandas==1.0.1
@@ -289,7 +289,7 @@ def boundary_iou(pred: Polygon, gt: Polygon, dilation_m: float = 0.5) -> float:
     return intersection / union if union > 0 else 0.0
 ```
 
-Always reproject geometries to a [local metric CRS](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (e.g. `EPSG:32633` for UTM Zone 33N) before calling `boundary_iou` — computing BIoU in geographic degrees (`EPSG:4326`) produces meaningless results at mid-latitudes.
+Always reproject geometries to a [local metric CRS](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (e.g. `EPSG:32633` for UTM Zone 33N) before calling `boundary_iou` — computing BIoU in geographic degrees (`EPSG:4326`) produces meaningless results at mid-latitudes.
 
 ## Spatial parameters and thresholds reference
 
@@ -323,12 +323,12 @@ COCO mask export produces out-of-memory error during training
 
 ---
 
-This page is one focused how-to within the broader [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) workflow, which covers class hierarchy design, confidence scoring, and multi-sensor taxonomy alignment.
+This page is one focused how-to within the broader [Defining ROI Label Taxonomies for Aerial Imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) workflow, which covers class hierarchy design, confidence scoring, and multi-sensor taxonomy alignment.
 
 **Related**
 
-- [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — class hierarchy design and taxonomy governance
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contracts, datum alignment, and projected IoU computation
-- [Calculating IoU Thresholds for Geospatial Object Detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — per-class IoU cutoffs by GSD and mission type
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation scoring to drive active-learning queues
-- [Using DVC Pipelines for Automated Dataset Snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) — integrate polygon validation as a reproducible pipeline step
+- [Defining ROI Label Taxonomies for Aerial Imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — class hierarchy design and taxonomy governance
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS contracts, datum alignment, and projected IoU computation
+- [Calculating IoU Thresholds for Geospatial Object Detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) — per-class IoU cutoffs by GSD and mission type
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — per-annotation scoring to drive active-learning queues
+- [Using DVC Pipelines for Automated Dataset Snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) — integrate polygon validation as a reproducible pipeline step

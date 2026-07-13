@@ -2,7 +2,7 @@
 title: "Monitoring Class-Balance Drift Across Image Tiles"
 description: "Track per-class annotation frequency across tiles and acquisition batches using the population stability index, with a pandas implementation and alert thresholds for geospatial datasets."
 slug: "monitoring-class-balance-drift-across-tiles"
-type: "long_tail"
+type: "tutorial"
 breadcrumb:
   - label: "Home"
     url: "/"
@@ -37,10 +37,10 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/"},
-        {"@type": "ListItem", "position": 3, "name": "Detecting Distribution Drift in Spatial Datasets", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/"},
-        {"@type": "ListItem", "position": 4, "name": "Monitoring Class-Balance Drift Across Image Tiles", "item": "https://geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/monitoring-class-balance-drift-across-tiles/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Active Learning & Model Feedback Loops", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/"},
+        {"@type": "ListItem", "position": 3, "name": "Detecting Distribution Drift in Spatial Datasets", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/"},
+        {"@type": "ListItem", "position": 4, "name": "Monitoring Class-Balance Drift Across Image Tiles", "item": "https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/monitoring-class-balance-drift-across-tiles/"}
       ]
     },
     {
@@ -84,13 +84,13 @@ schema:
 
 # Monitoring Class-Balance Drift Across Image Tiles
 
-To detect class-balance drift across image tiles, compute a per-class annotation frequency vector for every acquisition batch, normalise it into a class-prior distribution, and compare each incoming batch against a trusted reference prior using the **Population Stability Index (PSI)**. PSI scores each class by `(current_prop - reference_prop) * ln(current_prop / reference_prop)`; a per-class PSI above **0.25** flags significant class-balance drift and should trigger targeted re-labeling of that batch's tiles before they enter training. This measure is the batch-level companion to per-tile monitoring inside an [active learning loop](/active-learning-model-feedback-loops/), where annotation effort is steered toward the data the model handles worst. The rest of this guide gives a runnable pandas implementation, a threshold table, and the failure modes that quietly break PSI monitoring.
+To detect class-balance drift across image tiles, compute a per-class annotation frequency vector for every acquisition batch, normalise it into a class-prior distribution, and compare each incoming batch against a trusted reference prior using the **Population Stability Index (PSI)**. PSI scores each class by `(current_prop - reference_prop) * ln(current_prop / reference_prop)`; a per-class PSI above **0.25** flags significant class-balance drift and should trigger targeted re-labeling of that batch's tiles before they enter training. This measure is the batch-level companion to per-tile monitoring inside an [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/), where annotation effort is steered toward the data the model handles worst. The rest of this guide gives a runnable pandas implementation, a threshold table, and the failure modes that quietly break PSI monitoring.
 
 ## Why Class-Balance Drift Silently Degrades Geospatial Models
 
 A geospatial detector learns the class priors baked into its training set. When later acquisition batches carry a different mix — a summer flight thick with cars where the winter baseline had mostly bare roofs, or a new sensor that resolves small vehicles the old one missed — the label distribution shifts even though every individual annotation is correct. That shift is *label drift*, and it erodes model performance in a way that overall accuracy hides: the minority classes lose recall first, and aggregate metrics stay high because the dominant class still scores well.
 
-Per-class frequency is the cheapest drift signal you can compute. It needs no imagery, no model inference, and no reprojection — only the class property already present in each annotation. Yet a naive check ("did any class change by more than 5 percentage points?") misfires in both directions. It ignores a rare class tripling from 1% to 3%, and it panics over a dominant class drifting from 40% to 45%. PSI fixes both by weighting every change by its log-ratio, so proportional moves in small classes dominate the score exactly where drift does the most damage. Because class labels are the same discrete categories the [ROI label taxonomy](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) already fixes, the reference vector is stable and cheap to maintain across the life of a dataset.
+Per-class frequency is the cheapest drift signal you can compute. It needs no imagery, no model inference, and no reprojection — only the class property already present in each annotation. Yet a naive check ("did any class change by more than 5 percentage points?") misfires in both directions. It ignores a rare class tripling from 1% to 3%, and it panics over a dominant class drifting from 40% to 45%. PSI fixes both by weighting every change by its log-ratio, so proportional moves in small classes dominate the score exactly where drift does the most damage. Because class labels are the same discrete categories the [ROI label taxonomy](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) already fixes, the reference vector is stable and cheap to maintain across the life of a dataset.
 
 <svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grouped bar chart comparing reference and current class-prior distributions for four classes, alongside a horizontal PSI gauge with stable, watch, and drift zones" style="width:100%;max-width:660px;display:block;margin:1.5rem auto;">
   <title>Reference versus current class priors with a PSI drift gauge</title>
@@ -151,7 +151,7 @@ pip install pandas==2.2.2 numpy==1.26.4
 
 ### Step 1 — Tabulate Class Counts per Batch from GeoJSON
 
-Each tile is a GeoJSON `FeatureCollection` whose features carry a `class` property. Group tiles into acquisition batches (a flight, a sensor pass, or a delivery) and count classes per batch. Store the batch identifier and the source [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) coordinate reference system alongside the counts so a flagged batch stays traceable to its raw tiles.
+Each tile is a GeoJSON `FeatureCollection` whose features carry a `class` property. Group tiles into acquisition batches (a flight, a sensor pass, or a delivery) and count classes per batch. Store the batch identifier and the source [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) coordinate reference system alongside the counts so a flagged batch stays traceable to its raw tiles.
 
 ```python
 from __future__ import annotations
@@ -303,7 +303,7 @@ print(f"Total PSI for {report.batch_id}: {report.total_psi:.3f}")
 print(report.per_class.round(3).to_string())
 ```
 
-Running the example prints a total PSI of roughly 0.34, with `vehicle` carrying a per-class PSI well above 0.25 and an action of `re-label this class` — the batch tripled its vehicle prevalence, exactly the minority-class shift that erodes recall. Persisting each `BatchDriftReport` next to its dataset snapshot keeps the drift signal reproducible; the mechanics of attaching that context live in [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/).
+Running the example prints a total PSI of roughly 0.34, with `vehicle` carrying a per-class PSI well above 0.25 and an action of `re-label this class` — the batch tripled its vehicle prevalence, exactly the minority-class shift that erodes recall. Persisting each `BatchDriftReport` next to its dataset snapshot keeps the drift signal reproducible; the mechanics of attaching that context live in [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/).
 
 ## PSI Thresholds and Actions
 
@@ -338,9 +338,9 @@ Fix: alert on the maximum per-class PSI, not just the total; a single class abov
 
 ## Related
 
-- [Detecting Distribution Drift in Spatial Datasets](/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — the broader topic area covering spectral, covariate, and label drift monitors this class-balance check belongs to
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — persist each batch's drift report and reference prior so a flagged shift stays reproducible across snapshots
-- [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — a stable class taxonomy is what makes the reference prior vector meaningful batch after batch
-- [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/) — how drift alerts feed the retraining and re-labeling triage that keeps a deployed detector current
+- [Detecting Distribution Drift in Spatial Datasets](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — the broader topic area covering spectral, covariate, and label drift monitors this class-balance check belongs to
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — persist each batch's drift report and reference prior so a flagged shift stays reproducible across snapshots
+- [Defining ROI Label Taxonomies for Aerial Imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — a stable class taxonomy is what makes the reference prior vector meaningful batch after batch
+- [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) — how drift alerts feed the retraining and re-labeling triage that keeps a deployed detector current
 
-This guide covers one specialised monitor within [Detecting Distribution Drift in Spatial Datasets](/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/), which is itself part of [Active Learning & Model Feedback Loops for Geospatial Annotation](/active-learning-model-feedback-loops/).
+This guide covers one specialised monitor within [Detecting Distribution Drift in Spatial Datasets](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/), which is itself part of [Active Learning & Model Feedback Loops for Geospatial Annotation](https://www.geospatialannotation.com/active-learning-model-feedback-loops/).

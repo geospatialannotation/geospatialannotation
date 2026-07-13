@@ -2,7 +2,7 @@
 title: "Validating Annotation Export Formats: COCO, YOLO, and GeoJSON"
 description: "Enforce schema validity on COCO, YOLO, and GeoJSON annotation exports before training: JSON Schema contracts, geometry checks with shapely, and CRS/geotransform sidecar verification for geospatial datasets."
 slug: "validating-annotation-export-formats"
-type: "cluster"
+type: "guide"
 breadcrumb: "Labeling Workflows & Toolchain Integration > Validating Annotation Export Formats"
 datePublished: "2026-07-13"
 dateModified: "2026-07-13"
@@ -29,9 +29,9 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
-        {"@type": "ListItem", "position": 3, "name": "Validating Annotation Export Formats: COCO, YOLO, and GeoJSON", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration for Geospatial AI", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "Validating Annotation Export Formats: COCO, YOLO, and GeoJSON", "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/"}
       ]
     },
     {
@@ -91,7 +91,7 @@ schema:
 
 A drone-survey team exports 40,000 building footprints from their labeling tool as COCO JSON, the file loads without error, and the training run kicks off overnight. By morning the detector's mean average precision has collapsed. The export was silently malformed in three ways at once: a batch of annotations pointed at a `category_id` that a taxonomy rename had deleted, several bounding boxes ran past the right edge of their tiles after a tiling offset bug, and the geotransform that tied pixel coordinates back to real-world positions was dropped entirely because COCO has no field for it. Nothing raised an exception. The loader simply skipped the dangling annotations, clamped or ignored the out-of-bounds boxes, and trained a model that learned a distorted version of the ground truth.
 
-This is the failure mode export validation exists to prevent. An annotation export can be perfectly valid JSON or a perfectly readable text file and still be unusable as training data, because format correctness and *semantic* correctness are different guarantees. This guide, part of the broader [labeling workflows and toolchain integration](/labeling-workflows-toolchain-integration/) practice, shows how to build runnable validators for the three formats that dominate geospatial annotation pipelines — COCO, YOLO, and GeoJSON — covering schema conformance, referential integrity, geometry validity, and the CRS and geotransform metadata that keeps pixel labels georeferenced.
+This is the failure mode export validation exists to prevent. An annotation export can be perfectly valid JSON or a perfectly readable text file and still be unusable as training data, because format correctness and *semantic* correctness are different guarantees. This guide, part of the broader [labeling workflows and toolchain integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) practice, shows how to build runnable validators for the three formats that dominate geospatial annotation pipelines — COCO, YOLO, and GeoJSON — covering schema conformance, referential integrity, geometry validity, and the CRS and geotransform metadata that keeps pixel labels georeferenced.
 
 ---
 
@@ -150,7 +150,7 @@ Before writing a validator you need a clear picture of what each format promises
   <text x="710" y="273" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">property schema</text>
 </svg>
 
-The practical takeaway: no format hands you a fully validated export for free. COCO needs the most work on referential integrity, YOLO needs the most work on external metadata, and GeoJSON gives you geometry semantics but leaves the [coordinate reference system](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) to convention. A single validation library that treats all three uniformly will miss the failure that actually matters for each.
+The practical takeaway: no format hands you a fully validated export for free. COCO needs the most work on referential integrity, YOLO needs the most work on external metadata, and GeoJSON gives you geometry semantics but leaves the [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) to convention. A single validation library that treats all three uniformly will miss the failure that actually matters for each.
 
 ---
 
@@ -166,7 +166,7 @@ pip install pycocotools==2.0.7 \
             pyproj==3.6.1
 ```
 
-You should be comfortable reading a COCO annotation record, know that YOLO stores one text file per image with one object per line, and understand that GeoJSON coordinates are ordered longitude-first. If your labeling stack routes through [Label Studio](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) or a desktop [QGIS](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) workflow, the validators here run downstream of whichever tool produced the export — they are format checks, not tool integrations, so they apply regardless of origin.
+You should be comfortable reading a COCO annotation record, know that YOLO stores one text file per image with one object per line, and understand that GeoJSON coordinates are ordered longitude-first. If your labeling stack routes through [Label Studio](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) or a desktop [QGIS](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) workflow, the validators here run downstream of whichever tool produced the export — they are format checks, not tool integrations, so they apply regardless of origin.
 
 ---
 
@@ -281,7 +281,7 @@ Returning early after schema errors is deliberate: if the arrays themselves are 
 
 ### Validate YOLO: Normalized Coordinates and Class Range
 
-YOLO's grammar is unforgiving in its simplicity. Each line is `class_index cx cy w h`, where the four geometry values are normalized to the image dimensions and must lie in the closed interval `[0, 1]`. A value of `1.0001` is not a rounding curiosity — it means an object edge sits outside the image, and depending on the loader it will be clamped, dropped, or trigger an index error during augmentation. The class index must also fall within the range declared by the dataset's class list; an off-by-one from a renamed [label taxonomy](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) is the most common cause of a mislabeled model.
+YOLO's grammar is unforgiving in its simplicity. Each line is `class_index cx cy w h`, where the four geometry values are normalized to the image dimensions and must lie in the closed interval `[0, 1]`. A value of `1.0001` is not a rounding curiosity — it means an object edge sits outside the image, and depending on the loader it will be clamped, dropped, or trigger an index error during augmentation. The class index must also fall within the range declared by the dataset's class list; an off-by-one from a renamed [label taxonomy](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) is the most common cause of a mislabeled model.
 
 ```python
 from __future__ import annotations
@@ -396,7 +396,7 @@ The out-of-range coordinate check does double duty: it flags data that was accid
 
 ### Verify the CRS and Geotransform Sidecar
 
-COCO and YOLO both store pixel-space coordinates with no room for georeferencing. To make their detections usable in a spatial pipeline you attach a sidecar file recording the source tile's [`EPSG:4326`](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) or projected code and the affine geotransform that maps pixels to world coordinates. The validator asserts the sidecar exists, declares a resolvable CRS, and carries a well-formed six-element transform.
+COCO and YOLO both store pixel-space coordinates with no room for georeferencing. To make their detections usable in a spatial pipeline you attach a sidecar file recording the source tile's [`EPSG:4326`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) or projected code and the affine geotransform that maps pixels to world coordinates. The validator asserts the sidecar exists, declares a resolvable CRS, and carries a well-formed six-element transform.
 
 ```python
 from __future__ import annotations
@@ -433,7 +433,7 @@ def validate_geo_sidecar(sidecar_path: str | Path) -> list[str]:
     return errors
 ```
 
-Pairing a pixel-format export with a verified sidecar is what lets a COCO detection reproject cleanly back to ground coordinates; the same principle underpins [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/), where the geotransform must survive every snapshot.
+Pairing a pixel-format export with a verified sidecar is what lets a COCO detection reproject cleanly back to ground coordinates; the same principle underpins [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/), where the geotransform must survive every snapshot.
 
 ---
 
@@ -473,7 +473,7 @@ Exporters that serialize coordinates as single-precision floats or truncate deci
 
 ### Wire the validators into a dataset gate
 
-The three validators plus the sidecar check compose into a single gate that runs on every export. Rather than calling them ad hoc, aggregate their error lists and fail loudly on any non-empty result. This is the unit that belongs in [CI/CD gates for annotation datasets](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/), where the same function runs on every pull request that touches label data.
+The three validators plus the sidecar check compose into a single gate that runs on every export. Rather than calling them ad hoc, aggregate their error lists and fail loudly on any non-empty result. This is the unit that belongs in [CI/CD gates for annotation datasets](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/), where the same function runs on every pull request that touches label data.
 
 ```python
 from __future__ import annotations
@@ -494,7 +494,7 @@ def gate_export(coco_path: str, sidecar_path: str) -> None:
 
 ### Carry metadata through versioned snapshots
 
-A validated export is only durable if its georeferencing metadata survives every version bump. When the sidecar is stored alongside the annotations under version control, [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) ensures the CRS and transform stay bound to the exact annotation snapshot they describe, so a rollback never resurrects labels without their coordinate context.
+A validated export is only durable if its georeferencing metadata survives every version bump. When the sidecar is stored alongside the annotations under version control, [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) ensures the CRS and transform stay bound to the exact annotation snapshot they describe, so a rollback never resurrects labels without their coordinate context.
 
 ---
 
@@ -569,9 +569,9 @@ RFC 7946 requires exterior polygon rings to be counter-clockwise and interior ho
 
 ## Related
 
-- [Enforcing the COCO JSON Schema in CI](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/) — a runnable jsonschema gate for category, image, and RLE integrity inside continuous integration
-- [COCO vs GeoParquet for Annotation Export](/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/) — a decision guide weighing CRS fidelity, query speed, and interoperability between the two export targets
-- [CI/CD Gates for Annotation Datasets](/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — wiring these validators into GitHub Actions and DVC so broken exports never merge
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keeping the CRS and geotransform sidecar bound to each versioned annotation snapshot
+- [Enforcing the COCO JSON Schema in CI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/) — a runnable jsonschema gate for category, image, and RLE integrity inside continuous integration
+- [COCO vs GeoParquet for Annotation Export](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/) — a decision guide weighing CRS fidelity, query speed, and interoperability between the two export targets
+- [CI/CD Gates for Annotation Datasets](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/) — wiring these validators into GitHub Actions and DVC so broken exports never merge
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keeping the CRS and geotransform sidecar bound to each versioned annotation snapshot
 
-This guide is part of the broader [Labeling Workflows & Toolchain Integration for Geospatial AI](/labeling-workflows-toolchain-integration/) practice that connects annotation tooling to reproducible ML training pipelines.
+This guide is part of the broader [Labeling Workflows & Toolchain Integration for Geospatial AI](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) practice that connects annotation tooling to reproducible ML training pipelines.

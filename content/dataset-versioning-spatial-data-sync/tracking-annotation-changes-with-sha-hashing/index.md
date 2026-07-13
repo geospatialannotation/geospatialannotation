@@ -2,7 +2,7 @@
 title: "Tracking Annotation Changes with SHA Hashing"
 description: "Implement deterministic SHA-256 hashing to detect silent annotation drift in geospatial ML datasets—covering normalization, manifest generation, spatial edge cases, and CI/CD integration."
 slug: "tracking-annotation-changes-with-sha-hashing"
-type: "cluster"
+type: "guide"
 breadcrumb: "Dataset Versioning & Spatial Data Sync"
 datePublished: "2025-03-10"
 dateModified: "2026-06-25"
@@ -24,9 +24,9 @@ dateModified: "2026-06-25"
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
-        {"@type": "ListItem", "position": 3, "name": "Tracking Annotation Changes with SHA Hashing", "item": "https://geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Dataset Versioning & Spatial Data Sync", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/"},
+        {"@type": "ListItem", "position": 3, "name": "Tracking Annotation Changes with SHA Hashing", "item": "https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/"}
       ]
     },
     {
@@ -87,7 +87,7 @@ dateModified: "2026-06-25"
 
 Geospatial ML pipelines fail silently in ways that are difficult to catch after the fact. A bounding box shifts two pixels during a Label Studio re-export, a polygon ring reverses its winding order after a QGIS edit, or a class label is reassigned by a second annotator—none of these changes alter the file's modification timestamp or byte count. Training proceeds, metrics shift, and the root cause is invisible. **SHA-256 hashing applied to normalized annotation payloads** is the only reliable mechanism to catch all of these mutations deterministically, because it reduces the entire semantic state of an annotation to a 64-character hexadecimal string that changes if and only if the training-relevant content changes.
 
-This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) pipeline, where annotation integrity feeds directly into reproducible model checkpoints and rollback capability.
+This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) pipeline, where annotation integrity feeds directly into reproducible model checkpoints and rollback capability.
 
 ## Prerequisites & Toolchain Alignment
 
@@ -104,9 +104,9 @@ orjson==3.10.3   # optional high-throughput JSON parsing for large datasets
 
 **System requirements:** GDAL 3.8+ and PROJ 9.3+ installed at the system level. Python 3.10+ with explicit type hints throughout.
 
-**Spatial knowledge prerequisites:** Understanding of [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) is essential — hashing must occur after CRS normalization, not before. Annotations stored in mixed projections that are hashed before transformation produce manifests that cannot be compared across ingestion sources.
+**Spatial knowledge prerequisites:** Understanding of [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) is essential — hashing must occur after CRS normalization, not before. Annotations stored in mixed projections that are hashed before transformation produce manifests that cannot be compared across ingestion sources.
 
-For foundational context on the broader pipeline these hashes live within, see the parent [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) overview, which covers DVC integration, metadata preservation, and rollback architecture.
+For foundational context on the broader pipeline these hashes live within, see the parent [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) overview, which covers DVC integration, metadata preservation, and rollback architecture.
 
 ## SHA Hashing Pipeline: Architecture Overview
 
@@ -199,7 +199,7 @@ The round-trip through `json.dumps`/`json.loads` with `sort_keys=True` collapses
 
 Generic normalization is not sufficient for geospatial annotations. Two sources of hash divergence are unique to spatial data and must be addressed before serialization.
 
-**Coordinate precision:** Different GIS tools serialize `EPSG:4326` coordinates to different decimal place counts — see the full projection decision matrix on the [coordinate reference systems in annotation pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page. A coordinate written as `12.300000000000001` by QGIS and `12.3` by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (approximately 0.11 m at the equator, well within sub-meter imagery resolution) before hashing.
+**Coordinate precision:** Different GIS tools serialize `EPSG:4326` coordinates to different decimal place counts — see the full projection decision matrix on the [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page. A coordinate written as `12.300000000000001` by QGIS and `12.3` by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (approximately 0.11 m at the equator, well within sub-meter imagery resolution) before hashing.
 
 **Polygon vertex ordering:** GeoJSON polygons can be written starting at any vertex and traversing either clockwise or counter-clockwise. IETF RFC 7946 mandates counter-clockwise exterior rings, but many tools ignore this. Two annotators drawing the same field boundary will produce geometrically identical but byte-level different polygons. Canonicalize by rotating each ring to start at its lexicographically smallest coordinate pair and enforcing RFC 7946 winding order.
 
@@ -313,7 +313,7 @@ def build_manifest(
     return manifest
 ```
 
-When you integrate this with [DVC for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), the manifest file itself becomes a tracked DVC artifact — a lightweight JSON sidecar that lets you reproduce any dataset state by checking out a Git commit without pulling the full imagery or annotation files.
+When you integrate this with [DVC for geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/), the manifest file itself becomes a tracked DVC artifact — a lightweight JSON sidecar that lets you reproduce any dataset state by checking out a Git commit without pulling the full imagery or annotation files.
 
 ### Step 5: Validate Against Baseline
 
@@ -398,7 +398,7 @@ def validate_against_baseline(
     return len(errors) == 0, errors
 ```
 
-When validation fails, the [rollback strategies for corrupted spatial datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) page covers how to restore a known-good annotation state from a DVC remote or object storage backup without interrupting the broader MLOps pipeline.
+When validation fails, the [rollback strategies for corrupted spatial datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) page covers how to restore a known-good annotation state from a DVC remote or object storage backup without interrupting the broader MLOps pipeline.
 
 ## Spatial Parameters & Configuration Reference
 
@@ -418,19 +418,19 @@ When validation fails, the [rollback strategies for corrupted spatial datasets](
 
 **Self-intersecting polygons producing inconsistent canonical forms.** `shapely.normalize()` and winding-order enforcement both assume valid geometry. A self-intersecting polygon (butterfly polygon) will produce different `make_valid()` outputs depending on the Shapely/GEOS version. Pin `shapely==2.0.6` and `GEOS>=3.12` to lock this behavior. Log a warning and flag any feature where `make_valid()` changes the geometry type (e.g., Polygon → MultiPolygon) before including it in the manifest.
 
-**COCO JSON feature ordering.** COCO format stores annotations as a flat list with integer IDs. Sorting by `id` before hashing is not sufficient if IDs were reassigned during a re-export. Sort instead by `(image_id, category_id, bbox[0], bbox[1])` to achieve a stable ordering that survives ID reassignment. The [preserving metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) page covers COCO metadata field handling in depth.
+**COCO JSON feature ordering.** COCO format stores annotations as a flat list with integer IDs. Sorting by `id` before hashing is not sufficient if IDs were reassigned during a re-export. Sort instead by `(image_id, category_id, bbox[0], bbox[1])` to achieve a stable ordering that survives ID reassignment. The [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) page covers COCO metadata field handling in depth.
 
 **Floating-point round-trip through projection libraries.** A coordinate projected from UTM to WGS84 and back may not round-trip exactly due to PROJ's internal floating-point arithmetic. Always hash in the target CRS, not in an intermediate representation, and never hash a coordinate that has been projected more than once.
 
 **Multi-temporal annotation misalignment.** Annotations covering the same geographic extent but generated from imagery at different acquisition dates may hash identically if the geometry and labels are the same — even if the underlying scene has changed. Include the imagery acquisition date as a non-volatile metadata field in the canonical payload (distinct from `created_at`, which tracks the annotation session, not the imagery).
 
-**[Confidence score](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) fields and hashing.** Per-feature confidence scores assigned during [human-in-the-loop validation](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) should be treated as training-relevant content — do not strip them as volatile metadata. If confidence scores change because a reviewer upgraded a borderline annotation, the hash should change so the training gate catches the update.
+**[Confidence score](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) fields and hashing.** Per-feature confidence scores assigned during [human-in-the-loop validation](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) should be treated as training-relevant content — do not strip them as volatile metadata. If confidence scores change because a reviewer upgraded a borderline annotation, the hash should change so the training gate catches the update.
 
 ## Integration & Automation Hooks
 
 ### DVC Integration
 
-Store the manifest alongside `.dvc` tracking files so that `dvc repro` automatically regenerates and validates hashes as part of the training pipeline. See [using DVC pipelines for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) for the full `dvc.yaml` stage definition.
+Store the manifest alongside `.dvc` tracking files so that `dvc repro` automatically regenerates and validates hashes as part of the training pipeline. See [using DVC pipelines for automated dataset snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) for the full `dvc.yaml` stage definition.
 
 ```yaml
 # dvc.yaml integration snippet
@@ -499,7 +499,7 @@ jobs:
         run: python scripts/validate_manifest.py --current manifests/current.json --baseline manifests/baseline.json
 ```
 
-This gate runs on every pull request that touches the `annotations/` directory. A hash mismatch fails the check and blocks the merge, making annotation drift visible in code review before it reaches a training run. Pair this gate with a per-feature [confidence score](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) check so low-confidence annotations surface alongside integrity failures.
+This gate runs on every pull request that touches the `annotations/` directory. A hash mismatch fails the check and blocks the merge, making annotation drift visible in code review before it reaches a training run. Pair this gate with a per-feature [confidence score](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) check so low-confidence annotations surface alongside integrity failures.
 
 ## Validation & Testing
 
@@ -601,13 +601,13 @@ Use this checklist before treating annotation hashing as a production integrity 
 
 ---
 
-This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) pipeline.
+This workflow is one component of the broader [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) pipeline.
 
 **Related**
 
-- [Implementing DVC for Geospatial Training Data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-control heavy annotation assets with DVC remotes alongside SHA manifests
-- [Rollback Strategies for Corrupted Spatial Datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — restore a known-good annotation state when validation fails
-- [Preserving Metadata Across Dataset Versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep COCO/GeoJSON schema fields consistent across manifest versions
-- [Using DVC Pipelines for Automated Dataset Snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) — chain manifest generation with training triggers in `dvc.yaml`
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — project all geometries to a consistent CRS before hashing
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — treat per-feature scores as non-volatile training signal in manifests
+- [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — version-control heavy annotation assets with DVC remotes alongside SHA manifests
+- [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — restore a known-good annotation state when validation fails
+- [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) — keep COCO/GeoJSON schema fields consistent across manifest versions
+- [Using DVC Pipelines for Automated Dataset Snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/) — chain manifest generation with training triggers in `dvc.yaml`
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — project all geometries to a consistent CRS before hashing
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — treat per-feature scores as non-volatile training signal in manifests

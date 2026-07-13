@@ -15,7 +15,7 @@ layout: layouts/base.njk
         {% if loop.last %}
           <li aria-current="page">{{ c.title }}</li>
         {% else %}
-          <li><a href="{{ c.url }}">{{ c.title }}</a></li>
+          <li><a href="{{ siteUrl }}{{ c.url }}">{{ c.title }}</a></li>
         {% endif %}
       {% endfor %}
     </ol>
@@ -25,14 +25,14 @@ layout: layouts/base.njk
     <aside class="sidebar" aria-label="Section contents">
       <h4>{{ topNode.title }}</h4>
       <ul>
-        <li><a href="{{ topNode.url }}" class="{% if pageUrl == topNode.url %}is-active{% endif %}">Overview</a></li>
+        <li><a href="{{ siteUrl }}{{ topNode.url }}" class="{% if pageUrl == topNode.url %}is-active{% endif %}">Overview</a></li>
         {% for child in topNode.children %}
           <li>
-            <a href="{{ child.url }}" class="{% if pageUrl == child.url or pageUrl.startsWith(child.url) %}is-active{% endif %}">{{ child.title }}</a>
+            <a href="{{ siteUrl }}{{ child.url }}" class="{% if pageUrl == child.url or pageUrl.startsWith(child.url) %}is-active{% endif %}">{{ child.title }}</a>
             {% if child.children.length %}
             <ul>
               {% for grand in child.children %}
-                <li><a href="{{ grand.url }}" class="{% if pageUrl == grand.url %}is-active{% endif %}">{{ grand.title }}</a></li>
+                <li><a href="{{ siteUrl }}{{ grand.url }}" class="{% if pageUrl == grand.url %}is-active{% endif %}">{{ grand.title }}</a></li>
               {% endfor %}
             </ul>
             {% endif %}
@@ -49,7 +49,7 @@ layout: layouts/base.njk
         <h2>Dive deeper</h2>
         <div class="related__grid">
           {% for child in node.children %}
-            <a class="related__card" href="{{ child.url }}">
+            <a class="related__card" href="{{ siteUrl }}{{ child.url }}">
               <div class="title">{{ child.title }}</div>
               {% if child.description %}<div class="desc">{{ child.description }}</div>{% endif %}
             </a>
@@ -63,7 +63,7 @@ layout: layouts/base.njk
         <h2>Related in {{ parent.title }}</h2>
         <div class="related__grid">
           {% for sib in siblings %}
-            <a class="related__card" href="{{ sib.url }}">
+            <a class="related__card" href="{{ siteUrl }}{{ sib.url }}">
               <div class="title">{{ sib.title }}</div>
               {% if sib.description %}<div class="desc">{{ sib.description }}</div>{% endif %}
             </a>

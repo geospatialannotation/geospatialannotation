@@ -2,7 +2,7 @@
 title: "Geospatial Annotation Fundamentals & Architecture"
 description: "A complete guide to geospatial annotation architecture for spatial ML practitioners: data modalities, CRS governance, label taxonomies, pipeline stages, failure modes, and CI/CD integration."
 slug: "geospatial-annotation-fundamentals-architecture"
-type: "pillar"
+type: "overview"
 breadcrumb: "Geospatial Annotation Fundamentals"
 datePublished: "2024-01-15"
 dateModified: "2026-06-25"
@@ -29,8 +29,8 @@ schema:
     {
       "@type": "BreadcrumbList",
       "itemListElement": [
-        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
-        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals", "item": "https://geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"}
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://www.geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Geospatial Annotation Fundamentals", "item": "https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/"}
       ]
     },
     {
@@ -76,7 +76,7 @@ Geospatial AI has crossed from experimental research into enterprise deployment,
 
 ## Core Data Modalities & Spatial Primitives
 
-Geospatial machine learning operates across fundamentally different data structures, and the choice between [vector vs. raster annotation workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) dictates tooling, storage formats, and downstream model architecture. Misalignment between data modality and labeling paradigm is a leading cause of pipeline failure, often surfacing only during model evaluation when spatial metrics collapse unexpectedly.
+Geospatial machine learning operates across fundamentally different data structures, and the choice between [vector vs. raster annotation workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) dictates tooling, storage formats, and downstream model architecture. Misalignment between data modality and labeling paradigm is a leading cause of pipeline failure, often surfacing only during model evaluation when spatial metrics collapse unexpectedly.
 
 **Raster data**—orthomosaics, multispectral band stacks, synthetic aperture radar (SAR), and digital elevation models—stores continuous spatial fields at fixed grid resolution. Annotation of raster data centers on pixel-level segmentation masks, instance masks, and patch-based classification. Every annotation operation must account for spectral resolution (GSD), bit-depth constraints, and the source geotransform matrix that anchors the pixel grid to geographic coordinates.
 
@@ -149,7 +149,7 @@ Raw imagery enters through a standardized gateway that enforces format contracts
 
 - Cloud masking and atmospheric correction for satellite data
 - Orthorectification and DEM alignment for aerial and drone captures
-- CRS normalization to the project's canonical projection (`EPSG:32610` for UTM-based workflows; `EPSG:4326` for global datasets) — full [coordinate reference system governance](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) details are covered in the dedicated cluster
+- CRS normalization to the project's canonical projection (`EPSG:32610` for UTM-based workflows; `EPSG:4326` for global datasets) — full [coordinate reference system governance](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) details are covered in the dedicated cluster
 - Tiling into ML-friendly chunks (512×512 or 1024×1024 pixels) with spatial index generation using GeoHash, H3, or QuadTree
 
 ```python
@@ -190,7 +190,7 @@ Web-based or desktop annotation tools communicate via REST or gRPC APIs. Robust 
 - Offline capability with deterministic conflict resolution on sync
 - Real-time validation feedback: snapping to existing road network edges, enforcing minimum polygon area, alerting on self-intersections as they are drawn
 
-[Integrating Label Studio with geospatial workflows](/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) demonstrates how to wire a geospatial-aware labeling backend to these state requirements. Teams using QGIS for desktop digitizing can consult the [QGIS plugin ecosystem for annotation teams](/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) for plugin selection and automation hooks.
+[Integrating Label Studio with geospatial workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) demonstrates how to wire a geospatial-aware labeling backend to these state requirements. Teams using QGIS for desktop digitizing can consult the [QGIS plugin ecosystem for annotation teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) for plugin selection and automation hooks.
 
 ### Stage 3 — Geometry & QA Validation
 
@@ -216,11 +216,11 @@ def validate_and_repair(gdf: gpd.GeoDataFrame, min_area_m2: float = 5.0) -> gpd.
     return gdf
 ```
 
-Assigning [confidence scores for geospatial labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) at this stage extends the validation layer with probabilistic per-annotation quality signals that drive active learning routing and loss-weighting during model training.
+Assigning [confidence scores for geospatial labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) at this stage extends the validation layer with probabilistic per-annotation quality signals that drive active learning routing and loss-weighting during model training.
 
 ### Stage 4 — Export & Format Translation
 
-Training frameworks rarely consume raw GIS formats natively. Export pipelines translate annotations into framework-ready structures while [preserving spatial metadata across dataset versions](/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/):
+Training frameworks rarely consume raw GIS formats natively. Export pipelines translate annotations into framework-ready structures while [preserving spatial metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/):
 
 | Target Format | Use Case | Key Spatial Metadata |
 |---|---|---|
@@ -230,7 +230,7 @@ Training frameworks rarely consume raw GIS formats natively. Export pipelines tr
 | Mask GeoTIFF | Semantic segmentation | Full geotransform, nodata value |
 | YOLOv8 TXT | Lightweight bounding box training | Normalised `[cx, cy, w, h]` |
 
-The [how to structure GeoJSON for ML training datasets](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) guide provides production-ready schema templates and explains which fields are mandatory for spatial model training.
+The [how to structure GeoJSON for ML training datasets](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/) guide provides production-ready schema templates and explains which fields are mandatory for spatial model training.
 
 ### Stage 5 — Active Learning & Feedback
 
@@ -238,10 +238,10 @@ The final stage closes the loop between model predictions and the annotation que
 
 - Score unlabeled patches for uncertainty (entropy, MC Dropout variance) or spatial diversity
 - Route high-uncertainty samples to senior annotators, bypassing standard review queues
-- Pre-fill annotation canvases with model predictions for human correction — [automating pre-labeling with foundation models](/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) covers SAM-based and vision-language pre-labeling strategies
+- Pre-fill annotation canvases with model predictions for human correction — [automating pre-labeling with foundation models](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) covers SAM-based and vision-language pre-labeling strategies
 - Track correction rates per annotator and per class to detect annotator drift over time
 
-[Human-in-the-loop validation cycles](/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) provides implementation patterns for routing uncertain samples, managing review queues, and measuring annotator agreement across spatial domains.
+[Human-in-the-loop validation cycles](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) provides implementation patterns for routing uncertain samples, managing review queues, and measuring annotator agreement across spatial domains.
 
 ---
 
@@ -324,7 +324,7 @@ The diagram below illustrates a hierarchical taxonomy structure for land-cover c
   <text x="360" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="system-ui,sans-serif" opacity="0.6">Leaf nodes map directly to model output classes; parent nodes aggregate for reporting</text>
 </svg>
 
-When defining ROI boundaries for aerial or satellite imagery, sensor resolution dictates minimum viable feature sizes. A 30 cm/pixel drone orthomosaic can distinguish individual vehicles; 10 m Sentinel-2 data requires aggregated land-use classifications. [Defining ROI label taxonomies for aerial imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) provides structured templates for class hierarchies, attribute schemas, and resolution-aware labeling guidelines—including a decision matrix for [polygon vs. bounding box annotation](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) that accounts for both annotation cost and downstream model architecture.
+When defining ROI boundaries for aerial or satellite imagery, sensor resolution dictates minimum viable feature sizes. A 30 cm/pixel drone orthomosaic can distinguish individual vehicles; 10 m Sentinel-2 data requires aggregated land-use classifications. [Defining ROI label taxonomies for aerial imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) provides structured templates for class hierarchies, attribute schemas, and resolution-aware labeling guidelines—including a decision matrix for [polygon vs. bounding box annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/best-practices-for-polygon-vs-bounding-box-annotation/) that accounts for both annotation cost and downstream model architecture.
 
 ---
 
@@ -338,7 +338,7 @@ Multi-temporal annotation architecture requires:
 - **Delta tracking:** Record modifications as additive changes rather than destructive overwrites, preserving the full edit history per feature
 - **Cross-epoch validation:** Ensure historical annotations remain spatially consistent when projected to newer CRS versions or updated orthorectified baselines
 
-Change detection models perform best when annotation pipelines explicitly label transition states: `pre_event`, `during_event`, `post_event`, or `stable`, `degraded`, `restored`. [Tracking annotation changes with SHA hashing](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) provides a concrete implementation of change detection at the dataset level, while [implementing DVC for geospatial training data](/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) demonstrates how to version multi-temporal annotation snapshots with full lineage tracking.
+Change detection models perform best when annotation pipelines explicitly label transition states: `pre_event`, `during_event`, `post_event`, or `stable`, `degraded`, `restored`. [Tracking annotation changes with SHA hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) provides a concrete implementation of change detection at the dataset level, while [implementing DVC for geospatial training data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) demonstrates how to version multi-temporal annotation snapshots with full lineage tracking.
 
 ---
 
@@ -350,13 +350,13 @@ The following failure patterns are endemic to geospatial annotation pipelines an
 
 **Topology corruption from coordinate rounding.** Serializing geometries to JSON with insufficient decimal precision (fewer than 7 decimal places for `EPSG:4326`) rounds coordinates and can collapse thin polygons into self-intersections. Use at least 8 decimal places for geographic coordinates and 3 for projected metre coordinates.
 
-**Class imbalance amplified by spatial autocorrelation.** Geospatial datasets exhibit strong spatial autocorrelation—nearby pixels or polygons belong to the same class. Naive random train/validation splits place spatially adjacent samples in both sets, inflating validation accuracy by up to 15–20 IoU points. Always split on spatial grid tiles or geographic regions, not on individual features. [Calculating IoU thresholds for geospatial object detection](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) covers how projection choice affects IoU computation and what thresholds are appropriate per sensor type.
+**Class imbalance amplified by spatial autocorrelation.** Geospatial datasets exhibit strong spatial autocorrelation—nearby pixels or polygons belong to the same class. Naive random train/validation splits place spatially adjacent samples in both sets, inflating validation accuracy by up to 15–20 IoU points. Always split on spatial grid tiles or geographic regions, not on individual features. [Calculating IoU thresholds for geospatial object detection](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) covers how projection choice affects IoU computation and what thresholds are appropriate per sensor type.
 
 **Multi-temporal misalignment from orthorectification differences.** Imagery from different acquisition dates may use different DEM versions or orthorectification algorithms, introducing sub-pixel misalignment. A building annotated on 2022 imagery may be offset by 1–3 pixels from the same building in 2024 imagery at the same nominal resolution. Run co-registration checks before labeling time-series datasets.
 
 **Sliver polygons from automated digitizing.** Automated or semi-automated labeling tools frequently generate sliver polygons at class boundaries. These slivers train the model to expect a spurious narrow class transition that does not exist in reality. Enforce a minimum area threshold (project-appropriate—5 m² for urban parcel work, 100 m² for land cover) in the validation layer.
 
-**Annotator disagreement on spectral edge cases.** Low-contrast regions—shallow water over bright sand, shadow-filled valleys, burned areas—produce high inter-annotator disagreement. Without explicit uncertainty flags, these samples are treated as high-confidence training data. Compute IoU between annotator pairs on overlapping regions to identify and route ambiguous samples to adjudication rather than the main training pool. [Debugging annotation drift across dataset versions](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) covers how to detect systematic annotator drift and quarantine affected batches before they contaminate the training corpus.
+**Annotator disagreement on spectral edge cases.** Low-contrast regions—shallow water over bright sand, shadow-filled valleys, burned areas—produce high inter-annotator disagreement. Without explicit uncertainty flags, these samples are treated as high-confidence training data. Compute IoU between annotator pairs on overlapping regions to identify and route ambiguous samples to adjudication rather than the main training pool. [Debugging annotation drift across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/) covers how to detect systematic annotator drift and quarantine affected batches before they contaminate the training corpus.
 
 ---
 
@@ -393,7 +393,7 @@ jobs:
 
 ### DVC pipeline hook
 
-For teams using [DVC pipelines for automated dataset snapshots](/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/), add a validation stage before the training stage to ensure corrupted geometries never reach the model:
+For teams using [DVC pipelines for automated dataset snapshots](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/), add a validation stage before the training stage to ensure corrupted geometries never reach the model:
 
 ```yaml
 # dvc.yaml
@@ -413,7 +413,7 @@ stages:
       - data/processed/
 ```
 
-[Rollback strategies for corrupted spatial datasets](/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) covers how to recover from annotation batches that pass CI locally but fail downstream schema validation after format translation.
+[Rollback strategies for corrupted spatial datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) covers how to recover from annotation batches that pass CI locally but fail downstream schema validation after format translation.
 
 ---
 
@@ -436,9 +436,9 @@ Before scaling geospatial annotation workflows to enterprise datasets, verify th
 
 ## Related
 
-- [Vector vs. Raster Annotation Workflows](/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — labeling interface selection, export format rules, and validation patterns per modality
-- [Coordinate Reference Systems in Annotation Pipelines](/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — projection selection, transformation hooks, and CRS metadata preservation
-- [Defining ROI Label Taxonomies for Aerial Imagery](/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — hierarchical class design, attribute schemas, and resolution-aware labeling guidelines
-- [Confidence Scoring for Geospatial Labels](/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — probabilistic scoring, annotator reliability calibration, and uncertainty-driven training
-- [Dataset Versioning & Spatial Data Sync](/dataset-versioning-spatial-data-sync/) — DVC, STAC, SHA hashing, and rollback strategies for annotation dataset lineage
-- [Labeling Workflows & Toolchain Integration](/labeling-workflows-toolchain-integration/) — Label Studio, QGIS plugins, pre-labeling automation, and human-in-the-loop validation cycles
+- [Vector vs. Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — labeling interface selection, export format rules, and validation patterns per modality
+- [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — projection selection, transformation hooks, and CRS metadata preservation
+- [Defining ROI Label Taxonomies for Aerial Imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — hierarchical class design, attribute schemas, and resolution-aware labeling guidelines
+- [Confidence Scoring for Geospatial Labels](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) — probabilistic scoring, annotator reliability calibration, and uncertainty-driven training
+- [Dataset Versioning & Spatial Data Sync](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/) — DVC, STAC, SHA hashing, and rollback strategies for annotation dataset lineage
+- [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) — Label Studio, QGIS plugins, pre-labeling automation, and human-in-the-loop validation cycles
