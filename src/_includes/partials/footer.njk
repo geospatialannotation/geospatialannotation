@@ -24,7 +24,7 @@
 
     {% for section in navTree.children %}
     <div>
-      <h4>{{ section.title | replace(" for Geospatial AI/ML Pipelines", "") | replace(" for Geospatial AI", "") | replace(" & Architecture", "") | replace("Labeling Workflows & Toolchain Integration", "Labeling") | replace("Dataset Versioning & Spatial Data Sync", "Versioning") | replace("Geospatial Annotation Fundamentals", "Fundamentals") }}</h4>
+      <h4>{{ section.title | replace(" for Geospatial AI/ML Pipelines", "") | replace("Active Learning & Model Feedback Loops for Geospatial Annotation", "Active Learning") | replace(" for Geospatial AI", "") | replace(" & Architecture", "") | replace("Labeling Workflows & Toolchain Integration", "Labeling") | replace("Dataset Versioning & Spatial Data Sync", "Versioning") | replace("Geospatial Annotation Fundamentals", "Fundamentals") }}</h4>
       <ul>
         <li><a href="{{ section.url }}">Overview</a></li>
         {% for child in section.children %}

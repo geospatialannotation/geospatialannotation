@@ -405,6 +405,7 @@ img, svg { max-width: 100%; height: auto; }
 .cta--sky    .cta__icon { background: linear-gradient(135deg, var(--sky-400), var(--sky-600)); }
 .cta--teal   .cta__icon { background: linear-gradient(135deg, var(--teal-400), var(--teal-600)); }
 .cta--gold   .cta__icon { background: linear-gradient(135deg, var(--gold-400), var(--coral-400)); color: var(--sky-900); }
+.cta--coral  .cta__icon { background: linear-gradient(135deg, var(--coral-400), var(--sky-500)); }
 .cta__title  { font-weight: 600; line-height: 1.2; }
 .cta__sub    { font-size: 0.86rem; color: var(--muted); margin-top: 2px; }
 
@@ -458,6 +459,9 @@ img, svg { max-width: 100%; height: auto; }
 }
 .section-card--teal .section-card__icon {
   background: linear-gradient(135deg, var(--teal-400), var(--teal-600));
+}
+.section-card--coral .section-card__icon {
+  background: linear-gradient(135deg, var(--coral-400), var(--sky-500));
 }
 .section-card h3 {
   margin: 6px 0 0;
@@ -1008,3 +1012,7 @@ pre.mermaid {
   z-index: 200;
 }
 .skip-link:focus { left: 0; }
+
+/* In-article diagram SVGs: override inline max-width caps so they fill the text column.
+   Scoped to .article role="img" SVGs so UI icons remain unaffected. */
+.article svg[role="img"] { width: 100% !important; max-width: 100% !important; height: auto; }

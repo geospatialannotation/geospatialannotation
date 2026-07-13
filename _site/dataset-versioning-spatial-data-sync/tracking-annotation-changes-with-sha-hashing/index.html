@@ -54,7 +54,7 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
+  <link rel="stylesheet" href="/assets/css/site.css?v=77763835">
   <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
@@ -165,6 +165,13 @@
         <span class="site-nav__label">Home</span>
       </a>
       
+      <a href="/active-learning-model-feedback-loops/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+        
+        <span class="site-nav__label">Active Learning</span>
+      </a>
+      
       <a href="/dataset-versioning-spatial-data-sync/" class="is-active">
         
           <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
@@ -229,7 +236,11 @@
             
             <ul>
               
+                <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/" class="">Configuring DVC Remotes for Geospatial Data</a></li>
+              
                 <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/how-to-version-control-large-satellite-imagery-datasets/" class="">How to Version Control Large Satellite Imagery Datasets</a></li>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/integrating-stac-catalogs-with-versioned-datasets/" class="">Integrating STAC Catalogs with Versioned Datasets</a></li>
               
             </ul>
             
@@ -237,6 +248,12 @@
         
           <li>
             <a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/" class="">Preserving Metadata Across Dataset Versions</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
             
           </li>
         
@@ -247,6 +264,19 @@
               
                 <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/debugging-annotation-drift-across-dataset-versions/" class="">Debugging Annotation Drift Across Dataset Versions</a></li>
               
+                <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/recovering-from-a-corrupted-cog-export/" class="">Recovering from a Corrupted COG Export</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/" class="">Syncing Annotations Across Cloud Remotes</a>
+            
+            <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/" class="">Resolving Sync Conflicts in Distributed Annotation</a></li>
+              
             </ul>
             
           </li>
@@ -255,6 +285,8 @@
             <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/" class="is-active">Tracking Annotation Changes with SHA Hashing</a>
             
             <ul>
+              
+                <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/" class="">Computing Stable Content Hashes for COGs</a></li>
               
                 <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/" class="">Using DVC Pipelines for Automated Dataset Snapshots</a></li>
               
@@ -918,16 +950,16 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
 <h2 id="production-checklist" tabindex="-1"><a class="header-anchor" href="#production-checklist" aria-label="Permalink to section &quot;Production Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Checklist</h2>
 <p>Use this checklist before treating annotation hashing as a production integrity gate:</p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3065732"> All annotation sources normalized to <code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-3065732"> All annotation sources normalized to `EPSG:4326` (or an agreed projected CRS) before hashing</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6503090"> <code class="inline-code">VOLATILE_KEYS</code> list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio <code class="inline-code">reviewed_by</code>, CVAT <code class="inline-code">z_order</code><label class="task-list-item-label" for="task-item-6503090"> `VOLATILE_KEYS` list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio `reviewed_by`, CVAT `z_order`)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4242125"> Shapely and GEOS versions pinned (<code class="inline-code">shapely==2.0.6</code>, <code class="inline-code">GEOS&gt;=3.12</code>) and locked in <label class="task-list-item-label" for="task-item-4242125"> Shapely and GEOS versions pinned (`shapely==2.0.6`, `GEOS>=3.12`) and locked in `requirements.txt`</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5837836"> <code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-5837836"> `make_valid()` geometry-type changes logged and flagged; features that change type are quarantined before manifest inclusion</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3178897"> COCO feature lists sorted by <code class="inline-code">(image_id, category_id, bbox[0], bbox[1])</code> before hashing, not by raw <label class="task-list-item-label" for="task-item-3178897"> COCO feature lists sorted by `(image_id, category_id, bbox[0], bbox[1])` before hashing, not by raw `id`</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8946740"><label class="task-list-item-label" for="task-item-8946740"> Imagery acquisition date included as a non-volatile field to distinguish multi-temporal annotation sets</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7164188"><label class="task-list-item-label" for="task-item-7164188"> Baseline manifest stored in append-only object storage (S3/GCS/R2) with versioning enabled; semantic version incremented on every intentional update</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8398270"><label class="task-list-item-label" for="task-item-8398270"> Validation gate wired into CI and training trigger; a manifest mismatch halts the run before any GPU cost is incurred</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8577366"> Perceptual hash (<code class="inline-code">imagehash.phash</code><label class="task-list-item-label" for="task-item-8577366"> Perceptual hash (`imagehash.phash`) added to manifest for raster tile sidecars alongside the SHA-256 digest</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3190014"><label class="task-list-item-label" for="task-item-3190014"> Audit log receives manifest diffs with annotator-ID attribution for drift frequency tracking per tool</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2893950"> All annotation sources normalized to <code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-2893950"> All annotation sources normalized to `EPSG:4326` (or an agreed projected CRS) before hashing</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2207114"> <code class="inline-code">VOLATILE_KEYS</code> list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio <code class="inline-code">reviewed_by</code>, CVAT <code class="inline-code">z_order</code><label class="task-list-item-label" for="task-item-2207114"> `VOLATILE_KEYS` list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio `reviewed_by`, CVAT `z_order`)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-824224"> Shapely and GEOS versions pinned (<code class="inline-code">shapely==2.0.6</code>, <code class="inline-code">GEOS&gt;=3.12</code>) and locked in <label class="task-list-item-label" for="task-item-824224"> Shapely and GEOS versions pinned (`shapely==2.0.6`, `GEOS>=3.12`) and locked in `requirements.txt`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9100906"> <code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-9100906"> `make_valid()` geometry-type changes logged and flagged; features that change type are quarantined before manifest inclusion</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7674546"> COCO feature lists sorted by <code class="inline-code">(image_id, category_id, bbox[0], bbox[1])</code> before hashing, not by raw <label class="task-list-item-label" for="task-item-7674546"> COCO feature lists sorted by `(image_id, category_id, bbox[0], bbox[1])` before hashing, not by raw `id`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7708774"><label class="task-list-item-label" for="task-item-7708774"> Imagery acquisition date included as a non-volatile field to distinguish multi-temporal annotation sets</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2465113"><label class="task-list-item-label" for="task-item-2465113"> Baseline manifest stored in append-only object storage (S3/GCS/R2) with versioning enabled; semantic version incremented on every intentional update</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4794082"><label class="task-list-item-label" for="task-item-4794082"> Validation gate wired into CI and training trigger; a manifest mismatch halts the run before any GPU cost is incurred</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2245746"> Perceptual hash (<code class="inline-code">imagehash.phash</code><label class="task-list-item-label" for="task-item-2245746"> Perceptual hash (`imagehash.phash`) added to manifest for raster tile sidecars alongside the SHA-256 digest</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9416523"><label class="task-list-item-label" for="task-item-9416523"> Audit log receives manifest diffs with annotator-ID attribution for drift frequency tracking per tool</label></li>
 </ul>
 <h2 id="production-best-practices" tabindex="-1"><a class="header-anchor" href="#production-best-practices" aria-label="Permalink to section &quot;Production Best Practices&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Best Practices</h2>
 <p><strong>Pre-commit hooks for local drift detection.</strong> Run a lightweight hash check with <code class="inline-code">pre-commit</code> on every commit to the annotation repository. Use fast mode that only hashes modified files rather than rebuilding the full manifest.</p>
@@ -952,6 +984,11 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
       <section class="related" aria-label="Subsections">
         <h2>Dive deeper</h2>
         <div class="related__grid">
+          
+            <a class="related__card" href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/computing-stable-content-hashes-for-cogs/">
+              <div class="title">Computing Stable Content Hashes for COGs</div>
+              <div class="desc">A raw file SHA of a Cloud-Optimized GeoTIFF changes on almost every re-export, even when not a single pixel moved. GeoTIFF headers carry volatile bytes — a creation timestamp, a GDAL version tag, TIFF tag ordering, and shifting IFD offsets — so re-running the identical export on a newer library or a different machine r</div>
+            </a>
           
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">
               <div class="title">Using DVC Pipelines for Automated Dataset Snapshots</div>
@@ -980,6 +1017,11 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
             <a class="related__card" href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">
               <div class="title">Rollback Strategies for Corrupted Spatial Datasets</div>
               <div class="desc">A corrupted geospatial training dataset rarely announces itself. A malformed coordinate reference system embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation</div>
+            </a>
+          
+            <a class="related__card" href="/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">
+              <div class="title">Syncing Annotations Across Cloud Remotes</div>
+              <div class="desc">Two annotation teams — one in Lisbon, one in Nairobi — spend a Tuesday labeling building footprints over the same city extent. Both pull the dataset in the morning, both work against a shared S3 bucket, and both run sync at the end of the day. The Nairobi run finishes ninety seconds after Lisbon&#39;s. Because the tool wro</div>
             </a>
           
         </div>
@@ -1019,6 +1061,20 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
 
     
     <div>
+      <h4>Active Learning</h4>
+      <ul>
+        <li><a href="/active-learning-model-feedback-loops/">Overview</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
       <h4>Versioning</h4>
       <ul>
         <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
@@ -1028,6 +1084,8 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
           <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
           <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
         
           <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
         
@@ -1045,6 +1103,8 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
         
           <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
         
+          <li><a href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/">Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC</a></li>
+        
           <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows for Geospatial ML</a></li>
         
       </ul>
@@ -1057,11 +1117,15 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
         
           <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
         
+          <li><a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">CI/CD Gates for Annotation Datasets</a></li>
+        
           <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
         
           <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
           <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         
       </ul>
     </div>

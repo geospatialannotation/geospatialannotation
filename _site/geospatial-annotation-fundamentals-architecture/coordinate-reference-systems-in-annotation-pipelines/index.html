@@ -54,7 +54,7 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
+  <link rel="stylesheet" href="/assets/css/site.css?v=77763835">
   <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
@@ -165,6 +165,13 @@
         <span class="site-nav__label">Home</span>
       </a>
       
+      <a href="/active-learning-model-feedback-loops/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+        
+        <span class="site-nav__label">Active Learning</span>
+      </a>
+      
       <a href="/dataset-versioning-spatial-data-sync/" class="">
         
           <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
@@ -227,6 +234,12 @@
           <li>
             <a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="">Confidence Scoring for Geospatial Labels</a>
             
+            <ul>
+              
+                <li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+            </ul>
+            
           </li>
         
           <li>
@@ -234,7 +247,13 @@
             
             <ul>
               
+                <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/" class="">Applying Datum Transformation Grids with pyproj</a></li>
+              
                 <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/" class="">Calculating IoU Thresholds for Geospatial Object Detection</a></li>
+              
+                <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/" class="">CRS Roundtrip Testing with pyproj</a></li>
+              
+                <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/" class="">Fixing Legacy Shapefile .prj Mismatches</a></li>
               
             </ul>
             
@@ -252,11 +271,24 @@
           </li>
         
           <li>
+            <a href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/" class="">Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC</a>
+            
+            <ul>
+              
+                <li><a href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/converting-shapefiles-to-geoparquet-for-annotation/" class="">Converting Shapefiles to GeoParquet for Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/" class="">Vector vs Raster Annotation Workflows for Geospatial ML</a>
             
             <ul>
               
                 <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/how-to-structure-geojson-for-ml-training-datasets/" class="">How to Structure GeoJSON for ML Training Datasets</a></li>
+              
+                <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/rasterizing-vector-labels-for-segmentation-masks/" class="">Rasterizing Vector Labels for Segmentation Masks</a></li>
               
             </ul>
             
@@ -403,10 +435,10 @@
 <p>When <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">defining ROI label taxonomies for aerial imagery</a>, document the expected CRS for each label class in the taxonomy schema — this prevents downstream ambiguity when annotation batches arrive from different tools or annotators.</p>
 <p><strong>Baseline checklist before starting:</strong></p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-146324"> All source assets contain valid <code class="inline-code">spatial_ref</code> or <code class="inline-code">crs</code><label class="task-list-item-label" for="task-item-146324"> All source assets contain valid `spatial_ref` or `crs` metadata</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1696533"> Target CRS for model training is agreed upon (typically a local UTM zone such as <code class="inline-code">EPSG:32632</code><label class="task-list-item-label" for="task-item-1696533"> Target CRS for model training is agreed upon (typically a local UTM zone such as `EPSG:32632`)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4709251"> PROJ network access is enabled (<code class="inline-code">PROJ_NETWORK=ON</code><label class="task-list-item-label" for="task-item-4709251"> PROJ network access is enabled (`PROJ_NETWORK=ON`) or required grid files are bundled offline</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1848258"> Canonical axis order policy is documented (<code class="inline-code">lon, lat</code> for geographic; <code class="inline-code">x, y</code><label class="task-list-item-label" for="task-item-1848258"> Canonical axis order policy is documented (`lon, lat` for geographic; `x, y` for projected)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9160019"> All source assets contain valid <code class="inline-code">spatial_ref</code> or <code class="inline-code">crs</code><label class="task-list-item-label" for="task-item-9160019"> All source assets contain valid `spatial_ref` or `crs` metadata</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1766263"> Target CRS for model training is agreed upon (typically a local UTM zone such as <code class="inline-code">EPSG:32632</code><label class="task-list-item-label" for="task-item-1766263"> Target CRS for model training is agreed upon (typically a local UTM zone such as `EPSG:32632`)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5722254"> PROJ network access is enabled (<code class="inline-code">PROJ_NETWORK=ON</code><label class="task-list-item-label" for="task-item-5722254"> PROJ network access is enabled (`PROJ_NETWORK=ON`) or required grid files are bundled offline</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9177468"> Canonical axis order policy is documented (<code class="inline-code">lon, lat</code> for geographic; <code class="inline-code">x, y</code><label class="task-list-item-label" for="task-item-9177468"> Canonical axis order policy is documented (`lon, lat` for geographic; `x, y` for projected)</label></li>
 </ul>
 <hr>
 <h2 id="axis-order-inversion-the-most-common-crs-bug" tabindex="-1"><a class="header-anchor" href="#axis-order-inversion-the-most-common-crs-bug" aria-label="Permalink to section &quot;Axis-Order Inversion: The Most Common CRS Bug&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Axis-Order Inversion: The Most Common CRS Bug</h2>
@@ -982,9 +1014,24 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
         <h2>Dive deeper</h2>
         <div class="related__grid">
           
+            <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/">
+              <div class="title">Applying Datum Transformation Grids with pyproj</div>
+              <div class="desc">A datum shift such as NAD27 to NAD83, or NAD27 to WGS84, is not a simple rotation and scale — it corrects for how two reference frames disagree region by region, and that regional distortion is stored in a transformation grid. In pyproj, the accurate path uses an NTv2 grid (horizontal shifts) or a GTX grid (vertical sh</div>
+            </a>
+          
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">
               <div class="title">Calculating IoU Thresholds for Geospatial Object Detection</div>
               <div class="desc">Reliable IoU evaluation for aerial and satellite object detection requires three things that standard computer vision toolkits omit: reprojection from angular coordinates to a local metric coordinate reference system before any area computation, topology validation with shapely 2.0+ makevalid(), and threshold values ca</div>
+            </a>
+          
+            <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/crs-roundtrip-testing-with-pyproj/">
+              <div class="title">CRS Roundtrip Testing with pyproj</div>
+              <div class="desc">A CRS roundtrip test reprojects a set of known control points from the source coordinate reference system to the target and back to the source, then asserts that the maximum coordinate drift stays below a tolerance — under 1 cm for grid-based datum transforms, sub-millimetre for a plain projection change. That single a</div>
+            </a>
+          
+            <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/fixing-legacy-shapefile-prj-mismatches/">
+              <div class="title">Fixing Legacy Shapefile .prj Mismatches</div>
+              <div class="desc">A legacy Shapefile whose .prj sidecar declares one coordinate reference system while its coordinate values were actually recorded in another is one of the quietest data-corruption bugs in a geospatial annotation pipeline. The file loads without error, the geometries look valid, and every downstream tool trusts the .prj</div>
             </a>
           
         </div>
@@ -1004,6 +1051,11 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">
               <div class="title">Defining ROI Label Taxonomies for Aerial Imagery</div>
               <div class="desc">Without a structured ontology, annotation teams produce inconsistent labels, model training suffers from class imbalance, and downstream inference pipelines break under schema drift. A concrete failure mode: a six-class land-cover taxonomy that allows annotators to choose between vegetation and groundcover based on vis</div>
+            </a>
+          
+            <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/">
+              <div class="title">Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC</div>
+              <div class="desc">A team ingests a few hundred gigabytes of aerial imagery as plain striped GeoTIFFs and stores its vector labels as Shapefiles on a shared bucket. It works for the first sprint. Then the dataset grows to tens of thousands of scenes, and three failures land in the same week. The annotation tool takes twelve seconds to op</div>
             </a>
           
             <a class="related__card" href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">
@@ -1048,6 +1100,20 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
 
     
     <div>
+      <h4>Active Learning</h4>
+      <ul>
+        <li><a href="/active-learning-model-feedback-loops/">Overview</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
       <h4>Versioning</h4>
       <ul>
         <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
@@ -1057,6 +1123,8 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
           <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
           <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
         
           <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
         
@@ -1074,6 +1142,8 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
         
           <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
         
+          <li><a href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/">Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC</a></li>
+        
           <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows for Geospatial ML</a></li>
         
       </ul>
@@ -1086,11 +1156,15 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
         
           <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
         
+          <li><a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">CI/CD Gates for Annotation Datasets</a></li>
+        
           <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
         
           <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
           <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         
       </ul>
     </div>

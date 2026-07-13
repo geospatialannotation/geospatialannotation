@@ -1,0 +1,1101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><title>CI/CD Gates for Annotation Datasets · GeoAnnotation</title>
+  <meta name="description" content="Build CI/CD gates that block broken geospatial annotations from reaching training: geometry validation, CRS assertions, class-balance checks, and schema enforcement wired into GitHub Actions and DVC pipelines.">
+  <meta name="author" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
+  <meta name="googlebot" content="index, follow">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="canonical" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">
+
+  <!-- Theme + tile colors -->
+  <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="msapplication-TileColor" content="#1f779e">
+  <meta name="msapplication-config" content="none">
+  <meta name="application-name" content="GeoAnnotation">
+
+  <!-- Icons -->
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
+  <link rel="mask-icon" href="/icons/safari-pinned-tab.svg" color="#1f779e">
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="GeoAnnot">
+  <meta name="mobile-web-app-capable" content="yes">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="CI/CD Gates for Annotation Datasets · GeoAnnotation">
+  <meta property="og:description" content="Build CI/CD gates that block broken geospatial annotations from reaching training: geometry validation, CRS assertions, class-balance checks, and schema enforcement wired into GitHub Actions and DVC pipelines.">
+  <meta property="og:url" content="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">
+  <meta property="og:site_name" content="Geospatial Annotation &amp; ML Pipeline Automation">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CI/CD Gates for Annotation Datasets · GeoAnnotation">
+  <meta name="twitter:description" content="Build CI/CD gates that block broken geospatial annotations from reaching training: geometry validation, CRS assertions, class-balance checks, and schema enforcement wired into GitHub Actions and DVC pipelines.">
+  <meta name="twitter:image" content="https://www.geospatialannotation.com/icons/og-image.png">
+  <meta name="twitter:image:alt" content="Geospatial Annotation &amp; ML Pipeline Automation — production-grade geospatial annotation pipelines">
+
+  <!-- DNS prefetch + preconnect for mermaid CDN (only loaded when needed by the page) -->
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+  <link rel="sitemap" type="application/xml" href="/sitemap.xml">
+  <link rel="stylesheet" href="/assets/css/site.css?v=77763835">
+  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": "https://www.geospatialannotation.com/#organization",
+  "name": "Geospatial Annotation &amp; ML Pipeline Automation",
+  "url": "https://www.geospatialannotation.com/",
+  "logo": {
+    "@type": "ImageObject",
+    "url": "https://www.geospatialannotation.com/icons/icon-512.png",
+    "width": 512,
+    "height": 512
+  }
+}
+</script>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [{
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://www.geospatialannotation.com/"
+    },{
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Labeling Workflows & Toolchain Integration for Geospatial AI",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/"
+    },{
+      "@type": "ListItem",
+      "position": 3,
+      "name": "CI/CD Gates for Annotation Datasets",
+      "item": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/"
+    }]
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "TechArticle",
+  "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/#article",
+  "headline": "CI/CD Gates for Annotation Datasets",
+  "description": "Build CI/CD gates that block broken geospatial annotations from reaching training: geometry validation, CRS assertions, class-balance checks, and schema enforcement wired into GitHub Actions and DVC pipelines.",
+  "url": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/"
+  },
+  "image": "https://www.geospatialannotation.com/icons/og-image.png",
+  "inLanguage": "en-US",
+  "isPartOf": { "@id": "https://www.geospatialannotation.com/#website" },
+  "publisher": { "@id": "https://www.geospatialannotation.com/#organization" },
+  "author": { "@id": "https://www.geospatialannotation.com/#organization" }
+}
+</script>
+
+
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
+
+  
+  
+<header class="site-header" role="banner">
+  <div class="site-header__inner">
+    <a class="brand" href="/" aria-label="Home — Geospatial Annotation &amp; ML Pipeline Automation">
+      <svg class="brand__logo" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <linearGradient id="b1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#94d0e6"/>
+            <stop offset="55%" stop-color="#43b7a5"/>
+            <stop offset="100%" stop-color="#ffc73a"/>
+          </linearGradient>
+          <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff8e6d"/>
+            <stop offset="100%" stop-color="#f06a48"/>
+          </linearGradient>
+        </defs>
+        <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#b1)"/>
+        <g fill="none" stroke="#fff" stroke-opacity="0.55" stroke-width="1.25" stroke-linecap="round">
+          <path d="M8 44 C 18 36, 28 42, 38 34 S 56 26, 58 20"/>
+          <path d="M8 50 C 20 44, 30 48, 42 40 S 56 32, 60 28"/>
+          <path d="M8 38 C 16 32, 24 36, 32 30 S 48 20, 56 14"/>
+        </g>
+        <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+        <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="url(#b2)" stroke="#fff" stroke-width="1.4"/>
+        <circle cx="33" cy="29.4" r="2.4" fill="#fff"/>
+      </svg>
+      <span class="brand__text">
+        <span>GeoAnnotation</span>
+        <span class="brand__sub">ML Pipeline Automation</span>
+      </span>
+    </a>
+
+    <button class="nav-toggle" type="button" aria-controls="primary-nav" aria-expanded="false" aria-label="Toggle navigation">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+
+    <nav id="primary-nav" class="site-nav" aria-label="Primary">
+      <a href="/" class="">
+        <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>
+        <span class="site-nav__label">Home</span>
+      </a>
+      
+      <a href="/active-learning-model-feedback-loops/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+        
+        <span class="site-nav__label">Active Learning</span>
+      </a>
+      
+      <a href="/dataset-versioning-spatial-data-sync/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+        
+        <span class="site-nav__label">Dataset Versioning</span>
+      </a>
+      
+      <a href="/geospatial-annotation-fundamentals-architecture/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        
+        <span class="site-nav__label">Fundamentals</span>
+      </a>
+      
+      <a href="/labeling-workflows-toolchain-integration/" class="is-active">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
+        
+        <span class="site-nav__label">Labeling Workflows</span>
+      </a>
+      
+    </nav>
+  </div>
+</header>
+
+
+  <main id="main-content" class="site-main">
+    
+
+
+
+
+
+
+<div class="shell">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol>
+      
+        
+          <li><a href="/">Home</a></li>
+        
+      
+        
+          <li><a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration for Geospatial AI</a></li>
+        
+      
+        
+          <li aria-current="page">CI/CD Gates for Annotation Datasets</li>
+        
+      
+    </ol>
+  </nav>
+
+  <div class="content-shell">
+    <aside class="sidebar" aria-label="Section contents">
+      <h4>Labeling Workflows &amp; Toolchain Integration for Geospatial AI</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/" class="">Overview</a></li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/" class="">Automating Pre-Labeling with Foundation Models</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/" class="">Converting Label Studio Exports to YOLOv8 Format</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/" class="is-active">CI/CD Gates for Annotation Datasets</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/" class="">A GitHub Actions Geometry Validation Gate</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/" class="">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/syncing-qgis-edits-to-cloud-annotation-platforms/" class="">Syncing QGIS Edits to Cloud Annotation Platforms</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/" class="">Integrating Label Studio with Geospatial Workflows</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/step-by-step-cvat-setup-for-drone-imagery-annotation/" class="">Step-by-Step CVAT Setup for Drone Imagery Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/" class="">Label Studio vs QGIS for Geospatial Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/" class="">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/" class="">COCO vs GeoParquet for Annotation Export</a></li>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/" class="">Enforcing the COCO JSON Schema in CI</a></li>
+              
+            </ul>
+            
+          </li>
+        
+      </ul>
+    </aside>
+
+    <article class="article">
+      <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Article",
+      "headline": "CI/CD Gates for Annotation Datasets",
+      "description": "Build CI/CD gates that block broken geospatial annotations from reaching training: geometry validation, CRS assertions, class-balance checks, and schema enforcement wired into GitHub Actions and DVC pipelines.",
+      "datePublished": "2026-07-13",
+      "dateModified": "2026-07-13",
+      "author": {"@type": "Organization", "name": "Geospatial Annotation"},
+      "publisher": {"@type": "Organization", "name": "Geospatial Annotation"}
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://geospatialannotation.com/"},
+        {"@type": "ListItem", "position": 2, "name": "Labeling Workflows & Toolchain Integration", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/"},
+        {"@type": "ListItem", "position": 3, "name": "CI/CD Gates for Annotation Datasets", "item": "https://geospatialannotation.com/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/"}
+      ]
+    },
+    {
+      "@type": "HowTo",
+      "name": "Build a CI/CD Gate for Geospatial Annotation Datasets",
+      "step": [
+        {"@type": "HowToStep", "position": 1, "name": "Write a validation script", "text": "Implement a Python entrypoint that runs geometry, CRS, class-balance, and schema checks over changed annotation files and exits non-zero on any error-severity finding."},
+        {"@type": "HowToStep", "position": 2, "name": "Trigger the gate on annotation pull requests", "text": "Add a GitHub Actions workflow with a paths filter so the validation job runs only when files under the annotations directory change."},
+        {"@type": "HowToStep", "position": 3, "name": "Pull versioned data before validating", "text": "Restore LFS or DVC-tracked assets in the runner so the gate validates real geometry rather than pointer files."},
+        {"@type": "HowToStep", "position": 4, "name": "Mirror the gate as a DVC stage", "text": "Register the same validation command as a DVC pipeline stage so local runs and reproducible pipelines enforce identical rules."},
+        {"@type": "HowToStep", "position": 5, "name": "Post a summary report", "text": "Write a per-check summary to the workflow step summary and comment it on the pull request so reviewers see exactly what failed."}
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What should block a merge versus only raise a warning?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Block on defects that silently corrupt training: invalid or empty geometry, a wrong or missing coordinate reference system, and schema violations that break the loader. Downgrade taste-driven or statistical signals such as mild class imbalance or a rise in tiny polygons to warnings, so annotators see the trend without a hard stop that trains them to bypass the gate."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I keep the geometry check from failing on valid multipart features?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Test validity with the same predicate your training loader uses. A MultiPolygon of disjoint parts is valid; a bow-tie ring is not. Rely on shapely is_valid plus explain_validity rather than ad hoc part-count heuristics, and treat empty geometries and zero-area polygons as separate, explicit checks so legitimate multipart labels pass."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Should the gate run on every commit or only on pull requests?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run the full gate on pull requests targeting your protected branch, and require it as a status check before merge. On feature-branch commits, run a lighter fast subset for quick feedback. This keeps main protected while avoiding an expensive full data pull on every intermediate push."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do I stop large imagery checkouts from making the gate flaky?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Validate only the files the pull request changed instead of the whole dataset, cache the DVC or LFS store between runs keyed on the lockfile, and pull the specific paths rather than the full remote. Add a bounded retry around the data-pull step so a single transient network error does not fail an otherwise clean batch."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
+<h1>CI/CD Gates for Annotation Datasets</h1>
+<p>A junior annotator finishes a batch of 400 building footprints on Friday afternoon, opens a pull request, and a teammate approves it on the strength of a clean visual diff. The merge looks routine. What the diff did not show is that the export tool wrote the footprints in the imagery’s native <code class="inline-code">EPSG:32633</code> while the rest of the training store is normalized to <code class="inline-code">EPSG:4326</code>, and that three of the polygons self-intersect where the annotator clicked back across an existing edge. The nightly retraining job ingests the batch without complaint — the loader happily reads whatever coordinates it finds — and the model quietly loses two points of mean average precision on the validation set. Nobody notices for a week, because nothing gated the batch. By the time the regression is traced back, four more batches have been built on the corrupted convention.</p>
+<p>This is the failure mode a CI/CD gate exists to prevent. In software, no one merges code that fails the build; annotation datasets deserve the same discipline. This guide shows how to build an automated gate for the <a href="/labeling-workflows-toolchain-integration/">labeling workflows and toolchain integration</a> that sit between your annotators and your training queue — a script that runs geometry, coordinate reference system, class-balance, and schema checks, exits non-zero on failure, and blocks the merge until the batch is fixed. You will wire that script into GitHub Actions so it runs on every pull request that touches annotations, mirror it as a reproducible DVC stage, and post a per-check report so reviewers see exactly what broke.</p>
+<svg viewBox="0 0 880 200" role="img" aria-label="CI gate pipeline for annotation datasets from pull request through validation to merge or block" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:880px;display:block;margin:1.5rem auto;">
+  <title>Annotation CI Gate Pipeline</title>
+  <desc>A pull request that touches annotations flows through checkout, dependency install, and a validation stage running geometry, CRS, schema, and class-balance checks; a passing run merges while a failing run blocks the pull request.</desc>
+  <defs>
+    <marker id="ga" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
+    </marker>
+  </defs>
+  <rect x="8" y="60" width="104" height="66" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="60" y="88" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="sans-serif">PR touches</text>
+  <text x="60" y="106" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">annotations</text>
+  <rect x="140" y="60" width="96" height="66" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="188" y="88" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="sans-serif">Checkout</text>
+  <text x="188" y="106" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">+ LFS / DVC</text>
+  <rect x="264" y="60" width="96" height="66" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="312" y="88" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="sans-serif">Install</text>
+  <text x="312" y="106" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">pinned deps</text>
+  <rect x="388" y="26" width="176" height="134" rx="8" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.65"/>
+  <text x="476" y="50" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Validate gate</text>
+  <text x="476" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">geometry</text>
+  <text x="476" y="98" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">CRS</text>
+  <text x="476" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">schema</text>
+  <text x="476" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.85">class balance</text>
+  <rect x="700" y="28" width="164" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="782" y="52" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="sans-serif">exit 0 → merge</text>
+  <text x="782" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">status check green</text>
+  <rect x="700" y="104" width="164" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="782" y="128" text-anchor="middle" font-size="12" font-weight="600" fill="currentColor" font-family="sans-serif">exit 1 → block</text>
+  <text x="782" y="146" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">merge disabled</text>
+  <line x1="112" y1="93" x2="138" y2="93" stroke="currentColor" stroke-width="1.5" marker-end="url(#ga)" opacity="0.6"/>
+  <line x1="236" y1="93" x2="262" y2="93" stroke="currentColor" stroke-width="1.5" marker-end="url(#ga)" opacity="0.6"/>
+  <line x1="360" y1="93" x2="386" y2="93" stroke="currentColor" stroke-width="1.5" marker-end="url(#ga)" opacity="0.6"/>
+  <path d="M564,80 C620,80 640,56 698,56" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#ga)" opacity="0.6"/>
+  <path d="M564,106 C620,106 640,132 698,132" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#ga)" opacity="0.6"/>
+</svg>
+<h2 id="prerequisites-pinned-toolchain" tabindex="-1"><a class="header-anchor" href="#prerequisites-pinned-toolchain" aria-label="Permalink to section &quot;Prerequisites &amp; Pinned Toolchain&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Prerequisites &amp; Pinned Toolchain</h2>
+<p>A gate is only trustworthy if it runs the same code with the same library versions on every machine — the CI runner, the reviewer’s laptop, and the reproducible pipeline. Pin everything. Floating versions are how a <code class="inline-code">shapely</code> minor release quietly changes what counts as a valid geometry and turns a green build red overnight.</p>
+<p>Install the validation dependencies from a lockfile-style block:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">bash</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-bash">pip <span class="token function">install</span> <span class="token punctuation">\</span>
+  <span class="token assign-left variable">shapely</span><span class="token operator">==</span><span class="token number">2.0</span>.6 <span class="token punctuation">\</span>
+  <span class="token assign-left variable">pyproj</span><span class="token operator">==</span><span class="token number">3.6</span>.1 <span class="token punctuation">\</span>
+  <span class="token assign-left variable">geopandas</span><span class="token operator">==</span><span class="token number">0.14</span>.4 <span class="token punctuation">\</span>
+  <span class="token assign-left variable">jsonschema</span><span class="token operator">==</span><span class="token number">4.23</span>.0
+</code></pre>
+</div>
+<p>You also need two pieces of infrastructure:</p>
+<ul>
+<li><strong>GitHub Actions</strong> (or an equivalent CI service) with branch protection enabled on your default branch, so the gate can be marked a <em>required status check</em>. Without branch protection the gate reports failures but cannot actually stop a merge.</li>
+<li><strong>A data layer</strong> that stores the heavy assets outside Git. This guide assumes either Git LFS for imagery or <a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">DVC for versioning geospatial training data</a>, which keeps multi-gigabyte rasters and their annotation exports content-addressed rather than committed as blobs.</li>
+</ul>
+<p>A minimal repository layout the gate expects:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">text</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-text">repo/
+├── annotations/            # GeoJSON / GeoParquet label files (PRs touch these)
+├── schemas/
+│   └── feature.schema.json # JSON Schema contract for feature properties
+├── scripts/
+│   └── validate_annotations.py
+├── dvc.yaml
+└── .github/workflows/annotation-gate.yml
+</code></pre>
+</div>
+<p>The gate operates on the files under <code class="inline-code">annotations/</code>. Every label file is expected to carry a declared <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> and a <code class="inline-code">class</code> property on each feature that matches your agreed <a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">label taxonomy</a>. Those two contracts are what the checks below enforce.</p>
+<h2 id="structuring-the-four-check-validation-gate" tabindex="-1"><a class="header-anchor" href="#structuring-the-four-check-validation-gate" aria-label="Permalink to section &quot;Structuring the Four-Check Validation Gate&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Structuring the Four-Check Validation Gate</h2>
+<p>The gate is a single Python entrypoint that runs four independent checks and aggregates their findings. Each check returns a list of <code class="inline-code">Issue</code> records tagged with a severity; the entrypoint decides the exit code from the worst severity it sees. Keeping the checks independent means you can add a fifth later without touching the others, and you can unit-test each in isolation.</p>
+<p>Start with the shared vocabulary — an <code class="inline-code">Issue</code> dataclass and a severity ranking:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> __future__ <span class="token keyword">import</span> annotations
+
+<span class="token keyword">from</span> dataclasses <span class="token keyword">import</span> dataclass
+<span class="token keyword">from</span> enum <span class="token keyword">import</span> IntEnum
+
+
+<span class="token keyword">class</span> <span class="token class-name">Severity</span><span class="token punctuation">(</span>IntEnum<span class="token punctuation">)</span><span class="token punctuation">:</span>
+    WARNING <span class="token operator">=</span> <span class="token number">1</span>
+    ERROR <span class="token operator">=</span> <span class="token number">2</span>
+
+
+<span class="token decorator annotation punctuation">@dataclass</span><span class="token punctuation">(</span>frozen<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">)</span>
+<span class="token keyword">class</span> <span class="token class-name">Issue</span><span class="token punctuation">:</span>
+    check<span class="token punctuation">:</span> <span class="token builtin">str</span>
+    severity<span class="token punctuation">:</span> Severity
+    feature_id<span class="token punctuation">:</span> <span class="token builtin">str</span> <span class="token operator">|</span> <span class="token builtin">int</span> <span class="token operator">|</span> <span class="token boolean">None</span>
+    message<span class="token punctuation">:</span> <span class="token builtin">str</span>
+</code></pre>
+</div>
+<h3 id="geometry-validity-checks-with-shapely" tabindex="-1"><a class="header-anchor" href="#geometry-validity-checks-with-shapely" aria-label="Permalink to section &quot;Geometry validity checks with shapely&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Geometry validity checks with shapely</h3>
+<p>Invalid geometry is the defect most likely to slip past a visual review and then break rasterization or <a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">IoU threshold calculations</a> downstream. The check flags three distinct failure classes — topological invalidity, empty geometries, and zero-area polygons — because conflating them produces confusing reports.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>validation <span class="token keyword">import</span> explain_validity
+
+
+<span class="token keyword">def</span> <span class="token function">check_geometry</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    issues<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> fid<span class="token punctuation">,</span> geom <span class="token keyword">in</span> gdf<span class="token punctuation">.</span>geometry<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        <span class="token keyword">if</span> geom <span class="token keyword">is</span> <span class="token boolean">None</span> <span class="token keyword">or</span> geom<span class="token punctuation">.</span>is_empty<span class="token punctuation">:</span>
+            issues<span class="token punctuation">.</span>append<span class="token punctuation">(</span>Issue<span class="token punctuation">(</span><span class="token string">"geometry"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> fid<span class="token punctuation">,</span> <span class="token string">"empty or null geometry"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token keyword">continue</span>
+        <span class="token keyword">if</span> <span class="token keyword">not</span> geom<span class="token punctuation">.</span>is_valid<span class="token punctuation">:</span>
+            reason <span class="token operator">=</span> explain_validity<span class="token punctuation">(</span>geom<span class="token punctuation">)</span>
+            issues<span class="token punctuation">.</span>append<span class="token punctuation">(</span>Issue<span class="token punctuation">(</span><span class="token string">"geometry"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> fid<span class="token punctuation">,</span> <span class="token string-interpolation"><span class="token string">f"invalid: </span><span class="token interpolation"><span class="token punctuation">{</span>reason<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+            <span class="token keyword">continue</span>
+        <span class="token keyword">if</span> geom<span class="token punctuation">.</span>geom_type <span class="token keyword">in</span> <span class="token punctuation">(</span><span class="token string">"Polygon"</span><span class="token punctuation">,</span> <span class="token string">"MultiPolygon"</span><span class="token punctuation">)</span> <span class="token keyword">and</span> geom<span class="token punctuation">.</span>area <span class="token operator">==</span> <span class="token number">0.0</span><span class="token punctuation">:</span>
+            issues<span class="token punctuation">.</span>append<span class="token punctuation">(</span>Issue<span class="token punctuation">(</span><span class="token string">"geometry"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>WARNING<span class="token punctuation">,</span> fid<span class="token punctuation">,</span> <span class="token string">"zero-area polygon"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> issues
+</code></pre>
+</div>
+<p>Note the deliberate choice: an invalid ring is an <code class="inline-code">ERROR</code> that blocks the merge, but a zero-area polygon is a <code class="inline-code">WARNING</code>, because it is occasionally a legitimate degenerate label an annotator will fix on the next pass rather than a corruption.</p>
+<h3 id="crs-assertions-with-pyproj" tabindex="-1"><a class="header-anchor" href="#crs-assertions-with-pyproj" aria-label="Permalink to section &quot;CRS assertions with pyproj&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> CRS assertions with pyproj</h3>
+<p>The Friday-afternoon bug in the opening scenario was a silent CRS mismatch. The gate asserts that every file declares a CRS and that it matches the pipeline’s canonical projection. Comparing normalized EPSG codes is more robust than comparing WKT strings, which differ cosmetically across PROJ versions.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> pyproj <span class="token keyword">import</span> CRS
+
+
+<span class="token keyword">def</span> <span class="token function">check_crs</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span> expected_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token keyword">if</span> gdf<span class="token punctuation">.</span>crs <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span>Issue<span class="token punctuation">(</span><span class="token string">"crs"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token string">"no CRS declared on layer"</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+    actual <span class="token operator">=</span> CRS<span class="token punctuation">.</span>from_user_input<span class="token punctuation">(</span>gdf<span class="token punctuation">.</span>crs<span class="token punctuation">)</span><span class="token punctuation">.</span>to_epsg<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> actual <span class="token keyword">is</span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span>Issue<span class="token punctuation">(</span><span class="token string">"crs"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token string">"CRS does not resolve to an EPSG code"</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+    <span class="token keyword">if</span> actual <span class="token operator">!=</span> expected_epsg<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span>Issue<span class="token punctuation">(</span><span class="token string">"crs"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+                      <span class="token string-interpolation"><span class="token string">f"CRS EPSG:</span><span class="token interpolation"><span class="token punctuation">{</span>actual<span class="token punctuation">}</span></span><span class="token string"> != expected EPSG:</span><span class="token interpolation"><span class="token punctuation">{</span>expected_epsg<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+    <span class="token keyword">return</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+</code></pre>
+</div>
+<h3 id="class-balance-checks" tabindex="-1"><a class="header-anchor" href="#class-balance-checks" aria-label="Permalink to section &quot;Class-balance checks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Class-balance checks</h3>
+<p>A batch that is 98% “vehicle” and 2% everything else will not crash training, but it skews the class distribution and is worth surfacing. The check computes per-class frequency and flags any class that falls below a minimum share of the batch. This is a <code class="inline-code">WARNING</code> by default — imbalance is a signal, not a corruption — but you can promote it to <code class="inline-code">ERROR</code> for classes your model is known to be fragile on.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">from</span> collections <span class="token keyword">import</span> Counter
+
+
+<span class="token keyword">def</span> <span class="token function">check_class_balance</span><span class="token punctuation">(</span>
+    gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span>
+    class_field<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span>
+    min_share<span class="token punctuation">:</span> <span class="token builtin">float</span><span class="token punctuation">,</span>
+<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    <span class="token keyword">if</span> class_field <span class="token keyword">not</span> <span class="token keyword">in</span> gdf<span class="token punctuation">.</span>columns<span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span>Issue<span class="token punctuation">(</span><span class="token string">"balance"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token string-interpolation"><span class="token string">f"missing '</span><span class="token interpolation"><span class="token punctuation">{</span>class_field<span class="token punctuation">}</span></span><span class="token string">' column"</span></span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+    counts <span class="token operator">=</span> Counter<span class="token punctuation">(</span>gdf<span class="token punctuation">[</span>class_field<span class="token punctuation">]</span><span class="token punctuation">.</span>dropna<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    total <span class="token operator">=</span> <span class="token builtin">sum</span><span class="token punctuation">(</span>counts<span class="token punctuation">.</span>values<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> total <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">:</span>
+        <span class="token keyword">return</span> <span class="token punctuation">[</span>Issue<span class="token punctuation">(</span><span class="token string">"balance"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span> <span class="token string">"no labeled features in batch"</span><span class="token punctuation">)</span><span class="token punctuation">]</span>
+    issues<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> cls<span class="token punctuation">,</span> n <span class="token keyword">in</span> counts<span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        share <span class="token operator">=</span> n <span class="token operator">/</span> total
+        <span class="token keyword">if</span> share <span class="token operator">&lt;</span> min_share<span class="token punctuation">:</span>
+            issues<span class="token punctuation">.</span>append<span class="token punctuation">(</span>Issue<span class="token punctuation">(</span><span class="token string">"balance"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>WARNING<span class="token punctuation">,</span> <span class="token boolean">None</span><span class="token punctuation">,</span>
+                                 <span class="token string-interpolation"><span class="token string">f"class '</span><span class="token interpolation"><span class="token punctuation">{</span>cls<span class="token punctuation">}</span></span><span class="token string">' is </span><span class="token interpolation"><span class="token punctuation">{</span>share<span class="token punctuation">:</span><span class="token format-spec">.1%</span><span class="token punctuation">}</span></span><span class="token string"> of batch (&lt; </span><span class="token interpolation"><span class="token punctuation">{</span>min_share<span class="token punctuation">:</span><span class="token format-spec">.0%</span><span class="token punctuation">}</span></span><span class="token string">)"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> issues
+</code></pre>
+</div>
+<h3 id="schema-enforcement-with-jsonschema" tabindex="-1"><a class="header-anchor" href="#schema-enforcement-with-jsonschema" aria-label="Permalink to section &quot;Schema enforcement with jsonschema&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Schema enforcement with jsonschema</h3>
+<p>Geometry and CRS guard the spatial layer; JSON Schema guards the attribute layer. A contract in <code class="inline-code">schemas/feature.schema.json</code> pins which properties every feature must carry, their types, and their allowed values — for example, that <code class="inline-code">class</code> is one of an enumerated taxonomy and <code class="inline-code">confidence</code> is a number between 0 and 1. This is where a formal export contract, described in <a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">validating annotation export formats</a>, becomes an executable check.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> json
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">from</span> jsonschema <span class="token keyword">import</span> Draft202012Validator
+
+
+<span class="token keyword">def</span> <span class="token function">check_schema</span><span class="token punctuation">(</span>gdf<span class="token punctuation">:</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">,</span> schema_path<span class="token punctuation">:</span> Path<span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    schema <span class="token operator">=</span> json<span class="token punctuation">.</span>loads<span class="token punctuation">(</span>schema_path<span class="token punctuation">.</span>read_text<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    validator <span class="token operator">=</span> Draft202012Validator<span class="token punctuation">(</span>schema<span class="token punctuation">)</span>
+    issues<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> fid<span class="token punctuation">,</span> row <span class="token keyword">in</span> gdf<span class="token punctuation">.</span>drop<span class="token punctuation">(</span>columns<span class="token operator">=</span><span class="token string">"geometry"</span><span class="token punctuation">)</span><span class="token punctuation">.</span>iterrows<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">:</span>
+        record <span class="token operator">=</span> <span class="token punctuation">{</span>k<span class="token punctuation">:</span> <span class="token punctuation">(</span><span class="token boolean">None</span> <span class="token keyword">if</span> v <span class="token operator">!=</span> v <span class="token keyword">else</span> v<span class="token punctuation">)</span> <span class="token keyword">for</span> k<span class="token punctuation">,</span> v <span class="token keyword">in</span> row<span class="token punctuation">.</span>to_dict<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>items<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">}</span>
+        <span class="token keyword">for</span> err <span class="token keyword">in</span> validator<span class="token punctuation">.</span>iter_errors<span class="token punctuation">(</span>record<span class="token punctuation">)</span><span class="token punctuation">:</span>
+            path <span class="token operator">=</span> <span class="token string">"."</span><span class="token punctuation">.</span>join<span class="token punctuation">(</span><span class="token builtin">str</span><span class="token punctuation">(</span>p<span class="token punctuation">)</span> <span class="token keyword">for</span> p <span class="token keyword">in</span> err<span class="token punctuation">.</span>path<span class="token punctuation">)</span> <span class="token keyword">or</span> <span class="token string">"&lt;root>"</span>
+            issues<span class="token punctuation">.</span>append<span class="token punctuation">(</span>Issue<span class="token punctuation">(</span><span class="token string">"schema"</span><span class="token punctuation">,</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">,</span> fid<span class="token punctuation">,</span> <span class="token string-interpolation"><span class="token string">f"</span><span class="token interpolation"><span class="token punctuation">{</span>path<span class="token punctuation">}</span></span><span class="token string">: </span><span class="token interpolation"><span class="token punctuation">{</span>err<span class="token punctuation">.</span>message<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> issues
+</code></pre>
+</div>
+<h3 id="the-gate-entrypoint-that-exits-non-zero" tabindex="-1"><a class="header-anchor" href="#the-gate-entrypoint-that-exits-non-zero" aria-label="Permalink to section &quot;The gate entrypoint that exits non-zero&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> The gate entrypoint that exits non-zero</h3>
+<p>The entrypoint ties the checks together over the files a pull request changed, prints a report, and — critically — exits with a non-zero status when any <code class="inline-code">ERROR</code> is present. That exit code is the entire mechanism by which CI blocks the merge.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> argparse
+<span class="token keyword">import</span> sys
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+<span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+
+
+<span class="token keyword">def</span> <span class="token function">validate_file</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> Path<span class="token punctuation">,</span> expected_epsg<span class="token punctuation">:</span> <span class="token builtin">int</span><span class="token punctuation">,</span> schema_path<span class="token punctuation">:</span> Path<span class="token punctuation">,</span>
+                  class_field<span class="token punctuation">:</span> <span class="token builtin">str</span><span class="token punctuation">,</span> min_share<span class="token punctuation">:</span> <span class="token builtin">float</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span><span class="token punctuation">:</span>
+    gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>read_file<span class="token punctuation">(</span>path<span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token punctuation">[</span>
+        <span class="token operator">*</span>check_geometry<span class="token punctuation">(</span>gdf<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token operator">*</span>check_crs<span class="token punctuation">(</span>gdf<span class="token punctuation">,</span> expected_epsg<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token operator">*</span>check_class_balance<span class="token punctuation">(</span>gdf<span class="token punctuation">,</span> class_field<span class="token punctuation">,</span> min_share<span class="token punctuation">)</span><span class="token punctuation">,</span>
+        <span class="token operator">*</span>check_schema<span class="token punctuation">(</span>gdf<span class="token punctuation">,</span> schema_path<span class="token punctuation">)</span><span class="token punctuation">,</span>
+    <span class="token punctuation">]</span>
+
+
+<span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token builtin">int</span><span class="token punctuation">:</span>
+    parser <span class="token operator">=</span> argparse<span class="token punctuation">.</span>ArgumentParser<span class="token punctuation">(</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"files"</span><span class="token punctuation">,</span> nargs<span class="token operator">=</span><span class="token string">"+"</span><span class="token punctuation">,</span> <span class="token builtin">type</span><span class="token operator">=</span>Path<span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"--expected-epsg"</span><span class="token punctuation">,</span> <span class="token builtin">type</span><span class="token operator">=</span><span class="token builtin">int</span><span class="token punctuation">,</span> default<span class="token operator">=</span><span class="token number">4326</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"--schema"</span><span class="token punctuation">,</span> <span class="token builtin">type</span><span class="token operator">=</span>Path<span class="token punctuation">,</span> default<span class="token operator">=</span>Path<span class="token punctuation">(</span><span class="token string">"schemas/feature.schema.json"</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"--class-field"</span><span class="token punctuation">,</span> default<span class="token operator">=</span><span class="token string">"class"</span><span class="token punctuation">)</span>
+    parser<span class="token punctuation">.</span>add_argument<span class="token punctuation">(</span><span class="token string">"--min-share"</span><span class="token punctuation">,</span> <span class="token builtin">type</span><span class="token operator">=</span><span class="token builtin">float</span><span class="token punctuation">,</span> default<span class="token operator">=</span><span class="token number">0.02</span><span class="token punctuation">)</span>
+    args <span class="token operator">=</span> parser<span class="token punctuation">.</span>parse_args<span class="token punctuation">(</span><span class="token punctuation">)</span>
+
+    all_issues<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> path <span class="token keyword">in</span> args<span class="token punctuation">.</span>files<span class="token punctuation">:</span>
+        all_issues<span class="token punctuation">.</span>extend<span class="token punctuation">(</span>
+            validate_file<span class="token punctuation">(</span>path<span class="token punctuation">,</span> args<span class="token punctuation">.</span>expected_epsg<span class="token punctuation">,</span> args<span class="token punctuation">.</span>schema<span class="token punctuation">,</span>
+                          args<span class="token punctuation">.</span>class_field<span class="token punctuation">,</span> args<span class="token punctuation">.</span>min_share<span class="token punctuation">)</span>
+        <span class="token punctuation">)</span>
+
+    errors <span class="token operator">=</span> <span class="token punctuation">[</span>i <span class="token keyword">for</span> i <span class="token keyword">in</span> all_issues <span class="token keyword">if</span> i<span class="token punctuation">.</span>severity <span class="token keyword">is</span> Severity<span class="token punctuation">.</span>ERROR<span class="token punctuation">]</span>
+    warnings <span class="token operator">=</span> <span class="token punctuation">[</span>i <span class="token keyword">for</span> i <span class="token keyword">in</span> all_issues <span class="token keyword">if</span> i<span class="token punctuation">.</span>severity <span class="token keyword">is</span> Severity<span class="token punctuation">.</span>WARNING<span class="token punctuation">]</span>
+    <span class="token keyword">for</span> issue <span class="token keyword">in</span> all_issues<span class="token punctuation">:</span>
+        tag <span class="token operator">=</span> issue<span class="token punctuation">.</span>severity<span class="token punctuation">.</span>name
+        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"[</span><span class="token interpolation"><span class="token punctuation">{</span>tag<span class="token punctuation">}</span></span><span class="token string">] </span><span class="token interpolation"><span class="token punctuation">{</span>issue<span class="token punctuation">.</span>check<span class="token punctuation">}</span></span><span class="token string"> feature=</span><span class="token interpolation"><span class="token punctuation">{</span>issue<span class="token punctuation">.</span>feature_id<span class="token punctuation">}</span></span><span class="token string">: </span><span class="token interpolation"><span class="token punctuation">{</span>issue<span class="token punctuation">.</span>message<span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span>
+    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"\n</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>errors<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> error(s), </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token builtin">len</span><span class="token punctuation">(</span>warnings<span class="token punctuation">)</span><span class="token punctuation">}</span></span><span class="token string"> warning(s)"</span></span><span class="token punctuation">)</span>
+    <span class="token keyword">return</span> <span class="token number">1</span> <span class="token keyword">if</span> errors <span class="token keyword">else</span> <span class="token number">0</span>
+
+
+<span class="token keyword">if</span> __name__ <span class="token operator">==</span> <span class="token string">"__main__"</span><span class="token punctuation">:</span>
+    sys<span class="token punctuation">.</span>exit<span class="token punctuation">(</span>main<span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<p>Running <code class="inline-code">python scripts/validate_annotations.py annotations/batch_412.geojson</code> now prints a labelled report and returns <code class="inline-code">1</code> if anything blocks the merge. Everything that follows is about invoking this exact command in the right places.</p>
+<h2 id="wiring-the-gate-into-github-actions-on-annotation-pull-requests" tabindex="-1"><a class="header-anchor" href="#wiring-the-gate-into-github-actions-on-annotation-pull-requests" aria-label="Permalink to section &quot;Wiring the Gate into GitHub Actions on Annotation Pull Requests&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Wiring the Gate into GitHub Actions on Annotation Pull Requests</h2>
+<p>The workflow runs the gate only when a pull request changes files under <code class="inline-code">annotations/</code>, using a <code class="inline-code">paths</code> filter so unrelated code PRs are not slowed by a data pull. It checks out the branch, restores the versioned data, installs the pinned dependencies, and runs the validation command against the changed files.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">yaml</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-yaml"><span class="token comment"># .github/workflows/annotation-gate.yml</span>
+<span class="token key atrule">name</span><span class="token punctuation">:</span> Annotation validation gate
+<span class="token key atrule">on</span><span class="token punctuation">:</span>
+  <span class="token key atrule">pull_request</span><span class="token punctuation">:</span>
+    <span class="token key atrule">paths</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token string">"annotations/**"</span>
+      <span class="token punctuation">-</span> <span class="token string">"schemas/**"</span>
+
+<span class="token key atrule">jobs</span><span class="token punctuation">:</span>
+  <span class="token key atrule">validate</span><span class="token punctuation">:</span>
+    <span class="token key atrule">runs-on</span><span class="token punctuation">:</span> ubuntu<span class="token punctuation">-</span>latest
+    <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/checkout@v4
+        <span class="token key atrule">with</span><span class="token punctuation">:</span>
+          <span class="token key atrule">lfs</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+          <span class="token key atrule">fetch-depth</span><span class="token punctuation">:</span> <span class="token number">0</span>
+
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Set up Python
+        <span class="token key atrule">uses</span><span class="token punctuation">:</span> actions/setup<span class="token punctuation">-</span>python@v5
+        <span class="token key atrule">with</span><span class="token punctuation">:</span>
+          <span class="token key atrule">python-version</span><span class="token punctuation">:</span> <span class="token string">"3.11"</span>
+
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Install pinned dependencies
+        <span class="token key atrule">run</span><span class="token punctuation">:</span> pip install shapely==2.0.6 pyproj==3.6.1 geopandas==0.14.4 jsonschema==4.23.0
+
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Determine changed annotation files
+        <span class="token key atrule">id</span><span class="token punctuation">:</span> changed
+        <span class="token key atrule">run</span><span class="token punctuation">:</span> <span class="token punctuation">|</span><span class="token scalar string">
+          git fetch origin "$" --depth=1
+          files=$(git diff --name-only --diff-filter=ACM \
+            "origin/$"...HEAD -- 'annotations/**' | tr '\n' ' ')
+          echo "files=$files" >> "$GITHUB_OUTPUT"</span>
+
+      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Run validation gate
+        <span class="token key atrule">if</span><span class="token punctuation">:</span> steps.changed.outputs.files <span class="token tag">!=</span> ''
+        <span class="token key atrule">run</span><span class="token punctuation">:</span> python scripts/validate_annotations.py $ <span class="token punctuation">-</span><span class="token punctuation">-</span>expected<span class="token punctuation">-</span>epsg 4326
+        <span class="token key atrule">env</span><span class="token punctuation">:</span>
+          <span class="token key atrule">PROJ_NETWORK</span><span class="token punctuation">:</span> <span class="token string">"ON"</span>
+</code></pre>
+</div>
+<p>Two details make this reliable. The <code class="inline-code">Determine changed annotation files</code> step scopes validation to exactly what the pull request touched, so a 30-file batch does not trigger a full-dataset scan. And once the job is added as a required status check in branch-protection settings, a non-zero exit from the gate physically disables the merge button — the corrupted batch cannot reach the training branch until it is green.</p>
+<h2 id="running-the-gate-as-a-dvc-pipeline-stage" tabindex="-1"><a class="header-anchor" href="#running-the-gate-as-a-dvc-pipeline-stage" aria-label="Permalink to section &quot;Running the Gate as a DVC Pipeline Stage&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Running the Gate as a DVC Pipeline Stage</h2>
+<p>CI protects the shared branch, but annotators want the same verdict locally before they push, and reproducible pipelines want it as a tracked dependency. Registering the identical command as a DVC stage gives you both. Because DVC stages are content-addressed, the gate re-runs only when the annotations or the schema actually change.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">yaml</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-yaml"><span class="token comment"># dvc.yaml</span>
+<span class="token key atrule">stages</span><span class="token punctuation">:</span>
+  <span class="token key atrule">validate_annotations</span><span class="token punctuation">:</span>
+    <span class="token key atrule">cmd</span><span class="token punctuation">:</span> <span class="token punctuation">></span><span class="token scalar string">
+      python scripts/validate_annotations.py annotations/*.geojson
+      --expected-epsg 4326 --schema schemas/feature.schema.json</span>
+    <span class="token key atrule">deps</span><span class="token punctuation">:</span>
+      <span class="token punctuation">-</span> scripts/validate_annotations.py
+      <span class="token punctuation">-</span> schemas/feature.schema.json
+      <span class="token punctuation">-</span> annotations
+    <span class="token key atrule">always_changed</span><span class="token punctuation">:</span> <span class="token boolean important">false</span>
+</code></pre>
+</div>
+<p>Running <code class="inline-code">dvc repro validate_annotations</code> executes the same checks the CI runner does. Wiring the gate before your training stage in the same <code class="inline-code">dvc.yaml</code> means a failing validation halts the pipeline: <code class="inline-code">dvc repro</code> stops at the gate and never reaches the training stage, so a bad batch cannot be baked into a snapshot. This mirrors how CI blocks the merge, giving you one rule enforced in two places.</p>
+<h2 id="posting-a-validation-summary-to-the-pull-request" tabindex="-1"><a class="header-anchor" href="#posting-a-validation-summary-to-the-pull-request" aria-label="Permalink to section &quot;Posting a Validation Summary to the Pull Request&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Posting a Validation Summary to the Pull Request</h2>
+<p>A red X on a status check tells a reviewer <em>that</em> the batch failed, not <em>why</em>. Writing a structured summary turns the gate into a teaching tool. GitHub Actions renders anything appended to the <code class="inline-code">$GITHUB_STEP_SUMMARY</code> file as Markdown on the run page, and a short step can also comment the report directly on the pull request.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> os
+<span class="token keyword">from</span> pathlib <span class="token keyword">import</span> Path
+
+
+<span class="token keyword">def</span> <span class="token function">write_summary</span><span class="token punctuation">(</span>issues<span class="token punctuation">:</span> <span class="token builtin">list</span><span class="token punctuation">[</span>Issue<span class="token punctuation">]</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    summary_path <span class="token operator">=</span> os<span class="token punctuation">.</span>environ<span class="token punctuation">.</span>get<span class="token punctuation">(</span><span class="token string">"GITHUB_STEP_SUMMARY"</span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token keyword">not</span> summary_path<span class="token punctuation">:</span>
+        <span class="token keyword">return</span>
+    lines <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token string">"## Annotation gate report"</span><span class="token punctuation">,</span> <span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"| Severity | Check | Feature | Message |"</span><span class="token punctuation">,</span>
+             <span class="token string">"|---|---|---|---|"</span><span class="token punctuation">]</span>
+    <span class="token keyword">for</span> i <span class="token keyword">in</span> <span class="token builtin">sorted</span><span class="token punctuation">(</span>issues<span class="token punctuation">,</span> key<span class="token operator">=</span><span class="token keyword">lambda</span> x<span class="token punctuation">:</span> <span class="token operator">-</span>x<span class="token punctuation">.</span>severity<span class="token punctuation">)</span><span class="token punctuation">:</span>
+        lines<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token string-interpolation"><span class="token string">f"| </span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">.</span>severity<span class="token punctuation">.</span>name<span class="token punctuation">}</span></span><span class="token string"> | </span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">.</span>check<span class="token punctuation">}</span></span><span class="token string"> | </span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">.</span>feature_id<span class="token punctuation">}</span></span><span class="token string"> | </span><span class="token interpolation"><span class="token punctuation">{</span>i<span class="token punctuation">.</span>message<span class="token punctuation">}</span></span><span class="token string"> |"</span></span><span class="token punctuation">)</span>
+    <span class="token keyword">if</span> <span class="token keyword">not</span> issues<span class="token punctuation">:</span>
+        lines<span class="token punctuation">.</span>append<span class="token punctuation">(</span><span class="token string">"| — | — | — | All checks passed |"</span><span class="token punctuation">)</span>
+    Path<span class="token punctuation">(</span>summary_path<span class="token punctuation">)</span><span class="token punctuation">.</span>write_text<span class="token punctuation">(</span><span class="token string">"\n"</span><span class="token punctuation">.</span>join<span class="token punctuation">(</span>lines<span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"\n"</span><span class="token punctuation">)</span>
+</code></pre>
+</div>
+<p>To surface the same table as a pull-request comment, pipe it through the GitHub CLI in a final workflow step:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">yaml</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-yaml">      <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> Comment report on PR
+        <span class="token key atrule">if</span><span class="token punctuation">:</span> always()
+        <span class="token key atrule">run</span><span class="token punctuation">:</span> gh pr comment "$" <span class="token punctuation">-</span><span class="token punctuation">-</span>body<span class="token punctuation">-</span>file report.md
+        <span class="token key atrule">env</span><span class="token punctuation">:</span>
+          <span class="token key atrule">GH_TOKEN</span><span class="token punctuation">:</span> $
+</code></pre>
+</div>
+<p>Now a failing batch produces a per-feature list an annotator can act on directly — “feature 118: invalid: Self-intersection at or near point 6.14, 46.2” — instead of a mysterious build failure.</p>
+<h2 id="gate-parameters-severity-reference" tabindex="-1"><a class="header-anchor" href="#gate-parameters-severity-reference" aria-label="Permalink to section &quot;Gate Parameters &amp; Severity Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Gate Parameters &amp; Severity Reference</h2>
+<p>The table below summarizes each check, the library that implements it, the condition that trips it, and its default severity. Tune the severities and thresholds to your model’s sensitivities rather than accepting these blindly.</p>
+<div class="table-scroll" tabindex="0"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Tool</th>
+<th>Failure condition</th>
+<th>Default severity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Geometry validity</td>
+<td><code class="inline-code">shapely</code></td>
+<td>Self-intersection, null, or empty geometry</td>
+<td>Error</td>
+</tr>
+<tr>
+<td>Zero-area polygon</td>
+<td><code class="inline-code">shapely</code></td>
+<td>Polygon or multipolygon with <code class="inline-code">area == 0</code></td>
+<td>Warning</td>
+</tr>
+<tr>
+<td>CRS declared</td>
+<td><code class="inline-code">pyproj</code></td>
+<td>Layer has no CRS or CRS lacks an EPSG code</td>
+<td>Error</td>
+</tr>
+<tr>
+<td>CRS match</td>
+<td><code class="inline-code">pyproj</code></td>
+<td>EPSG code differs from canonical projection</td>
+<td>Error</td>
+</tr>
+<tr>
+<td>Class balance</td>
+<td><code class="inline-code">geopandas</code> / <code class="inline-code">Counter</code></td>
+<td>A class falls below <code class="inline-code">min_share</code> of the batch</td>
+<td>Warning</td>
+</tr>
+<tr>
+<td>Schema conformance</td>
+<td><code class="inline-code">jsonschema</code></td>
+<td>Property missing, wrong type, or out of enum</td>
+<td>Error</td>
+</tr>
+<tr>
+<td>Empty batch</td>
+<td><code class="inline-code">geopandas</code></td>
+<td>Zero labeled features in a changed file</td>
+<td>Error</td>
+</tr>
+</tbody>
+</table>
+</div><h2 id="edge-cases-gotchas" tabindex="-1"><a class="header-anchor" href="#edge-cases-gotchas" aria-label="Permalink to section &quot;Edge Cases &amp; Gotchas&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases &amp; Gotchas</h2>
+<p><strong>Flaky large-file checkouts.</strong> Cloning a repository with gigabytes of imagery on every run is slow and occasionally times out. Scope the checkout and validation to the changed paths, and cache the data layer between runs keyed on the DVC lockfile hash. A gate that pulls only the tiles a pull request touched runs in seconds and rarely flakes.</p>
+<p><strong>LFS and DVC pull in CI.</strong> If you forget <code class="inline-code">lfs: true</code> on the checkout — or forget an explicit <code class="inline-code">dvc pull</code> before validating — the runner sees pointer files, not real geometry. <code class="inline-code">geopandas.read_file</code> then either errors on a text pointer or, worse, reads a stale cached copy and passes a batch that would fail on real data. Always restore the actual assets before the validation step, and prefer <code class="inline-code">dvc pull annotations</code> to a full-remote pull so you fetch only what the gate needs.</p>
+<p><strong>False positives from make_valid repairs.</strong> It is tempting to auto-repair geometry in the gate with <code class="inline-code">buffer(0)</code> or <code class="inline-code">make_valid</code> and then validate the repaired result. Resist it in the gate itself. A repair can silently change a polygon’s area or split it into parts, so a batch that “passes” after repair is not the batch the annotator drew. Keep the gate read-only: it reports invalidity and blocks the merge, and repair happens as a deliberate, reviewed commit — not an invisible CI side effect.</p>
+<p><strong>Threshold tuning.</strong> A <code class="inline-code">min_share</code> set too high fails every small specialist batch and trains annotators to ignore the gate; set too low, it never fires. Start permissive, watch which warnings recur over a few weeks, and tighten from evidence. The same applies to promoting balance or zero-area findings from warning to error — do it per class, driven by which classes your model actually regresses on, not uniformly.</p>
+<h2 id="validation-testing" tabindex="-1"><a class="header-anchor" href="#validation-testing" aria-label="Permalink to section &quot;Validation &amp; Testing&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Validation &amp; Testing</h2>
+<p>The gate is code, so it needs its own tests. Feed it deliberately broken fixtures and assert the exit code and the issues, so a future refactor cannot silently weaken a check.</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> geopandas <span class="token keyword">as</span> gpd
+<span class="token keyword">from</span> shapely<span class="token punctuation">.</span>geometry <span class="token keyword">import</span> Polygon
+
+
+<span class="token keyword">def</span> <span class="token function">test_bowtie_polygon_is_error</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    bowtie <span class="token operator">=</span> Polygon<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span>  <span class="token comment"># self-intersecting</span>
+    gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"class"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"road"</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">,</span> geometry<span class="token operator">=</span><span class="token punctuation">[</span>bowtie<span class="token punctuation">]</span><span class="token punctuation">,</span> crs<span class="token operator">=</span><span class="token string">"EPSG:4326"</span><span class="token punctuation">)</span>
+    issues <span class="token operator">=</span> check_geometry<span class="token punctuation">(</span>gdf<span class="token punctuation">)</span>
+    <span class="token keyword">assert</span> <span class="token builtin">any</span><span class="token punctuation">(</span>i<span class="token punctuation">.</span>severity <span class="token keyword">is</span> Severity<span class="token punctuation">.</span>ERROR <span class="token keyword">and</span> i<span class="token punctuation">.</span>check <span class="token operator">==</span> <span class="token string">"geometry"</span> <span class="token keyword">for</span> i <span class="token keyword">in</span> issues<span class="token punctuation">)</span>
+
+
+<span class="token keyword">def</span> <span class="token function">test_wrong_crs_is_error</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    poly <span class="token operator">=</span> Polygon<span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">]</span><span class="token punctuation">)</span>
+    gdf <span class="token operator">=</span> gpd<span class="token punctuation">.</span>GeoDataFrame<span class="token punctuation">(</span><span class="token punctuation">{</span><span class="token string">"class"</span><span class="token punctuation">:</span> <span class="token punctuation">[</span><span class="token string">"road"</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">,</span> geometry<span class="token operator">=</span><span class="token punctuation">[</span>poly<span class="token punctuation">]</span><span class="token punctuation">,</span> crs<span class="token operator">=</span><span class="token string">"EPSG:3857"</span><span class="token punctuation">)</span>
+    issues <span class="token operator">=</span> check_crs<span class="token punctuation">(</span>gdf<span class="token punctuation">,</span> expected_epsg<span class="token operator">=</span><span class="token number">4326</span><span class="token punctuation">)</span>
+    <span class="token keyword">assert</span> issues <span class="token keyword">and</span> issues<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">.</span>severity <span class="token keyword">is</span> Severity<span class="token punctuation">.</span>ERROR
+</code></pre>
+</div>
+<p>Complement the unit tests with an end-to-end smoke run that invokes the entrypoint on a known-bad file and asserts a non-zero return:</p>
+<div class="code-block">
+  <div class="code-block__head">
+    <span class="code-lang">python</span>
+    <button type="button" class="code-copy" aria-label="Copy code to clipboard">
+      <span class="code-copy__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+      </span>
+      <span class="code-copy__label">Copy</span>
+    </button>
+  </div>
+  <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-python"><span class="token keyword">import</span> subprocess
+
+
+<span class="token keyword">def</span> <span class="token function">test_entrypoint_blocks_bad_batch</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-</span><span class="token operator">></span> <span class="token boolean">None</span><span class="token punctuation">:</span>
+    result <span class="token operator">=</span> subprocess<span class="token punctuation">.</span>run<span class="token punctuation">(</span>
+        <span class="token punctuation">[</span><span class="token string">"python"</span><span class="token punctuation">,</span> <span class="token string">"scripts/validate_annotations.py"</span><span class="token punctuation">,</span> <span class="token string">"tests/fixtures/bad_batch.geojson"</span><span class="token punctuation">]</span><span class="token punctuation">,</span>
+        capture_output<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span> text<span class="token operator">=</span><span class="token boolean">True</span><span class="token punctuation">,</span>
+    <span class="token punctuation">)</span>
+    <span class="token keyword">assert</span> result<span class="token punctuation">.</span>returncode <span class="token operator">==</span> <span class="token number">1</span>
+    <span class="token keyword">assert</span> <span class="token string">"ERROR"</span> <span class="token keyword">in</span> result<span class="token punctuation">.</span>stdout
+</code></pre>
+</div>
+<p>Pin these tests into the same CI workflow, and pair the gate with content-addressed change detection so it re-runs only when a batch truly changes. The techniques in <a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">tracking annotation changes with SHA hashing</a> give you stable per-batch hashes, letting the gate skip untouched files and making its verdicts reproducible across machines and re-exports.</p>
+<h2 id="frequently-asked-questions" tabindex="-1"><a class="header-anchor" href="#frequently-asked-questions" aria-label="Permalink to section &quot;Frequently Asked Questions&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Frequently Asked Questions</h2>
+<div class="faq"><details class="faq-item"><summary class="faq-item__q"># What should block a merge versus only raise a warning?<span class="faq-item__chev" aria-hidden="true">+</span></summary><div class="faq-item__a">
+<p>Block on defects that silently corrupt training: invalid or empty geometry, a wrong or missing coordinate reference system, and schema violations that break the loader. Downgrade taste-driven or statistical signals such as mild class imbalance or a rise in tiny polygons to warnings, so annotators see the trend without a hard stop that trains them to bypass the gate.</p>
+</div></details><details class="faq-item"><summary class="faq-item__q"># How do I keep the geometry check from failing on valid multipart features?<span class="faq-item__chev" aria-hidden="true">+</span></summary><div class="faq-item__a">
+<p>Test validity with the same predicate your training loader uses. A MultiPolygon of disjoint parts is valid; a bow-tie ring is not. Rely on shapely is_valid plus explain_validity rather than ad hoc part-count heuristics, and treat empty geometries and zero-area polygons as separate, explicit checks so legitimate multipart labels pass.</p>
+</div></details><details class="faq-item"><summary class="faq-item__q"># Should the gate run on every commit or only on pull requests?<span class="faq-item__chev" aria-hidden="true">+</span></summary><div class="faq-item__a">
+<p>Run the full gate on pull requests targeting your protected branch, and require it as a status check before merge. On feature-branch commits, run a lighter fast subset for quick feedback. This keeps main protected while avoiding an expensive full data pull on every intermediate push.</p>
+</div></details><details class="faq-item"><summary class="faq-item__q"># How do I stop large imagery checkouts from making the gate flaky?<span class="faq-item__chev" aria-hidden="true">+</span></summary><div class="faq-item__a">
+<p>Validate only the files the pull request changed instead of the whole dataset, cache the DVC or LFS store between runs keyed on the lockfile, and pull the specific paths rather than the full remote. Add a bounded retry around the data-pull step so a single transient network error does not fail an otherwise clean batch.</p>
+</div></details></div><h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
+<ul>
+<li><a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/">A GitHub Actions Geometry Validation Gate</a> — a complete, copy-ready workflow focused on catching self-intersections, zero-area polygons, and CRS mismatches on every pull request</li>
+<li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a> — the schema contracts and format checks your gate enforces before training</li>
+<li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — content-addressed change detection that lets the gate re-run only on batches that actually changed</li>
+<li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — the CRS normalization rules the gate’s projection assertions depend on</li>
+</ul>
+<p>This guide is part of the broader <a href="/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration for Geospatial AI</a> topic area, which connects annotation tooling to the automated pipelines that turn labels into trained models.</p>
+
+
+      
+      <section class="related" aria-label="Subsections">
+        <h2>Dive deeper</h2>
+        <div class="related__grid">
+          
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/">
+              <div class="title">A GitHub Actions Geometry Validation Gate</div>
+              <div class="desc">A geometry validation gate is a GitHub Actions job that runs on any pull request touching a .geojson file, checks out the branch, installs shapely and geopandas, and runs a validator that flags self-intersections, zero-area polygons, and CRS mismatches. When it finds a broken feature it fails the check and writes a Mar</div>
+            </a>
+          
+        </div>
+      </section>
+      
+
+      
+      <section class="related" aria-label="Related pages">
+        <h2>Related in Labeling Workflows &amp; Toolchain Integration for Geospatial AI</h2>
+        <div class="related__grid">
+          
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">
+              <div class="title">Automating Pre-Labeling with Foundation Models</div>
+              <div class="desc">A foundation model pipeline that looks perfect in a notebook fails in production the moment it encounters a raster with a non-standard coordinate reference system, a tile whose bounding box straddles the antimeridian, or a batch where GPU memory spikes during the second epoch. The central engineering challenge of autom</div>
+            </a>
+          
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">
+              <div class="title">Human-in-the-Loop Validation Cycles for Geospatial AI Training</div>
+              <div class="desc">Automated pre-labeling consistently produces prediction batches where 15–40% of geometries contain topological errors, coordinate reference system ambiguities, or semantic misclassifications that compound into training noise. A well-structured human-in-the-loop validation cycle intercepts these defects before they reac</div>
+            </a>
+          
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">
+              <div class="title">Integrating Label Studio with Geospatial Workflows</div>
+              <div class="desc">Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don&#39;t exist in standard computer vision workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on p</div>
+            </a>
+          
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">
+              <div class="title">QGIS Plugin Ecosystem for Annotation Teams</div>
+              <div class="desc">When a polygon layer annotated in QGIS arrives at a model training job only to collapse IoU scores by 30 percentage points, the culprit is rarely the annotators. It is almost always a silent coordinate reference system mismatch between the QGIS project, the background imagery, and the export format — compounded by miss</div>
+            </a>
+          
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">
+              <div class="title">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</div>
+              <div class="desc">A drone-survey team exports 40,000 building footprints from their labeling tool as COCO JSON, the file loads without error, and the training run kicks off overnight. By morning the detector&#39;s mean average precision has collapsed. The export was silently malformed in three ways at once: a batch of annotations pointed at</div>
+            </a>
+          
+        </div>
+      </section>
+      
+    </article>
+
+    <aside class="toc" aria-label="On this page"></aside>
+  </div>
+</div>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+  <div class="site-footer__inner">
+    <div>
+      <div class="site-footer__brand">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <defs>
+            <linearGradient id="fb1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#94d0e6"/>
+              <stop offset="55%" stop-color="#43b7a5"/>
+              <stop offset="100%" stop-color="#ffc73a"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#fb1)"/>
+          <rect x="22" y="20" width="22" height="18" rx="2.5" fill="none" stroke="#ffd862" stroke-width="2" stroke-dasharray="3 2.5"/>
+          <path d="M33 22 c -4.2 0 -7.5 3.3 -7.5 7.4 0 5.5 7.5 12 7.5 12 s 7.5 -6.5 7.5 -12 c 0 -4.1 -3.3 -7.4 -7.5 -7.4 z" fill="#ff8e6d" stroke="#fff" stroke-width="1.4"/>
+        </svg>
+        <div>
+          <div style="font-weight:700;color:var(--ink);">GeoAnnotation</div>
+          <div style="font-size:.78rem;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;">ML Pipeline Automation</div>
+        </div>
+      </div>
+      <p>Engineering production-grade pipelines for spatial annotation, dataset versioning, and active learning at scale.</p>
+    </div>
+
+    
+    <div>
+      <h4>Active Learning</h4>
+      <ul>
+        <li><a href="/active-learning-model-feedback-loops/">Overview</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Versioning</h4>
+      <ul>
+        <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Fundamentals</h4>
+      <ul>
+        <li><a href="/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/">Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC</a></li>
+        
+          <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows for Geospatial ML</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
+      <h4>Labeling</h4>
+      <ul>
+        <li><a href="/labeling-workflows-toolchain-integration/">Overview</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">CI/CD Gates for Annotation Datasets</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
+        
+      </ul>
+    </div>
+    
+  </div>
+
+  <div class="site-footer__bottom">
+    <span>© 2026 Geospatial Annotation & ML Pipeline Automation</span>
+    <span>Built with care for spatial data teams.</span>
+  </div>
+</footer>
+
+</body>
+</html>

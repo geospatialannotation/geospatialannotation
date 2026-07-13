@@ -48,6 +48,15 @@ permalink: /index.html
             <div class="cta__sub">DVC · SHA hashing · sync · rollback</div>
           </div>
         </a>
+        <a class="cta cta--coral" href="/active-learning-model-feedback-loops/">
+          <span class="cta__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><circle cx="12" cy="12" r="2.5"/></svg>
+          </span>
+          <div>
+            <div class="cta__title">Active Learning Loops</div>
+            <div class="cta__sub">Uncertainty · retraining · drift</div>
+          </div>
+        </a>
       </div>
     </div>
     <div class="hero__art" aria-hidden="true">
@@ -170,15 +179,16 @@ permalink: /index.html
 </section>
 
 <section class="shell">
-  <h2 style="font-size:1.6rem;margin:0 0 10px;color:var(--sky-800);">Three pillars of production geospatial AI</h2>
+  <h2 style="font-size:1.6rem;margin:0 0 10px;color:var(--sky-800);">Four foundations of production geospatial AI</h2>
   <p style="color:var(--muted);max-width:78ch;margin:0 0 8px;">
     Every guide is written for spatial data scientists, ML engineers, GIS annotation teams, and the Python
-    builders connecting them. Pick a pillar to dive deeper.
+    builders connecting them. Start with the fundamentals, wire up your labeling toolchain, version every
+    dataset change, then close the loop with active learning. Pick a track to dive deeper.
   </p>
 
   <div class="section-grid">
     {% for section in navTree.children %}
-    <article class="section-card {% if 'labeling' in section.url %}section-card--teal{% elif 'versioning' in section.url %}section-card--gold{% endif %}">
+    <article class="section-card {% if 'labeling' in section.url %}section-card--teal{% elif 'versioning' in section.url %}section-card--gold{% elif 'active-learning' in section.url %}section-card--coral{% endif %}">
       <span class="section-card__icon" aria-hidden="true">
         {% if 'fundamentals' in section.url %}
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
@@ -186,6 +196,8 @@ permalink: /index.html
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h6"/><path d="M15 15l3 3 5-5"/><path d="M8 9h7M8 13h4"/></svg>
         {% elif 'versioning' in section.url %}
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
+        {% elif 'active-learning' in section.url %}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><circle cx="12" cy="12" r="2.5"/></svg>
         {% endif %}
       </span>
       <h3>{{ section.title }}</h3>
@@ -214,30 +226,30 @@ permalink: /index.html
       <strong>Coordinate Reference Systems in Annotation Pipelines</strong>
       <span>Avoid CRS drift that silently corrupts training labels — projections, reprojection, and pipeline checks explained.</span>
     </a>
-    <a class="start-card" href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">
+    <a class="start-card" href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/">
       <span class="start-card__tag">Fundamentals</span>
-      <strong>Vector vs Raster Annotation Workflows</strong>
-      <span>Choose the right annotation modality for your data source and downstream model architecture.</span>
+      <strong>Spatial Data Formats for ML Annotation</strong>
+      <span>Pick and validate the right formats — Cloud-Optimized GeoTIFF for imagery, GeoParquet for labels, STAC for cataloging.</span>
     </a>
-    <a class="start-card" href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">
+    <a class="start-card" href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">
       <span class="start-card__tag">Labeling</span>
-      <strong>Integrating Label Studio with Geospatial Workflows</strong>
-      <span>Connect Label Studio to GeoTIFF, Cloud Optimized GeoTIFF, and STAC sources for remote sensing annotation.</span>
+      <strong>Validating Annotation Export Formats</strong>
+      <span>Enforce schema validity on COCO, YOLO, and GeoJSON exports before a single tile reaches your training loop.</span>
     </a>
-    <a class="start-card" href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">
+    <a class="start-card" href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">
       <span class="start-card__tag">Labeling</span>
-      <strong>Automating Pre-Labeling with Foundation Models</strong>
-      <span>Use SAM, DINO, and geospatial foundation models to generate high-quality label proposals at scale.</span>
+      <strong>CI/CD Gates for Annotation Datasets</strong>
+      <span>Block broken geometry, CRS mismatches, and class imbalance in CI — before bad labels ever merge.</span>
+    </a>
+    <a class="start-card" href="/active-learning-model-feedback-loops/">
+      <span class="start-card__tag">Active Learning</span>
+      <strong>Active Learning &amp; Model Feedback Loops</strong>
+      <span>Focus annotation budget where the model is weakest — uncertainty sampling, automated retraining, and drift detection.</span>
     </a>
     <a class="start-card" href="/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">
       <span class="start-card__tag">Versioning</span>
       <strong>Implementing DVC for Geospatial Training Data</strong>
       <span>Track satellite imagery datasets, annotation files, and model artifacts together with DVC remotes.</span>
-    </a>
-    <a class="start-card" href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">
-      <span class="start-card__tag">Versioning</span>
-      <strong>Rollback Strategies for Corrupted Spatial Datasets</strong>
-      <span>Detect, isolate, and roll back bad annotation batches without losing days of labeling work.</span>
     </a>
   </div>
 </section>

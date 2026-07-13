@@ -54,7 +54,7 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=047700c0">
+  <link rel="stylesheet" href="/assets/css/site.css?v=77763835">
   <script defer src="/assets/js/site.js?v=2033eb7b"></script>
 
   <script type="application/ld+json">
@@ -165,6 +165,13 @@
         <span class="site-nav__label">Home</span>
       </a>
       
+      <a href="/active-learning-model-feedback-loops/" class="">
+        
+          <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>
+        
+        <span class="site-nav__label">Active Learning</span>
+      </a>
+      
       <a href="/dataset-versioning-spatial-data-sync/" class="">
         
           <svg class="site-nav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v6c0 1.7 4 3 9 3s9-1.3 9-3V5"/><path d="M3 11v6c0 1.7 4 3 9 3s9-1.3 9-3v-6"/></svg>
@@ -236,6 +243,17 @@
           </li>
         
           <li>
+            <a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/" class="">CI/CD Gates for Annotation Datasets</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/github-actions-geometry-validation-gate/" class="">A GitHub Actions Geometry Validation Gate</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/" class="">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a>
             
             <ul>
@@ -263,6 +281,21 @@
             <ul>
               
                 <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/" class="">Label Studio vs QGIS for Geospatial Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/" class="">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a>
+            
+            <ul>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/coco-vs-geoparquet-for-annotation-export/" class="">COCO vs GeoParquet for Annotation Export</a></li>
+              
+                <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/enforcing-coco-json-schema-in-ci/" class="">Enforcing the COCO JSON Schema in CI</a></li>
               
             </ul>
             
@@ -1009,17 +1042,17 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
 <hr>
 <h2 id="production-readiness-checklist" tabindex="-1"><a class="header-anchor" href="#production-readiness-checklist" aria-label="Permalink to section &quot;Production Readiness Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Readiness Checklist</h2>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4496674"><label class="task-list-item-label" for="task-item-4496674"> CRS validated and EPSG resolved before tile generation begins</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7884485"><label class="task-list-item-label" for="task-item-7884485"> Affine transform bundled with each tile task in multiprocessing pool</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7450052"> <code class="inline-code">make_valid</code><label class="task-list-item-label" for="task-item-7450052"> `make_valid` called immediately after contour-to-polygon conversion</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1234584"><label class="task-list-item-label" for="task-item-1234584"> Per-tile GeoParquet checkpoints written before next tile starts (idempotent resume)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8221743"><label class="task-list-item-label" for="task-item-8221743"> Confidence threshold calibrated against at least 200 manually labeled validation tiles</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7010634"> Spatial NMS run with <code class="inline-code">sindex</code><label class="task-list-item-label" for="task-item-7010634"> Spatial NMS run with `sindex` for datasets with more than 100,000 predictions</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4407033"> <code class="inline-code">assert_geom_in_bounds</code><label class="task-list-item-label" for="task-item-4407033"> `assert_geom_in_bounds` check passes on sample before full export</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8952100"> Required metadata schema validated with <code class="inline-code">pydantic</code><label class="task-list-item-label" for="task-item-8952100"> Required metadata schema validated with `pydantic` or assertion block</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9264480"> Export CRS matches target annotation platform expectations (<code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-9264480"> Export CRS matches target annotation platform expectations (`EPSG:4326` for Label Studio)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7907317"><label class="task-list-item-label" for="task-item-7907317"> DVC pipeline stage defined so inference cache is not invalidated by filter-only changes</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-34759"><label class="task-list-item-label" for="task-item-34759"> Human review acceptance rate tracked per model checkpoint and image acquisition date</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8982201"><label class="task-list-item-label" for="task-item-8982201"> CRS validated and EPSG resolved before tile generation begins</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5293462"><label class="task-list-item-label" for="task-item-5293462"> Affine transform bundled with each tile task in multiprocessing pool</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-539901"> <code class="inline-code">make_valid</code><label class="task-list-item-label" for="task-item-539901"> `make_valid` called immediately after contour-to-polygon conversion</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6718871"><label class="task-list-item-label" for="task-item-6718871"> Per-tile GeoParquet checkpoints written before next tile starts (idempotent resume)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3079836"><label class="task-list-item-label" for="task-item-3079836"> Confidence threshold calibrated against at least 200 manually labeled validation tiles</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2518665"> Spatial NMS run with <code class="inline-code">sindex</code><label class="task-list-item-label" for="task-item-2518665"> Spatial NMS run with `sindex` for datasets with more than 100,000 predictions</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5606150"> <code class="inline-code">assert_geom_in_bounds</code><label class="task-list-item-label" for="task-item-5606150"> `assert_geom_in_bounds` check passes on sample before full export</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6756059"> Required metadata schema validated with <code class="inline-code">pydantic</code><label class="task-list-item-label" for="task-item-6756059"> Required metadata schema validated with `pydantic` or assertion block</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7957571"> Export CRS matches target annotation platform expectations (<code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-7957571"> Export CRS matches target annotation platform expectations (`EPSG:4326` for Label Studio)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1102724"><label class="task-list-item-label" for="task-item-1102724"> DVC pipeline stage defined so inference cache is not invalidated by filter-only changes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3557598"><label class="task-list-item-label" for="task-item-3557598"> Human review acceptance rate tracked per model checkpoint and image acquisition date</label></li>
 </ul>
 <hr>
 <h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
@@ -1051,6 +1084,11 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
         <h2>Related in Labeling Workflows &amp; Toolchain Integration for Geospatial AI</h2>
         <div class="related__grid">
           
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">
+              <div class="title">CI/CD Gates for Annotation Datasets</div>
+              <div class="desc">A junior annotator finishes a batch of 400 building footprints on Friday afternoon, opens a pull request, and a teammate approves it on the strength of a clean visual diff. The merge looks routine. What the diff did not show is that the export tool wrote the footprints in the imagery&#39;s native EPSG:32633 while the rest </div>
+            </a>
+          
             <a class="related__card" href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">
               <div class="title">Human-in-the-Loop Validation Cycles for Geospatial AI Training</div>
               <div class="desc">Automated pre-labeling consistently produces prediction batches where 15–40% of geometries contain topological errors, coordinate reference system ambiguities, or semantic misclassifications that compound into training noise. A well-structured human-in-the-loop validation cycle intercepts these defects before they reac</div>
@@ -1064,6 +1102,11 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
             <a class="related__card" href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">
               <div class="title">QGIS Plugin Ecosystem for Annotation Teams</div>
               <div class="desc">When a polygon layer annotated in QGIS arrives at a model training job only to collapse IoU scores by 30 percentage points, the culprit is rarely the annotators. It is almost always a silent coordinate reference system mismatch between the QGIS project, the background imagery, and the export format — compounded by miss</div>
+            </a>
+          
+            <a class="related__card" href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">
+              <div class="title">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</div>
+              <div class="desc">A drone-survey team exports 40,000 building footprints from their labeling tool as COCO JSON, the file loads without error, and the training run kicks off overnight. By morning the detector&#39;s mean average precision has collapsed. The export was silently malformed in three ways at once: a batch of annotations pointed at</div>
             </a>
           
         </div>
@@ -1103,6 +1146,20 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
 
     
     <div>
+      <h4>Active Learning</h4>
+      <ul>
+        <li><a href="/active-learning-model-feedback-loops/">Overview</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
+        
+          <li><a href="/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
+        
+      </ul>
+    </div>
+    
+    <div>
       <h4>Versioning</h4>
       <ul>
         <li><a href="/dataset-versioning-spatial-data-sync/">Overview</a></li>
@@ -1112,6 +1169,8 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
           <li><a href="/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
           <li><a href="/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
+        
+          <li><a href="/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
         
           <li><a href="/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a></li>
         
@@ -1129,6 +1188,8 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
         
           <li><a href="/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a></li>
         
+          <li><a href="/geospatial-annotation-fundamentals-architecture/spatial-data-formats-for-ml-annotation/">Spatial Data Formats for ML Annotation: COG, GeoParquet, and STAC</a></li>
+        
           <li><a href="/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs Raster Annotation Workflows for Geospatial ML</a></li>
         
       </ul>
@@ -1141,11 +1202,15 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
         
           <li><a href="/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/">Automating Pre-Labeling with Foundation Models</a></li>
         
+          <li><a href="/labeling-workflows-toolchain-integration/ci-cd-gates-for-annotation-datasets/">CI/CD Gates for Annotation Datasets</a></li>
+        
           <li><a href="/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/">Human-in-the-Loop Validation Cycles for Geospatial AI Training</a></li>
         
           <li><a href="/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
           <li><a href="/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         
       </ul>
     </div>
