@@ -96,6 +96,7 @@ The roundtrip is powerful because it is self-checking. A correct forward transfo
 <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of a CRS roundtrip: a control point is projected from source to target and back to source, its drift measured on a ruler and compared against a tolerance gate that passes or fails" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>CRS roundtrip drift measurement and tolerance gate</title>
   <desc>A control point in the source CRS is projected forward to the target CRS, then back to the source. The original and returned points are compared on a drift ruler measured in metres. The drift value enters a tolerance gate: if it is below the tolerance the test passes, otherwise it fails.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="rtarrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -134,13 +135,14 @@ The roundtrip is powerful because it is self-checking. A correct forward transfo
   <text x="476" y="186" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.45" font-family="sans-serif">0</text>
   <text x="626" y="186" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.45" font-family="sans-serif">0.02</text>
   <!-- drift measurement -->
-  <text x="330" y="172" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" font-family="sans-serif">max drift = ‖original − returned‖</text>
-  <line x1="330" y1="180" x2="470" y2="168" stroke="currentColor" stroke-width="1" opacity="0.3" stroke-dasharray="3 3"/>
+  <rect x="210" y="156" width="240" height="28" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+  <text x="330" y="175" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.8" font-family="sans-serif">max drift = &#8214;original &#8722; returned&#8214;</text>
+  <line x1="452" y1="170" x2="474" y2="168" stroke="currentColor" stroke-width="1" opacity="0.3" stroke-dasharray="3 3"/>
   <!-- Tolerance gate -->
   <rect x="200" y="222" width="240" height="60" rx="8" fill="currentColor" fill-opacity="0.06" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
   <text x="320" y="246" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.9" font-family="sans-serif" font-weight="bold">Tolerance gate</text>
   <text x="320" y="264" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">max drift &lt; tol ?</text>
-  <line x1="330" y1="192" x2="320" y2="220" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#rtarrow)"/>
+  <line x1="330" y1="186" x2="330" y2="220" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#rtarrow)"/>
   <!-- pass / fail -->
   <text x="120" y="256" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif" font-weight="bold">PASS</text>
   <line x1="198" y1="252" x2="160" y2="252" stroke="currentColor" stroke-width="1.5" opacity="0.45" marker-end="url(#rtarrow)"/>
@@ -254,6 +256,45 @@ def assert_roundtrip(case: RoundtripCase) -> float:
 
 Parametrize over every CRS pair your pipeline touches so a single test file guards the whole reprojection surface. Add the grid-based cases you rely on — the [datum transformation grids applied with pyproj](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/applying-datum-transformation-grids-with-pyproj/) determine whether those cases hit their tight tolerance or fall back and fail:
 
+<svg viewBox="-6 54 772 178" role="img" aria-label="The roundtrip test running as a merge gate: control points transform forward and back, drift is measured, and a breach blocks the pull request" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:772px;display:block;margin:1.5rem auto;">
+  <title>The roundtrip assertion as a merge gate</title>
+  <desc>A pull request touching CRS configuration triggers pytest, which transforms the control points forward and back and measures the drift. Drift within tolerance lets the merge proceed. Drift beyond tolerance fails the job and blocks the merge, naming the CRS pair and the measured distance.</desc>
+  <rect x="-6" y="54" width="772" height="178" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="rt-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="14" y="86" width="132" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="80" y="110" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">pull request</text>
+  <text x="80" y="127" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">touches CRS config</text>
+  <line x1="146" y1="114" x2="176" y2="114" stroke="currentColor" stroke-width="1.5" marker-end="url(#rt-arr)"/>
+  <rect x="178" y="86" width="132" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="244" y="110" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">pytest -k crs</text>
+  <text x="244" y="127" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">control points load</text>
+  <line x1="310" y1="114" x2="340" y2="114" stroke="currentColor" stroke-width="1.5" marker-end="url(#rt-arr)"/>
+  <rect x="342" y="80" width="150" height="68" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="417" y="102" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">forward → inverse</text>
+  <text x="417" y="119" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">measure drift</text>
+  <text x="417" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">geodesic metres</text>
+  <!-- Pass branch -->
+  <line x1="492" y1="98" x2="566" y2="98" stroke="currentColor" stroke-width="1.5" marker-end="url(#rt-arr)"/>
+  <text x="529" y="90" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">within</text>
+  <rect x="568" y="74" width="178" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="657" y="94" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">merge proceeds</text>
+  <text x="657" y="111" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">transform chain unchanged</text>
+  <!-- Fail branch -->
+  <line x1="492" y1="130" x2="566" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#rt-arr)"/>
+  <text x="529" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">beyond</text>
+  <rect x="568" y="150" width="178" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="657" y="172" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">merge blocked</text>
+  <text x="657" y="189" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">names the CRS pair and</text>
+  <text x="657" y="203" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the metres it moved</text>
+  <!-- Note -->
+  <text x="80" y="176" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">runs in seconds —</text>
+  <text x="80" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">no imagery needed</text>
+</svg>
+
 ```python
 import pytest
 
@@ -278,6 +319,45 @@ Run it with `pytest -q`. A green result certifies that every registered transfor
 ## Tolerance by Transform Type
 
 Drift is not a single number — the achievable residual depends on what the transform actually does. Assert against the class of transform you are exercising, not a universal constant:
+
+<svg viewBox="0 0 760 300" role="img" aria-label="Logarithmic scale of expected roundtrip drift for each class of transform, with the assertion tolerance marked and a failing band at the right" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Expected roundtrip drift by transform class — and where the test must fail</title>
+  <desc>A logarithmic scale from one micrometre to twenty metres. A same-datum projection roundtrips at numerical noise below one micrometre. Web Mercator reprojection lands under a millimetre. A grid-based datum shift leaves up to one centimetre of interpolation residual. A published seven-parameter Helmert fit leaves five centimetres to half a metre. A missing-grid fallback drifts one to fifteen metres, which the test is written to reject rather than tolerate.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="150" y1="248" x2="670" y2="248" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="150" y1="244" x2="150" y2="252" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="364" y1="244" x2="364" y2="252" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="435" y1="244" x2="435" y2="252" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="506" y1="244" x2="506" y2="252" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="577" y1="244" x2="577" y2="252" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="150" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 µm</text>
+  <text x="364" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 mm</text>
+  <text x="435" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 cm</text>
+  <text x="506" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10 cm</text>
+  <text x="577" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 m</text>
+  <text x="410" y="288" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">roundtrip drift, forward then inverse (log scale)</text>
+  <!-- Rows -->
+  <text x="142" y="42" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">projection, same datum</text>
+  <circle cx="152" cy="38" r="5" fill="currentColor" opacity="0.6"/>
+  <text x="164" y="42" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">numerical noise · assert &lt; 1e-6 m</text>
+  <text x="142" y="76" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">Web Mercator reprojection</text>
+  <rect x="292" y="66" width="72" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="372" y="77" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">assert &lt; 1e-3 m</text>
+  <text x="142" y="110" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">grid-based datum shift</text>
+  <rect x="364" y="100" width="71" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="443" y="111" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">assert &lt; 0.01 m</text>
+  <text x="142" y="144" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">7-parameter Helmert</text>
+  <rect x="485" y="134" width="71" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="564" y="145" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">assert &lt; 0.05 – 0.5 m</text>
+  <text x="142" y="178" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">fallback, grid missing</text>
+  <rect x="577" y="168" width="84" height="13" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="565" y="196" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the test should FAIL here, not widen its tolerance</text>
+  <!-- Failing band boundary -->
+  <line x1="570" y1="20" x2="570" y2="240" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+  <text x="576" y="32" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">beyond one metre,</text>
+  <text x="576" y="46" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">labels have moved</text>
+</svg>
 
 | Transform type | Example pair | Expected roundtrip drift | Tolerance to assert |
 |---|---|---|---|

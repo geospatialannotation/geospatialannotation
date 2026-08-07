@@ -105,6 +105,7 @@ The three-phase pipeline below maps directly to the extract, transform, and uplo
 <svg viewBox="0 0 760 220" role="img" aria-label="QGIS to cloud annotation sync pipeline: extract, transform, upload with retry loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>QGIS to Cloud Annotation Sync Pipeline</title>
   <desc>Three sequential phases connected by arrows. Phase 1 Extract reads from QgsVectorLayerEditBuffer: changed and added feature IDs. Phase 2 Transform reprojects to EPSG:4326 and validates and maps schema. Phase 3 Upload sends batch POST requests with idempotency key and exponential backoff on 429 and 5xx errors. A retry loop arrow curves back from Upload to Upload labelled retry on transient error.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L9,3 z" fill="currentColor"/>
@@ -174,6 +175,40 @@ def get_pending_feature_ids(layer_name: str) -> list[int]:
 
 Transform all coordinates to `EPSG:4326` before serialising to GeoJSON. Cloud annotation APIs enforce the GeoJSON specification's WGS 84 requirement; submitting features in a projected CRS such as `EPSG:32633` causes silent coordinate drift that can shift polygon vertices by hundreds of metres on the platform map. This CRS contract is the same one described in the broader guide to [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/).
 
+<svg viewBox="0 0 720 290" role="img" aria-label="Three coordinate reference systems in play during a QGIS sync, and which one the payload must be in" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Three CRS values are in play, and only one of them is the payload's</title>
+  <desc>The layer stores geometry in a local metric CRS, the QGIS project displays it in Web Mercator, and the cloud platform accepts only WGS84. QGIS reprojects for display without changing the stored geometry, so reading coordinates off the canvas produces Web Mercator metres in a field the platform reads as degrees. The transform must be taken from the layer CRS, never from the project CRS.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Three panels -->
+  <rect x="20" y="52" width="200" height="110" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">layer CRS</text>
+  <text x="120" y="98" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">EPSG:25832</text>
+  <text x="120" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">what is stored on disk</text>
+  <text x="120" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">(512340.2, 5401882.7)</text>
+  <rect x="260" y="52" width="200" height="110" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">project CRS</text>
+  <text x="360" y="98" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">EPSG:3857</text>
+  <text x="360" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">what the canvas draws</text>
+  <text x="360" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">display only — never persisted</text>
+  <rect x="500" y="52" width="200" height="110" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="600" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">platform CRS</text>
+  <text x="600" y="98" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">EPSG:4326</text>
+  <text x="600" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the only thing the API accepts</text>
+  <text x="600" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">(9.0021, 48.7734)</text>
+  <!-- Correct path -->
+  <path d="M220 96 L245 96 L245 190 L595 190 L595 168" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#sy-arr)"/>
+  <defs>
+    <marker id="sy-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="410" y="206" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">transform from the LAYER crs — layer.crs(), not project.crs()</text>
+  <!-- Wrong path -->
+  <path d="M360 162 L360 236 L580 236 L580 250" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3" opacity="0.7"/>
+  <text x="410" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reading the canvas instead sends Web Mercator metres</text>
+  <text x="410" y="268" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">into a field the platform reads as degrees — the features land near (0, 0)</text>
+</svg>
+
 ```python
 import json
 from qgis.core import (
@@ -240,6 +275,39 @@ Define `FIELD_MAP` per project and confirm the platform schema against its OpenA
 ### Step 4 — Batch Upload with Idempotency and Retry
 
 Upload in configurable batches with per-batch `Idempotency-Key` headers and exponential backoff. Idempotency keys prevent duplicate ingestion when network retries fire; without them, a single transient `502` can result in the same feature appearing twice in the annotation record and corrupting [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) aggregated at the platform level.
+
+<svg viewBox="0 0 740 280" role="img" aria-label="A retried upload carrying the same idempotency key, so the platform records one feature rather than two" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Why the retry does not create a second polygon</title>
+  <desc>The client sends a batch keyed by a hash of the feature id and its geometry. The platform stores the key with the created feature. When the response is lost and the client retries with the same key, the platform recognises it, skips the insert and returns the original feature id. Without the key, the same retry produces two identical polygons that no later validation can tell apart.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="id-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Actors -->
+  <rect x="20" y="40" width="150" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="95" y="63" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">QGIS sync client</text>
+  <rect x="520" y="40" width="180" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="610" y="63" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">annotation platform</text>
+  <line x1="95" y1="76" x2="95" y2="238" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <line x1="610" y1="76" x2="610" y2="238" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <!-- Exchange 1 -->
+  <line x1="99" y1="104" x2="602" y2="104" stroke="currentColor" stroke-width="1.5" marker-end="url(#id-arr)"/>
+  <text x="350" y="96" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">POST /features   Idempotency-Key: 8b41c7…</text>
+  <line x1="606" y1="134" x2="103" y2="134" stroke="currentColor" stroke-width="1.5" marker-end="url(#id-arr)" opacity="0.55"/>
+  <text x="350" y="126" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">201 created, feature 41209 — response lost in transit</text>
+  <!-- Exchange 2 -->
+  <line x1="99" y1="176" x2="602" y2="176" stroke="currentColor" stroke-width="1.5" marker-end="url(#id-arr)"/>
+  <text x="350" y="168" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">POST /features   Idempotency-Key: 8b41c7…   (retry)</text>
+  <line x1="606" y1="206" x2="103" y2="206" stroke="currentColor" stroke-width="1.5" marker-end="url(#id-arr)" opacity="0.55"/>
+  <text x="350" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">200 OK, feature 41209 — key already seen, nothing inserted</text>
+  <!-- Key construction -->
+  <rect x="20" y="238" width="330" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.7"/>
+  <text x="185" y="259" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">key = sha256(feature_id + wkb(geometry))</text>
+  <rect x="380" y="238" width="330" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 2" opacity="0.7"/>
+  <text x="545" y="259" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">edit the geometry and the key changes — as it should</text>
+</svg>
 
 ```python
 import time

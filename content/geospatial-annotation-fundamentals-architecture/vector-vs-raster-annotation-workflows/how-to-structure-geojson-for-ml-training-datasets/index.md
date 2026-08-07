@@ -102,9 +102,10 @@ Understanding where [vector vs raster annotation workflows](https://www.geospati
 
 The diagram below shows the full normalization flow from a raw annotation export to a dataloader-ready `FeatureCollection`. Each stage corresponds to a step in the implementation below.
 
-<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GeoJSON normalization pipeline showing five stages from raw export to ML-ready FeatureCollection" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="-10 48 740 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="GeoJSON normalization pipeline showing five stages from raw export to ML-ready FeatureCollection" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
   <title>GeoJSON normalization pipeline</title>
   <desc>Five processing stages connected by arrows: (1) Raw GeoJSON Export, (2) Assert FeatureCollection root and RFC 7946 coordinate order, (3) Reproject to EPSG:4326 and round coordinates, (4) Flatten properties and strip meta keys, (5) Validate topology with shapely — producing an ML-Ready FeatureCollection for the DataLoader.</desc>
+  <rect x="-10" y="48" width="740" height="150" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
       <polygon points="0 0, 10 3.5, 0 7" fill="currentColor"/>
@@ -164,6 +165,53 @@ The following steps take a raw annotation export — any CRS, nested properties,
 
 The root object must always be `{"type": "FeatureCollection"}`. Never use a bare array of `Feature` objects at the root; most spatial dataloaders test for the `FeatureCollection` type before iterating features. RFC 7946 also mandates `[longitude, latitude]` coordinate order — not `[lat, lon]`. Many GIS exports reverse this silently.
 
+<svg viewBox="0 0 780 320" role="img" aria-label="Tree of a FeatureCollection showing the required members at each level and where ML pipelines break when one is missing" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+  <title>The parts of a FeatureCollection an ML loader actually reads</title>
+  <desc>A FeatureCollection has a type member and a features array. Each feature carries a type, a geometry with its own type and coordinates, and a properties object. RFC 7946 fixes coordinate order as longitude then latitude and the CRS as WGS84. A bare geometry with no FeatureCollection wrapper, or properties nested more than one level deep, are the two shapes that break loaders.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="gj-arr" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L7,3 z" fill="currentColor" opacity="0.6"/>
+    </marker>
+  </defs>
+  <!-- Root -->
+  <rect x="20" y="28" width="180" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="110" y="48" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">FeatureCollection</text>
+  <text x="110" y="65" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">the root — always</text>
+  <line x1="200" y1="51" x2="248" y2="51" stroke="currentColor" stroke-width="1.3" marker-end="url(#gj-arr)"/>
+  <rect x="250" y="28" width="150" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="325" y="48" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">features[ ]</text>
+  <text x="325" y="65" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">one entry per label</text>
+  <line x1="400" y1="51" x2="448" y2="51" stroke="currentColor" stroke-width="1.3" marker-end="url(#gj-arr)"/>
+  <rect x="450" y="28" width="150" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="525" y="48" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">Feature</text>
+  <text x="525" y="65" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">type + geometry + properties</text>
+  <!-- Children of Feature -->
+  <line x1="525" y1="74" x2="525" y2="96" stroke="currentColor" stroke-width="1.3" opacity="0.6"/>
+  <line x1="325" y1="96" x2="665" y2="96" stroke="currentColor" stroke-width="1.3" opacity="0.6"/>
+  <line x1="325" y1="96" x2="325" y2="116" stroke="currentColor" stroke-width="1.3" marker-end="url(#gj-arr)" opacity="0.6"/>
+  <line x1="665" y1="96" x2="665" y2="116" stroke="currentColor" stroke-width="1.3" marker-end="url(#gj-arr)" opacity="0.6"/>
+  <rect x="230" y="118" width="190" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="325" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">geometry</text>
+  <text x="325" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">"type": "Polygon"</text>
+  <text x="325" y="176" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">"coordinates": [[[lon, lat]]]</text>
+  <rect x="570" y="118" width="190" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="665" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">properties</text>
+  <text x="665" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">flat, scalar values only</text>
+  <text x="665" y="176" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">class id, annotator, timestamp</text>
+  <!-- Rules -->
+  <rect x="20" y="212" width="340" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="190" y="234" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">what RFC 7946 fixes for you</text>
+  <text x="190" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">coordinate order is longitude, then latitude</text>
+  <text x="190" y="274" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the CRS is WGS84 — a crs member is not allowed</text>
+  <text x="190" y="292" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">rings wind counter-clockwise, holes clockwise</text>
+  <rect x="380" y="212" width="340" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="550" y="234" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">the two shapes that break loaders</text>
+  <text x="550" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a bare geometry with no FeatureCollection wrapper</text>
+  <text x="550" y="274" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">nested objects inside properties, which pandas</text>
+  <text x="550" y="292" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">turns into a column of dicts</text>
+</svg>
+
 ```python
 import json
 
@@ -182,6 +230,34 @@ def assert_featurecollection(path: str) -> dict:
 ### Step 2: Convert All Geometries to `EPSG:4326` and Round Coordinates
 
 All source data must be converted to `EPSG:4326` before ingestion, regardless of what the annotation tool used internally. If your training targets later require projected coordinates — for example, metre-scale bounding boxes for loss functions that use Euclidean distance — perform that projection **after** validation and store the target CRS in a separate pipeline config, never inside the GeoJSON.
+
+<svg viewBox="0 0 720 270" role="img" aria-label="What each decimal place of a WGS84 coordinate is worth on the ground, with the useful range for annotation marked" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Decimal places are ground distance — pick the one your sensor earns</title>
+  <desc>At the equator four decimal places of a WGS84 coordinate resolve about eleven metres, five about 1.1 metres, six about eleven centimetres, seven about 1.1 centimetres and eight about one millimetre. Seven places is the floor for annotation because it sits below any current sensor's ground sample distance, while eight and beyond only inflate the file.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Rows -->
+  <text x="120" y="52" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">4 dp</text>
+  <rect x="132" y="40" width="440" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="146" y="53" font-size="11" fill="currentColor" font-family="sans-serif">≈ 11 m — coarser than the object</text>
+  <text x="120" y="88" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">5 dp</text>
+  <rect x="132" y="76" width="440" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="146" y="89" font-size="11" fill="currentColor" font-family="sans-serif">≈ 1.1 m — visibly moves a building corner</text>
+  <text x="120" y="124" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">6 dp</text>
+  <rect x="132" y="112" width="440" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="146" y="125" font-size="11" fill="currentColor" font-family="sans-serif">≈ 11 cm — borderline at 10 cm drone GSD</text>
+  <text x="120" y="160" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">7 dp</text>
+  <rect x="132" y="148" width="440" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="146" y="161" font-size="11" fill="currentColor" font-family="sans-serif">≈ 1.1 cm — below every current sensor</text>
+  <text x="120" y="196" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">8 dp</text>
+  <rect x="132" y="184" width="440" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="146" y="197" font-size="11" fill="currentColor" font-family="sans-serif">≈ 1.1 mm — bytes with no information in them</text>
+  <!-- Bracket for the useful band -->
+  <path d="M588 148 L600 148 L600 164 L588 164" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="608" y="160" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">round here</text>
+  <!-- Footnote -->
+  <text x="360" y="234" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">distances are at the equator; a degree of longitude shrinks with the cosine of latitude,</text>
+  <text x="360" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">so the same decimal place buys finer resolution the further north or south you work</text>
+</svg>
 
 Rounding coordinates to 5–6 decimal places (~11 cm accuracy at the equator) is sufficient for all aerial and satellite vision tasks and reduces file size by 30–40%.
 

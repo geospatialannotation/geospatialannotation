@@ -93,9 +93,10 @@ Geospatial training data is derived data. The imagery a model learns from is a f
 
 STAC solves the description problem: it is a JSON specification where each **item** describes one spatiotemporal asset (a scene) with its geometry, datetime, and links to the underlying files. What STAC does not solve is *version binding* — nothing in a raw catalog ties a specific training snapshot to a specific set of items at a specific moment. That binding is what the manifest supplies. By recording item ids and a hash of the selection inside a DVC-tracked file, you turn an ephemeral query into a durable, verifiable part of the version record. When an upstream provider re-processes a scene and quietly changes an asset href, the recomputed hash no longer matches and the difference surfaces in `dvc status` instead of corrupting a downstream model months later.
 
-<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data-flow diagram: a STAC catalog of items is filtered by a spatiotemporal query into a selection, recorded as a dataset manifest of item ids and a catalog hash, which DVC tracks as a version" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="-8 11 736 211" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data-flow diagram: a STAC catalog of items is filtered by a spatiotemporal query into a selection, recorded as a dataset manifest of item ids and a catalog hash, which DVC tracks as a version" style="width:100%;max-width:736px;display:block;margin:1.5rem auto;">
   <title>From STAC catalog to DVC-tracked dataset version</title>
   <desc>Four stages flow left to right. A STAC catalog containing multiple items is filtered by a bounding box and datetime query into a smaller selection. The selection is written to a dataset manifest holding item ids and a catalog hash. DVC then tracks the manifest as an immutable version pointer committed to git.</desc>
+  <rect x="-8" y="11" width="736" height="211" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -237,6 +238,44 @@ Because `self_href` points at an immutable catalog record and the `id` uniquely 
 
 The catalog hash is a SHA-256 digest computed over the manifest in a canonical form. Serialising with `sort_keys=True` and no incidental whitespace guarantees the same logical content always yields the same digest, regardless of dict insertion order:
 
+<svg viewBox="0 0 720 280" role="img" aria-label="A manifest hash changing when the catalog selection changes, even though the local files did not" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The manifest hash catches the change that leaves no local trace</title>
+  <desc>Two runs of the same query against a moving catalog. The first selects fourteen items and hashes to 3f9c. The second, run a month later, selects fifteen because a scene was reprocessed and re-published, and hashes to a1d7. The local imagery on disk is byte-identical in both runs, so only the manifest hash reveals that the dataset's provenance moved.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="mh-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Run 1 -->
+  <text x="150" y="40" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">run in March</text>
+  <rect x="30" y="54" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="150" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">bbox + datetime + cloud &lt; 10%</text>
+  <text x="150" y="90" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">the same query, both times</text>
+  <line x1="150" y1="100" x2="150" y2="122" stroke="currentColor" stroke-width="1.4" marker-end="url(#mh-arr)"/>
+  <rect x="30" y="124" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="150" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">14 items selected</text>
+  <text x="150" y="161" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">manifest sha 3f9c…</text>
+  <!-- Run 2 -->
+  <text x="570" y="40" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">run in April</text>
+  <rect x="450" y="54" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="570" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">bbox + datetime + cloud &lt; 10%</text>
+  <text x="570" y="90" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">unchanged</text>
+  <line x1="570" y1="100" x2="570" y2="122" stroke="currentColor" stroke-width="1.4" marker-end="url(#mh-arr)"/>
+  <rect x="450" y="124" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="570" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">15 items — one was re-published</text>
+  <text x="570" y="161" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">manifest sha a1d7…</text>
+  <!-- Middle -->
+  <rect x="290" y="112" width="140" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">local imagery</text>
+  <text x="360" y="154" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">byte-identical</text>
+  <text x="360" y="172" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">in both runs</text>
+  <!-- Verdict -->
+  <rect x="130" y="204" width="460" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="226" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the files agree; the provenance does not</text>
+  <text x="360" y="246" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">only the manifest hash makes the difference visible — a file-level check reports "no changes"</text>
+</svg>
+
 ```python
 import hashlib
 
@@ -302,6 +341,27 @@ To reproduce the training set at any later date, check out the revision, run `dv
 ## STAC Fields That Anchor Reproducibility
 
 Not every STAC field matters for version binding. The ones below are the load-bearing pieces — capture them in the manifest or verify them at rehydration time.
+
+<svg viewBox="0 0 720 270" role="img" aria-label="STAC fields that survive into the version manifest, and the questions each one answers later" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The five STAC fields worth copying into the manifest</title>
+  <desc>Item id answers which scene this was. The self href answers where it came from and whether it still exists. The datetime answers when the ground looked like this. Cloud cover and off-nadir angle answer why a batch of labels may be systematically worse. Each is recorded at ingest because none of them can be recovered from the pixels afterwards.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="200" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">field copied into the manifest</text>
+  <text x="530" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">the question it answers a year later</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="monospace">item.id</text>
+  <text x="360" y="76" font-size="11" fill="currentColor" font-family="sans-serif">which scene is this, exactly?</text>
+  <text x="20" y="114" font-size="11" fill="currentColor" font-family="monospace">rel=self href</text>
+  <text x="360" y="114" font-size="11" fill="currentColor" font-family="sans-serif">where did it come from, and is it still there?</text>
+  <text x="20" y="152" font-size="11" fill="currentColor" font-family="monospace">properties.datetime</text>
+  <text x="360" y="152" font-size="11" fill="currentColor" font-family="sans-serif">when did the ground look like this?</text>
+  <text x="20" y="190" font-size="11" fill="currentColor" font-family="monospace">eo:cloud_cover</text>
+  <text x="360" y="190" font-size="11" fill="currentColor" font-family="sans-serif">why is this batch of labels worse than the rest?</text>
+  <text x="20" y="228" font-size="11" fill="currentColor" font-family="monospace">view:off_nadir</text>
+  <text x="360" y="228" font-size="11" fill="currentColor" font-family="sans-serif">why do the building footprints lean?</text>
+  <line x1="20" y1="242" x2="700" y2="242" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+  <text x="360" y="262" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">none of the five can be recovered from the pixels, which is the whole argument for recording them at ingest</text>
+</svg>
 
 | STAC field | Why it matters for reproducibility |
 |---|---|

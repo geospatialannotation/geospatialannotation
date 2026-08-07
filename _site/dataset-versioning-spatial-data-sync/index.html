@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -189,6 +203,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -243,6 +262,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/" class="">Reproducible Train/Validation Splits for Spatial Data</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/detecting-train-test-leakage-in-tiled-datasets/" class="">Detecting Train/Test Leakage in Tiled Datasets</a></li>
               
             </ul>
             
@@ -359,6 +389,7 @@
 <svg viewBox="0 0 800 380" role="img" aria-label="Dataset versioning pipeline architecture showing four layers and six data flow stages" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;display:block;margin:1.5rem auto;">
   <title>Dataset Versioning Pipeline Architecture</title>
   <desc>Four-layer architecture: Object Storage feeds into Content-Addressable Version Control, then Atomic Manifest Engine, then Compute Data Loader. Below, six sequential data flow stages run left to right: Ingest raster, Validate CRS, Tile and hash, Overlay labels, Write manifest, Promote version. A dashed feedback arrow returns from Promote version back to Ingest raster.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
       <path d="M0,0 L0,7 L8,3.5 z" fill="currentColor" opacity="0.6"/>
@@ -492,6 +523,41 @@
 </div>
 <h3 id="stage-2-deterministic-tile-hashing" tabindex="-1"><a class="header-anchor" href="#stage-2-deterministic-tile-hashing" aria-label="Permalink to section &quot;Stage 2: Deterministic Tile Hashing&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 2: Deterministic Tile Hashing</h3>
 <p>GeoTIFFs contain volatile metadata blocks that GDAL utilities can rewrite without altering pixel values. Hashing raw file bytes therefore produces false version drift. The correct approach hashes only the semantic content:</p>
+<svg viewBox="0 0 740 290" role="img" aria-label="A tile's identity built from decoded pixels plus canonical spatial metadata, so a re-export with a new timestamp keeps the same hash" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>What goes into a tile's identity, and what must stay out</title>
+  <desc>The deterministic tile hash covers decoded pixel buffers, the affine transform rounded to a fixed precision, the EPSG code and the band order. It deliberately excludes the file timestamp, the compression settings, the GDAL version string and any embedded processing history, because those change on every re-export without changing what the tile depicts.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- In -->
+  <rect x="20" y="46" width="250" height="200" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="145" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">hashed — the tile's identity</text>
+  <text x="40" y="104" font-size="11" fill="currentColor" font-family="monospace">decoded pixel buffers</text>
+  <text x="40" y="124" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">band by band, after decompression</text>
+  <text x="40" y="154" font-size="11" fill="currentColor" font-family="monospace">affine transform</text>
+  <text x="40" y="174" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">rounded to a fixed precision first</text>
+  <text x="40" y="204" font-size="11" fill="currentColor" font-family="monospace">EPSG code · band order</text>
+  <text x="40" y="224" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">canonicalised, never the raw WKT</text>
+  <!-- Out -->
+  <rect x="470" y="46" width="250" height="200" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="595" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">excluded — noise</text>
+  <text x="490" y="104" font-size="11" fill="currentColor" font-family="monospace">file mtime</text>
+  <text x="490" y="130" font-size="11" fill="currentColor" font-family="monospace">compression level, block size</text>
+  <text x="490" y="156" font-size="11" fill="currentColor" font-family="monospace">GDAL version string</text>
+  <text x="490" y="182" font-size="11" fill="currentColor" font-family="monospace">TIFFTAG_SOFTWARE, history</text>
+  <text x="490" y="212" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">each of these changes on a re-export</text>
+  <text x="490" y="226" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">without changing a single pixel</text>
+  <!-- Middle -->
+  <rect x="292" y="118" width="156" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="370" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">SHA-256</text>
+  <text x="370" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">7e02a3f8…</text>
+  <line x1="270" y1="146" x2="288" y2="146" stroke="currentColor" stroke-width="1.5" marker-end="url(#dvh-arr)"/>
+  <defs>
+    <marker id="dvh-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <line x1="466" y1="146" x2="452" y2="146" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.5"/>
+  <text x="370" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the test: re-export the same scene twice with different settings — the digest must not move</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -635,6 +701,32 @@
 <hr>
 <h2 id="spatial-specific-failure-modes-and-gotchas" tabindex="-1"><a class="header-anchor" href="#spatial-specific-failure-modes-and-gotchas" aria-label="Permalink to section &quot;Spatial-Specific Failure Modes and Gotchas&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial-Specific Failure Modes and Gotchas</h2>
 <p>Standard DevOps pipelines do not surface these failure patterns — they are unique to geospatial data engineering.</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="Four spatial failure modes of a versioning pipeline and the layer each one is caught in" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Which layer is supposed to catch which failure</title>
+  <desc>Non-deterministic re-exports are caught by content hashing. A CRS change between versions is caught by manifest validation. A partial upload leaving orphaned objects is caught by the sync layer's manifest comparison. A tile present in the manifest but missing from storage is caught at load time, which is the latest and most expensive place to find out.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="330" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">caught by</text>
+  <text x="600" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">cost when missed</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="78" font-size="11" fill="currentColor" font-family="sans-serif">re-export changes the bytes,</text>
+  <text x="20" y="94" font-size="11" fill="currentColor" font-family="sans-serif">not the pixels</text>
+  <rect x="230" y="64" width="200" height="24" rx="4" fill="currentColor" opacity="0.35"/>
+  <text x="330" y="81" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">content hashing</text>
+  <text x="600" y="81" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a full re-push of an unchanged set</text>
+  <text x="20" y="132" font-size="11" fill="currentColor" font-family="sans-serif">CRS differs from the last version</text>
+  <rect x="230" y="118" width="200" height="24" rx="4" fill="currentColor" opacity="0.35"/>
+  <text x="330" y="135" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">manifest validation</text>
+  <text x="600" y="135" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">labels and imagery drift apart</text>
+  <text x="20" y="186" font-size="11" fill="currentColor" font-family="sans-serif">partial upload, orphaned objects</text>
+  <rect x="230" y="172" width="200" height="24" rx="4" fill="currentColor" opacity="0.35"/>
+  <text x="330" y="189" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">sync layer comparison</text>
+  <text x="600" y="189" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">storage bill, and a confusing diff</text>
+  <text x="20" y="240" font-size="11" fill="currentColor" font-family="sans-serif">in the manifest, absent from storage</text>
+  <rect x="230" y="226" width="200" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="330" y="243" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">the data loader, mid-epoch</text>
+  <text x="600" y="243" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a crashed run and a wasted GPU night</text>
+  <text x="360" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">every row above the dashed one is cheap; the value of the manifest is moving the last row up into the third</text>
+</svg>
 <p><strong>CRS drift across annotation layers.</strong> Annotations created in <code class="inline-code">EPSG:4326</code> (geographic, degrees) silently misalign with imagery stored in <code class="inline-code">EPSG:3857</code> (Web Mercator) or a local UTM zone. At mid-latitudes, a 1-metre pixel in UTM corresponds to roughly 0.00001 degrees, but the mapping is non-linear. Without enforcing a single canonical CRS at ingestion, pixel-to-polygon offsets compound silently until validation IoU metrics collapse. Always enforce reprojection at the boundary of the ingestion stage, not during training.</p>
 <p><strong>Tiling scheme mismatch between model versions.</strong> Changing from 256×256 to 512×512 tiles, or shifting the tile grid origin by one pixel, invalidates all existing manifests even though the underlying imagery is identical. Record the tile grid parameters (size, overlap percentage, origin offset, and CRS) as first-class fields in the manifest rather than as implicit pipeline defaults.</p>
 <p><strong>Topology corruption in annotation updates.</strong> GIS operators frequently correct polygon boundaries in QGIS or Label Studio. Operations like snapping, merging, or splitting can introduce self-intersecting rings, sliver polygons, or orphaned vertices. These do not raise errors during export but cause <code class="inline-code">shapely</code> to return <code class="inline-code">None</code> area values during training data loading. Always run <code class="inline-code">make_valid()</code> and area-threshold filters after any annotation update is ingested.</p>
@@ -737,25 +829,64 @@
 <p><strong>Metadata preservation across iterations.</strong> Spatial datasets carry critical provenance: sensor type, cloud cover percentage, acquisition angle, and per-annotation confidence scores. Stripping this metadata during sync breaks downstream quality analysis. <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving metadata across dataset versions</a> demonstrates how to embed provenance directly into Parquet manifests and GeoTIFF sidecar files so that every training sample traces back to its source observation.</p>
 <p><strong>Pre-commit hooks for spatial drift.</strong> Python’s built-in <code class="inline-code">hashlib</code> and <code class="inline-code">rasterio</code> validation routines can be wrapped into pre-commit hooks to catch CRS mismatches or topology errors before they reach the shared data store.</p>
 <hr>
+<h2 id="what-a-version-actually-has-to-promise" tabindex="-1"><a class="header-anchor" href="#what-a-version-actually-has-to-promise" aria-label="Permalink to section &quot;What a Version Actually Has to Promise&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> What a Version Actually Has to Promise</h2>
+<p>A dataset version is not a backup. A backup promises that the bytes can be restored; a version promises
+something stronger and more useful — that a stated result can be reproduced from it. Four properties carry
+that promise, and each one fails differently when it is missing.</p>
+<p><strong>Identity.</strong> Two people asking for <code class="inline-code">v2.4.0</code> must receive the same data. That is a stronger claim than it
+looks, because “the same data” has to survive a re-export through a different GDAL build, a re-compression,
+and a filesystem that reorders directory listings. Content hashing over decoded pixels and canonicalised
+metadata is what makes the claim testable rather than aspirational, and a version system without it
+degrades into a naming convention.</p>
+<p><strong>Completeness.</strong> A version must name every artifact a training run consumes: imagery, labels, the split
+manifest, the taxonomy, the geotransform sidecars. The common failure is the artifact nobody thought of as
+data — a normalisation statistic fitted on the training set, a class-weight table, a list of tiles excluded
+for cloud. Each of those changes results, and each is easy to leave outside the version, where it drifts
+silently.</p>
+<p><strong>Provenance.</strong> For any feature in the dataset, it should be possible to say which scene it came from, when
+that scene was acquired, who annotated it and under which taxonomy version. None of that can be recovered
+from the pixels afterwards, which is why it is recorded at ingest rather than reconstructed later.</p>
+<p><strong>Reversibility.</strong> Every published version must be restorable without a human deciding what to restore.
+That means the restore path is a command rather than a runbook, and that it is exercised occasionally
+rather than trusted. A rollback procedure that has never been run is a hypothesis.</p>
+<p>The four are ordered by how loudly they fail. A broken identity claim shows up as a re-push of unchanged
+data — annoying, visible, cheap. A broken provenance claim shows up eighteen months later, when someone
+asks why one region’s labels are systematically different and the only honest answer is that nobody knows.</p>
+<h2 id="where-versioning-meets-the-rest-of-the-pipeline" tabindex="-1"><a class="header-anchor" href="#where-versioning-meets-the-rest-of-the-pipeline" aria-label="Permalink to section &quot;Where Versioning Meets the Rest of the Pipeline&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Where Versioning Meets the Rest of the Pipeline</h2>
+<p>Versioning is often introduced as a storage concern and then discovered to be a coordination one. Three
+boundaries do most of the work.</p>
+<p>The <strong>annotation platform boundary</strong> is where labels stop being a database row and become a file. Everything
+upstream of it is mutable by design — annotators edit, reviewers correct, states change — and everything
+downstream must be immutable, or the version means nothing. The harvest step that crosses that boundary is
+therefore the single most important idempotence requirement in the pipeline.</p>
+<p>The <strong>training boundary</strong> is where a version is consumed. A loader that globs a directory has quietly
+opted out of versioning: it will pick up whatever is there at run time, which is exactly the failure the
+version was supposed to prevent. Loaders should read a manifest and fail loudly when an entry is missing,
+rather than training on whatever subset happens to be present.</p>
+<p>The <strong>publication boundary</strong> is where a version becomes visible to other teams. This is the point at which
+a version number acquires meaning outside the project, and the point after which it can no longer be
+changed. Publishing early and often is good; publishing something that will later need to be edited is not,
+which is why the pointer flip comes last in every sequence in this section.</p>
 <h2 id="production-readiness-implementation-checklist" tabindex="-1"><a class="header-anchor" href="#production-readiness-implementation-checklist" aria-label="Permalink to section &quot;Production-Readiness Implementation Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production-Readiness Implementation Checklist</h2>
 <p>The following gates define a production-ready spatial versioning system. Incomplete gates should block model training runs.</p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-13810"><label class="task-list-item-label" for="task-item-13810"> Canonical CRS declared per project; all incoming layers validated and reprojected at ingestion boundary</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3594351"> SHA-256 hash computed over <code class="inline-code">(pixel_array, crs_string, geotransform)</code><label class="task-list-item-label" for="task-item-3594351"> SHA-256 hash computed over `(pixel_array, crs_string, geotransform)` — not raw file bytes</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8275005"><label class="task-list-item-label" for="task-item-8275005"> Tiling parameters (size, overlap, grid origin, CRS) recorded as explicit manifest fields</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3185564"><label class="task-list-item-label" for="task-item-3185564"> Manifest generated and committed to version control before any training run</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1512016"> <code class="inline-code">validate_manifest()</code><label class="task-list-item-label" for="task-item-1512016"> `validate_manifest()` passes on 100% of tiles in CI before merging pipeline changes</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8791855"> Topology validation (<code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-8791855"> Topology validation (`make_valid()` + area threshold) runs on every annotation ingest</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3305588"><label class="task-list-item-label" for="task-item-3305588"> Multi-temporal alignment check: acquisition timestamps for all layers within declared tolerance</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4374096"><label class="task-list-item-label" for="task-item-4374096"> Coordinate precision normalized to 6 decimal places before hashing vector features</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1067267"><label class="task-list-item-label" for="task-item-1067267"> Immutable version pointers in registry; no overwrite of versioned paths in object storage</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5286049"><label class="task-list-item-label" for="task-item-5286049"> Automated rollback configured: metric regression or manifest corruption reverts to previous stable hash</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1955881"><label class="task-list-item-label" for="task-item-1955881"> Audit log captures every read/write with user, timestamp, and dataset hash</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8258023"> DVC or Airflow pipeline enforces that training is gated on <code class="inline-code">validate_manifest</code><label class="task-list-item-label" for="task-item-8258023"> DVC or Airflow pipeline enforces that training is gated on `validate_manifest` success</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5584907"><label class="task-list-item-label" for="task-item-5584907"> Canonical CRS declared per project; all incoming layers validated and reprojected at ingestion boundary</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-702305"> SHA-256 hash computed over <code class="inline-code">(pixel_array, crs_string, geotransform)</code><label class="task-list-item-label" for="task-item-702305"> SHA-256 hash computed over `(pixel_array, crs_string, geotransform)` — not raw file bytes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9463770"><label class="task-list-item-label" for="task-item-9463770"> Tiling parameters (size, overlap, grid origin, CRS) recorded as explicit manifest fields</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5097300"><label class="task-list-item-label" for="task-item-5097300"> Manifest generated and committed to version control before any training run</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6561050"> <code class="inline-code">validate_manifest()</code><label class="task-list-item-label" for="task-item-6561050"> `validate_manifest()` passes on 100% of tiles in CI before merging pipeline changes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4567081"> Topology validation (<code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-4567081"> Topology validation (`make_valid()` + area threshold) runs on every annotation ingest</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9327971"><label class="task-list-item-label" for="task-item-9327971"> Multi-temporal alignment check: acquisition timestamps for all layers within declared tolerance</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5457513"><label class="task-list-item-label" for="task-item-5457513"> Coordinate precision normalized to 6 decimal places before hashing vector features</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7289444"><label class="task-list-item-label" for="task-item-7289444"> Immutable version pointers in registry; no overwrite of versioned paths in object storage</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3288647"><label class="task-list-item-label" for="task-item-3288647"> Automated rollback configured: metric regression or manifest corruption reverts to previous stable hash</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-375913"><label class="task-list-item-label" for="task-item-375913"> Audit log captures every read/write with user, timestamp, and dataset hash</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8645749"> DVC or Airflow pipeline enforces that training is gated on <code class="inline-code">validate_manifest</code><label class="task-list-item-label" for="task-item-8645749"> DVC or Airflow pipeline enforces that training is gated on `validate_manifest` success</label></li>
 </ul>
 <hr>
 <h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
 <ul>
+<li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a> — spatially blocked, buffered splits recorded in a manifest, and the tests that catch leakage after the fact</li>
 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">Implementing DVC for Geospatial Training Data</a> — migrate from ad-hoc sync scripts to DVC pipelines with S3/GCS remotes</li>
 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">Tracking Annotation Changes with SHA Hashing</a> — normalize and hash complex label geometries for deterministic drift detection</li>
 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a> — recover from corrupted COG exports, registry pointer failures, and partial sync states</li>
@@ -778,6 +909,11 @@
             <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">
               <div class="title">Preserving Metadata Across Dataset Versions</div>
               <div class="desc">Geospatial ML pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving t</div>
+            </a>
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">
+              <div class="title">Reproducible Train/Validation Splits for Spatial Data</div>
+              <div class="desc">A model reports 0.84 IoU on validation and 0.61 in production, and nothing in between changed. The usual cause is not the model: it is a train/validation split drawn by shuffling tiles, which put the tile north of a warehouse in training and the tile south of it in validation. The two share the roof, the shadow, the se</div>
             </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">
@@ -840,6 +976,8 @@
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -856,6 +994,8 @@
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -869,6 +1009,8 @@
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -896,7 +1038,11 @@
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

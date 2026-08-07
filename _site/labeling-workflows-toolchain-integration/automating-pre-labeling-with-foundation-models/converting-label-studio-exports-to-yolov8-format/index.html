@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -285,6 +304,17 @@
           </li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/" class="">Orchestrating Annotation Pipelines with Airflow</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/backfilling-a-month-of-annotation-harvests/" class="">Backfilling a Month of Annotation Harvests</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
             
             <ul>
@@ -292,6 +322,17 @@
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
               
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/" class="">Label Studio vs QGIS for Geospatial Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/" class="">Serving Imagery Tiles to Annotation Tools</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/adding-an-xyz-tile-layer-to-label-studio-tasks/" class="">Adding an XYZ Tile Layer to Label Studio Tasks</a></li>
               
             </ul>
             
@@ -381,9 +422,10 @@
 <h2 id="why-coordinate-precision-matters-for-raster-chips" tabindex="-1"><a class="header-anchor" href="#why-coordinate-precision-matters-for-raster-chips" aria-label="Permalink to section &quot;Why Coordinate Precision Matters for Raster Chips&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Coordinate Precision Matters for Raster Chips</h2>
 <p>A naive division by 100 is only correct when Label Studio’s stored <code class="inline-code">original_width</code> and <code class="inline-code">original_height</code> exactly match the pixel dimensions of the tile on disk. In geospatial pipelines this frequently breaks: dynamic tiling scripts using <code class="inline-code">rasterio</code> or <code class="inline-code">gdal_translate</code> sometimes add overlap padding, resize for square input, or resample to a different ground sampling distance — none of which Label Studio records unless you explicitly update the task metadata. Even a 4-pixel mismatch on a 512×512 chip produces a ~0.8% coordinate shift, which compounds across thousands of training images and measurably degrades mean Average Precision. Annotations that cross a tile boundary can produce <code class="inline-code">x_center + width/2 &gt; 1.0</code>, which triggers YOLOv8’s dataset validation assertion and aborts training entirely before a single epoch runs.</p>
 <hr>
-<svg viewBox="0 0 760 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio to YOLOv8 conversion pipeline diagram" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="-14 45 786 178" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio to YOLOv8 conversion pipeline diagram" style="width:100%;max-width:786px;display:block;margin:1.5rem auto;">
   <title>Label Studio to YOLOv8 Conversion Pipeline</title>
   <desc>Five-stage pipeline: Label Studio JSON export, dimension audit, coordinate math (percentage to normalized), class mapping and directory layout, then data.yaml output ready for yolo val and yolo train.</desc>
+  <rect x="-14" y="45" width="786" height="178" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
       <path d="M0,0 L8,3.5 L0,7 Z" fill="currentColor" opacity="0.55"/>
@@ -490,6 +532,39 @@
 <p>This is especially important when <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/">tracking annotation changes across dataset versions</a>: a silent dimension mismatch introduced at any pipeline stage will corrupt every downstream training run without producing an obvious error message.</p>
 <h3 id="step-3-coordinate-transformation-formula" tabindex="-1"><a class="header-anchor" href="#step-3-coordinate-transformation-formula" aria-label="Permalink to section &quot;Step 3 — Coordinate Transformation Formula&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Coordinate Transformation Formula</h3>
 <p>Label Studio’s top-left anchor convention means <code class="inline-code">x</code> and <code class="inline-code">y</code> are the top-left corner of the box expressed as percentages of the image dimensions. YOLOv8 expects center-point coordinates normalized to 0–1:</p>
+<svg viewBox="0 0 740 300" role="img" aria-label="One Label Studio box converted to a YOLO line, showing the top-left percentage anchor becoming a normalized centre point" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>From a top-left percentage to a normalized centre point</title>
+  <desc>A box on a 512 pixel chip reported by Label Studio as x 30 percent, y 20 percent, width 25 percent, height 40 percent. Halving the width and height and adding them to the top-left gives a centre at 42.5 and 40 percent, which divided by one hundred is 0.425 and 0.400. The YOLO line for class 2 is therefore 2, 0.425000, 0.400000, 0.250000, 0.400000.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Chip -->
+  <rect x="30" y="46" width="230" height="230" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="145" y="38" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">chip 512 × 512 px</text>
+  <rect x="99" y="92" width="57" height="92" fill="currentColor" opacity="0.2"/>
+  <rect x="99" y="92" width="57" height="92" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="99" cy="92" r="4" fill="currentColor"/>
+  <text x="106" y="86" font-size="9" fill="currentColor" font-family="monospace">x 30%, y 20%</text>
+  <circle cx="127" cy="138" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <text x="166" y="142" font-size="9" fill="currentColor" font-family="monospace">centre</text>
+  <text x="145" y="282" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">filled dot: Label Studio’s anchor</text>
+  <text x="145" y="296" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">hollow dot: what YOLO wants</text>
+  <!-- Arithmetic -->
+  <rect x="300" y="52" width="410" height="120" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="316" y="76" font-size="11" fill="currentColor" font-family="monospace">x_center = (30 + 25/2) / 100  =  0.425</text>
+  <text x="316" y="100" font-size="11" fill="currentColor" font-family="monospace">y_center = (20 + 40/2) / 100  =  0.400</text>
+  <text x="316" y="124" font-size="11" fill="currentColor" font-family="monospace">w_norm   =  25 / 100          =  0.250</text>
+  <text x="316" y="148" font-size="11" fill="currentColor" font-family="monospace">h_norm   =  40 / 100          =  0.400</text>
+  <line x1="505" y1="172" x2="505" y2="200" stroke="currentColor" stroke-width="1.5" marker-end="url(#yo-arr)"/>
+  <defs>
+    <marker id="yo-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Output line -->
+  <rect x="300" y="202" width="410" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="505" y="230" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">2 0.425000 0.400000 0.250000 0.400000</text>
+  <text x="505" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">class id first, then four values in 0–1 — no pixels, no percentages,</text>
+  <text x="505" y="286" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and the chip size never appears in the file</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">code</span>
@@ -639,6 +714,37 @@ logging<span class="token punctuation">.</span>basicConfig<span class="token pun
 </div>
 <h3 id="step-5-validate-the-dataset-before-training" tabindex="-1"><a class="header-anchor" href="#step-5-validate-the-dataset-before-training" aria-label="Permalink to section &quot;Step 5 — Validate the Dataset Before Training&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5 — Validate the Dataset Before Training</h3>
 <p>After conversion, run YOLOv8’s built-in dataset check before starting any training job. A clean dataset produces zero coordinate-range warnings and a legible class histogram:</p>
+<svg viewBox="0 0 700 300" role="img" aria-label="The directory layout YOLOv8 expects, with each label file sitting at the same relative path as its image" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>The layout the trainer resolves by convention, not by config</title>
+  <desc>Under the dataset root, images and labels are sibling directories, each with train and val splits. A label file is found by taking the image path, swapping the images directory for labels, and swapping the extension for .txt. A tile with no objects still needs an empty .txt file, and a missing one is read as a missing image rather than as background.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Tree -->
+  <text x="30" y="42" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">dataset/</text>
+  <text x="60" y="70" font-size="12" fill="currentColor" font-family="monospace">images/</text>
+  <text x="90" y="96" font-size="12" fill="currentColor" font-family="monospace">train/  tile_0007.tif</text>
+  <text x="90" y="120" font-size="12" fill="currentColor" font-family="monospace">val/    tile_0104.tif</text>
+  <text x="60" y="152" font-size="12" fill="currentColor" font-family="monospace">labels/</text>
+  <text x="90" y="178" font-size="12" fill="currentColor" font-family="monospace">train/  tile_0007.txt</text>
+  <text x="90" y="202" font-size="12" fill="currentColor" font-family="monospace">val/    tile_0104.txt</text>
+  <text x="60" y="234" font-size="12" fill="currentColor" font-family="monospace">data.yaml</text>
+  <text x="90" y="258" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">names the classes and the two split paths</text>
+  <!-- Pairing -->
+  <path d="M312 90 L360 90 L360 172 L312 172" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="370" y="126" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">same stem,</text>
+  <text x="370" y="140" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">same split</text>
+  <!-- Rules -->
+  <rect x="450" y="52" width="230" height="86" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="565" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">how the path is resolved</text>
+  <text x="565" y="98" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">swap /images/ for /labels/</text>
+  <text x="565" y="116" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">swap the extension for .txt</text>
+  <text x="565" y="132" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">nothing else is configurable</text>
+  <rect x="450" y="152" width="230" height="106" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="565" y="176" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">the empty-tile trap</text>
+  <text x="565" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a tile with no objects still needs</text>
+  <text x="565" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a zero-byte .txt beside it</text>
+  <text x="565" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">omit it and the trainer counts the</text>
+  <text x="565" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">image as missing, not as background</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -773,6 +879,8 @@ model<span class="token punctuation">.</span>val<span class="token punctuation">
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -789,6 +897,8 @@ model<span class="token punctuation">.</span>val<span class="token punctuation">
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -802,6 +912,8 @@ model<span class="token punctuation">.</span>val<span class="token punctuation">
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -829,7 +941,11 @@ model<span class="token punctuation">.</span>val<span class="token punctuation">
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

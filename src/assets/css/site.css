@@ -211,6 +211,36 @@ img, svg { max-width: 100%; height: auto; }
   .site-nav a { padding: 8px; }
 }
 
+/* Theme toggle */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin-left: 10px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--sky-100);
+  color: var(--accent-strong);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.theme-toggle:hover { background: var(--sky-200); border-color: var(--line-strong); }
+.theme-toggle:focus-visible { outline: 2px solid var(--gold-400); outline-offset: 3px; }
+.theme-toggle svg { width: 19px; height: 19px; }
+/* The sun shows in daylight (press it for night); the moon shows at night. */
+.theme-toggle__moon { display: none; }
+:root[data-theme="dark"] .theme-toggle__sun { display: none; }
+:root[data-theme="dark"] .theme-toggle__moon { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .theme-toggle__sun { display: none; }
+  :root:not([data-theme="light"]) .theme-toggle__moon { display: block; }
+}
+@media (max-width: 560px) { .theme-toggle { margin-left: auto; } }
+
 /* Mobile nav toggle */
 .nav-toggle {
   display: none;
@@ -331,11 +361,15 @@ img, svg { max-width: 100%; height: auto; }
   max-width: var(--content-max);
   margin: 0 auto;
   display: grid;
-  gap: 36px;
+  gap: clamp(28px, 4vw, 56px);
   align-items: center;
 }
 @media (min-width: 980px) {
-  .hero__inner { grid-template-columns: 1.4fr 1fr; }
+  .hero__inner { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+}
+.hero__ctas {
+  max-width: var(--content-max);
+  margin: 0 auto;
 }
 .hero__eyebrow {
   display: inline-flex;
@@ -374,11 +408,17 @@ img, svg { max-width: 100%; height: auto; }
 }
 .hero__art {
   position: relative;
-  min-height: 280px;
   display: grid;
   place-items: center;
 }
-.hero__art svg { width: 100%; max-width: 480px; }
+.hero__art svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 560px;
+  border-radius: 16px;
+  filter: drop-shadow(0 18px 40px rgba(31, 119, 158, 0.14));
+}
 
 .cta-row {
   display: grid;
@@ -1029,3 +1069,409 @@ pre.mermaid {
 /* In-article diagram SVGs: override inline max-width caps so they fill the text column.
    Scoped to .article role="img" SVGs so UI icons remain unaffected. */
 .article svg[role="img"] { width: 100% !important; max-width: 100% !important; height: auto; }
+
+/* =========================================================================
+   Dark theme — "Beach Sunset after dark"
+   The palette ramp is inverted rather than patched rule by rule: a token that
+   named a pale surface in daylight names a deep one at night, and a token that
+   named deep ink names a pale one, so every rule below keeps the contrast
+   relationship it was written with. Rules that baked a literal light colour
+   (header glass, code chrome, table stripes, Prism tokens) are re-stated after.
+   The same declarations are needed three times over: on the OS preference when
+   the reader has not chosen, and on an explicit [data-theme="dark"] so the
+   toggle wins in both directions.
+   ========================================================================= */
+
+:root[data-theme="dark"] {
+  --sky-50:  #0f202a;
+  --sky-100: #142c39;
+  --sky-200: #1d3f50;
+  --sky-300: #2f6076;
+  --sky-400: #4f93b3;
+  --sky-500: #63b2d3;
+  --sky-600: #86cbe7;
+  --sky-700: #a3daf1;
+  --sky-800: #c8e9f7;
+  --sky-900: #eaf6fc;
+
+  --teal-100: #10302c;
+  --teal-200: #17453e;
+  --teal-300: #3f8d80;
+  --teal-400: #5ecdba;
+  --teal-500: #74dcc8;
+  --teal-600: #94e8d7;
+
+  --gold-100: #2f2511;
+  --gold-200: #47370f;
+  --gold-300: #d9b355;
+  --gold-400: #ffc73a;
+  --gold-500: #ffd36b;
+  --gold-600: #ffdf94;
+
+  --coral-300: #5c2e20;
+  --coral-400: #ff9d7f;
+  --coral-500: #ffa286;
+
+  --sand-50:  #0a1820;
+  --sand-100: #10222c;
+  --sand-200: #17303c;
+
+  --bg:           var(--sand-50);
+  --bg-alt:       #10222c;
+  --surface:      #10222c;
+  --surface-soft: #142b36;
+  --ink:          #eaf6fc;
+  --ink-soft:     #d3e8f2;
+  --muted:        #a2bcc9;
+  --line:         rgba(134, 203, 231, 0.20);
+  --line-strong:  rgba(134, 203, 231, 0.36);
+
+  --accent:       var(--sky-600);
+  --accent-strong:var(--sky-700);
+  --accent-soft:  var(--sky-100);
+  --highlight:    var(--gold-400);
+  --highlight-soft:var(--gold-100);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.44), 0 1px 1px rgba(0, 0, 0, 0.30);
+  --shadow-md: 0 6px 24px -10px rgba(0, 0, 0, 0.66), 0 2px 6px rgba(0, 0, 0, 0.38);
+  --shadow-lg: 0 18px 40px -16px rgba(0, 0, 0, 0.72), 0 6px 14px rgba(0, 0, 0, 0.42);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] .site-header {
+  background: rgba(10, 24, 32, 0.86);
+  box-shadow: 0 4px 24px -16px rgba(0, 0, 0, 0.9);
+}
+:root[data-theme="dark"] .brand__logo { filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55)); }
+:root[data-theme="dark"] .site-footer {
+  background: linear-gradient(180deg, transparent, rgba(134, 203, 231, 0.06));
+}
+:root[data-theme="dark"] .hero::before {
+  background:
+    radial-gradient(800px 420px at 12% 10%, rgba(47, 96, 118, 0.42), transparent 65%),
+    radial-gradient(700px 360px at 95% 0%, rgba(120, 88, 24, 0.34), transparent 65%),
+    radial-gradient(900px 500px at 50% 100%, rgba(92, 46, 32, 0.30), transparent 65%);
+}
+:root[data-theme="dark"] .hero__art svg { filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.55)); }
+:root[data-theme="dark"] .code-block {
+  background: linear-gradient(180deg, #0d1f29, #0a1a23);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+:root[data-theme="dark"] .code-block__head {
+  background: linear-gradient(180deg, rgba(134, 203, 231, 0.12), rgba(134, 203, 231, 0.04));
+}
+:root[data-theme="dark"] .token.comment,
+:root[data-theme="dark"] .token.prolog,
+:root[data-theme="dark"] .token.doctype,
+:root[data-theme="dark"] .token.cdata { color: #9fb9c6; }
+:root[data-theme="dark"] .token.punctuation { color: #b6cdd8; }
+:root[data-theme="dark"] .table-scroll tr:nth-child(even) td { background: rgba(134, 203, 231, 0.05); }
+:root[data-theme="dark"] .table-scroll th {
+  background: linear-gradient(180deg, #17313e, #12262f);
+}
+:root[data-theme="dark"] .faq-item__q {
+  background: linear-gradient(180deg, transparent, rgba(134, 203, 231, 0.06));
+}
+:root[data-theme="dark"] .related__card .desc { color: #a2bcc9; }
+:root[data-theme="dark"] .skip-link { color: #08161d; }
+:root[data-theme="dark"] ::selection { background: #47370f; color: #eaf6fc; }
+
+@media (prefers-color-scheme: dark) {
+  /* Same tokens, applied from the OS preference when the reader has not chosen.
+     Kept a verbatim copy of the [data-theme="dark"] block so the two paths
+     cannot drift apart. */
+
+  :root:not([data-theme="light"]) {
+    --sky-50:  #0f202a;
+    --sky-100: #142c39;
+    --sky-200: #1d3f50;
+    --sky-300: #2f6076;
+    --sky-400: #4f93b3;
+    --sky-500: #63b2d3;
+    --sky-600: #86cbe7;
+    --sky-700: #a3daf1;
+    --sky-800: #c8e9f7;
+    --sky-900: #eaf6fc;
+
+    --teal-100: #10302c;
+    --teal-200: #17453e;
+    --teal-300: #3f8d80;
+    --teal-400: #5ecdba;
+    --teal-500: #74dcc8;
+    --teal-600: #94e8d7;
+
+    --gold-100: #2f2511;
+    --gold-200: #47370f;
+    --gold-300: #d9b355;
+    --gold-400: #ffc73a;
+    --gold-500: #ffd36b;
+    --gold-600: #ffdf94;
+
+    --coral-300: #5c2e20;
+    --coral-400: #ff9d7f;
+    --coral-500: #ffa286;
+
+    --sand-50:  #0a1820;
+    --sand-100: #10222c;
+    --sand-200: #17303c;
+
+    --bg:           var(--sand-50);
+    --bg-alt:       #10222c;
+    --surface:      #10222c;
+    --surface-soft: #142b36;
+    --ink:          #eaf6fc;
+    --ink-soft:     #d3e8f2;
+    --muted:        #a2bcc9;
+    --line:         rgba(134, 203, 231, 0.20);
+    --line-strong:  rgba(134, 203, 231, 0.36);
+
+    --accent:       var(--sky-600);
+    --accent-strong:var(--sky-700);
+    --accent-soft:  var(--sky-100);
+    --highlight:    var(--gold-400);
+    --highlight-soft:var(--gold-100);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.44), 0 1px 1px rgba(0, 0, 0, 0.30);
+    --shadow-md: 0 6px 24px -10px rgba(0, 0, 0, 0.66), 0 2px 6px rgba(0, 0, 0, 0.38);
+    --shadow-lg: 0 18px 40px -16px rgba(0, 0, 0, 0.72), 0 6px 14px rgba(0, 0, 0, 0.42);
+
+    color-scheme: dark;
+  }
+
+  :root:not([data-theme="light"]) .site-header {
+    background: rgba(10, 24, 32, 0.86);
+    box-shadow: 0 4px 24px -16px rgba(0, 0, 0, 0.9);
+  }
+  :root:not([data-theme="light"]) .brand__logo { filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.55)); }
+  :root:not([data-theme="light"]) .site-footer {
+    background: linear-gradient(180deg, transparent, rgba(134, 203, 231, 0.06));
+  }
+  :root:not([data-theme="light"]) .hero::before {
+    background:
+      radial-gradient(800px 420px at 12% 10%, rgba(47, 96, 118, 0.42), transparent 65%),
+      radial-gradient(700px 360px at 95% 0%, rgba(120, 88, 24, 0.34), transparent 65%),
+      radial-gradient(900px 500px at 50% 100%, rgba(92, 46, 32, 0.30), transparent 65%);
+  }
+  :root:not([data-theme="light"]) .hero__art svg { filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.55)); }
+  :root:not([data-theme="light"]) .code-block {
+    background: linear-gradient(180deg, #0d1f29, #0a1a23);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+  :root:not([data-theme="light"]) .code-block__head {
+    background: linear-gradient(180deg, rgba(134, 203, 231, 0.12), rgba(134, 203, 231, 0.04));
+  }
+  :root:not([data-theme="light"]) .token.comment,
+  :root:not([data-theme="light"]) .token.prolog,
+  :root:not([data-theme="light"]) .token.doctype,
+  :root:not([data-theme="light"]) .token.cdata { color: #9fb9c6; }
+  :root:not([data-theme="light"]) .token.punctuation { color: #b6cdd8; }
+  :root:not([data-theme="light"]) .table-scroll tr:nth-child(even) td { background: rgba(134, 203, 231, 0.05); }
+  :root:not([data-theme="light"]) .table-scroll th {
+    background: linear-gradient(180deg, #17313e, #12262f);
+  }
+  :root:not([data-theme="light"]) .faq-item__q {
+    background: linear-gradient(180deg, transparent, rgba(134, 203, 231, 0.06));
+  }
+  :root:not([data-theme="light"]) .related__card .desc { color: #a2bcc9; }
+  :root:not([data-theme="light"]) .skip-link { color: #08161d; }
+  :root:not([data-theme="light"]) ::selection { background: #47370f; color: #eaf6fc; }
+}
+
+/* --- Inline diagram interiors in dark mode ---------------------------------
+   The diagrams bake the palette as literal hexes, so the remap keys on those
+   exact values: pale surfaces go deep and dark ink goes pale, while saturated
+   brand marks stay saturated. Ink is remapped on <text>/<tspan> and on strokes
+   only — a rect deliberately filled with a deep brand colour keeps its fill so
+   the white label sitting on it keeps its contrast. Scoped to article/hero/
+   figure diagrams so the brand logo and UI glyphs are untouched; diagrams drawn
+   in currentColor need no entry, they already follow the body text. */
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#ffffff" i] { fill: #10222c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#ffffff" i] { stroke: #10222c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#ffffff" i] { stop-color: #10222c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#fbfeff" i] { fill: #0f202a; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#fbfeff" i] { stroke: #0f202a; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#fbfeff" i] { stop-color: #0f202a; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#f3fafd" i] { fill: #0f202a; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#f3fafd" i] { stroke: #0f202a; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#f3fafd" i] { stop-color: #0f202a; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#e2f2f9" i] { fill: #142c39; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#e2f2f9" i] { stroke: #142c39; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#e2f2f9" i] { stop-color: #142c39; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#c2e4f1" i] { fill: #1d3f50; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#c2e4f1" i] { stroke: #1d3f50; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#c2e4f1" i] { stop-color: #1d3f50; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#d3f0ec" i] { fill: #10302c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#d3f0ec" i] { stroke: #10302c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#d3f0ec" i] { stop-color: #10302c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#a7e0d7" i] { fill: #17453e; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#a7e0d7" i] { stroke: #17453e; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#a7e0d7" i] { stop-color: #17453e; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#fff3cc" i] { fill: #2f2511; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#fff3cc" i] { stroke: #2f2511; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#fff3cc" i] { stop-color: #2f2511; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#ffe695" i] { fill: #47370f; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#ffe695" i] { stroke: #47370f; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#ffe695" i] { stop-color: #47370f; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#fffbf3" i] { fill: #0a1820; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#fffbf3" i] { stroke: #0a1820; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#fffbf3" i] { stop-color: #0a1820; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#fff5e1" i] { fill: #10222c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#fff5e1" i] { stroke: #10222c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#fff5e1" i] { stop-color: #10222c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [fill="#f8ecd0" i] { fill: #17303c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#f8ecd0" i] { stroke: #17303c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stop-color="#f8ecd0" i] { stop-color: #17303c; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0e3548" i] { fill: #eaf6fc; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#0e3548" i] { stroke: #eaf6fc; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0e3548" i] { stop-color: #eaf6fc; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#154a63" i] { fill: #c8e9f7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#154a63" i] { stroke: #c8e9f7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#154a63" i] { stop-color: #c8e9f7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#1a5d7c" i] { fill: #a3daf1; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#1a5d7c" i] { stroke: #a3daf1; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#1a5d7c" i] { stop-color: #a3daf1; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0f4a63" i] { fill: #c8e9f7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#0f4a63" i] { stroke: #c8e9f7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0f4a63" i] { stop-color: #c8e9f7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#1f779e" i] { fill: #86cbe7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#1f779e" i] { stroke: #86cbe7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#1f779e" i] { stop-color: #86cbe7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#2e93bd" i] { fill: #86cbe7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#2e93bd" i] { stroke: #86cbe7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#2e93bd" i] { stop-color: #86cbe7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#3d5562" i] { fill: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#3d5562" i] { stroke: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#3d5562" i] { stop-color: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#5e7886" i] { fill: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#5e7886" i] { stroke: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#5e7886" i] { stop-color: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#527075" i] { fill: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#527075" i] { stroke: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#527075" i] { stop-color: #a2bcc9; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#4a6e80" i] { fill: #b6cdd8; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#4a6e80" i] { stroke: #b6cdd8; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#4a6e80" i] { stop-color: #b6cdd8; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0a4a43" i] { fill: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#0a4a43" i] { stroke: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0a4a43" i] { stop-color: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0d5c53" i] { fill: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#0d5c53" i] { stroke: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0d5c53" i] { stop-color: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0d6b5e" i] { fill: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#0d6b5e" i] { stroke: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0d6b5e" i] { stop-color: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#14826f" i] { fill: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#14826f" i] { stroke: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#14826f" i] { stop-color: #94e8d7; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#1e9d8a" i] { fill: #74dcc8; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#1e9d8a" i] { stroke: #74dcc8; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#1e9d8a" i] { stop-color: #74dcc8; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#7a4c00" i] { fill: #ffdf94; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#7a4c00" i] { stroke: #ffdf94; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#7a4c00" i] { stop-color: #ffdf94; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#d8930b" i] { fill: #ffdf94; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#d8930b" i] { stroke: #ffdf94; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#d8930b" i] { stop-color: #ffdf94; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#f6b21e" i] { fill: #ffd36b; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#f6b21e" i] { stroke: #ffd36b; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#f6b21e" i] { stop-color: #ffd36b; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#f06a48" i] { fill: #ffa286; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg [stroke="#f06a48" i] { stroke: #ffa286; }
+:root[data-theme="dark"] :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#f06a48" i] { stop-color: #ffa286; }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#ffffff" i] { fill: #10222c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#ffffff" i] { stroke: #10222c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#ffffff" i] { stop-color: #10222c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#fbfeff" i] { fill: #0f202a; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#fbfeff" i] { stroke: #0f202a; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#fbfeff" i] { stop-color: #0f202a; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#f3fafd" i] { fill: #0f202a; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#f3fafd" i] { stroke: #0f202a; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#f3fafd" i] { stop-color: #0f202a; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#e2f2f9" i] { fill: #142c39; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#e2f2f9" i] { stroke: #142c39; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#e2f2f9" i] { stop-color: #142c39; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#c2e4f1" i] { fill: #1d3f50; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#c2e4f1" i] { stroke: #1d3f50; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#c2e4f1" i] { stop-color: #1d3f50; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#d3f0ec" i] { fill: #10302c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#d3f0ec" i] { stroke: #10302c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#d3f0ec" i] { stop-color: #10302c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#a7e0d7" i] { fill: #17453e; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#a7e0d7" i] { stroke: #17453e; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#a7e0d7" i] { stop-color: #17453e; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#fff3cc" i] { fill: #2f2511; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#fff3cc" i] { stroke: #2f2511; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#fff3cc" i] { stop-color: #2f2511; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#ffe695" i] { fill: #47370f; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#ffe695" i] { stroke: #47370f; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#ffe695" i] { stop-color: #47370f; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#fffbf3" i] { fill: #0a1820; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#fffbf3" i] { stroke: #0a1820; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#fffbf3" i] { stop-color: #0a1820; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#fff5e1" i] { fill: #10222c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#fff5e1" i] { stroke: #10222c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#fff5e1" i] { stop-color: #10222c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [fill="#f8ecd0" i] { fill: #17303c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#f8ecd0" i] { stroke: #17303c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stop-color="#f8ecd0" i] { stop-color: #17303c; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0e3548" i] { fill: #eaf6fc; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#0e3548" i] { stroke: #eaf6fc; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0e3548" i] { stop-color: #eaf6fc; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#154a63" i] { fill: #c8e9f7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#154a63" i] { stroke: #c8e9f7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#154a63" i] { stop-color: #c8e9f7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#1a5d7c" i] { fill: #a3daf1; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#1a5d7c" i] { stroke: #a3daf1; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#1a5d7c" i] { stop-color: #a3daf1; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0f4a63" i] { fill: #c8e9f7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#0f4a63" i] { stroke: #c8e9f7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0f4a63" i] { stop-color: #c8e9f7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#1f779e" i] { fill: #86cbe7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#1f779e" i] { stroke: #86cbe7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#1f779e" i] { stop-color: #86cbe7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#2e93bd" i] { fill: #86cbe7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#2e93bd" i] { stroke: #86cbe7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#2e93bd" i] { stop-color: #86cbe7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#3d5562" i] { fill: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#3d5562" i] { stroke: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#3d5562" i] { stop-color: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#5e7886" i] { fill: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#5e7886" i] { stroke: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#5e7886" i] { stop-color: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#527075" i] { fill: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#527075" i] { stroke: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#527075" i] { stop-color: #a2bcc9; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#4a6e80" i] { fill: #b6cdd8; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#4a6e80" i] { stroke: #b6cdd8; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#4a6e80" i] { stop-color: #b6cdd8; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0a4a43" i] { fill: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#0a4a43" i] { stroke: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0a4a43" i] { stop-color: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0d5c53" i] { fill: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#0d5c53" i] { stroke: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0d5c53" i] { stop-color: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#0d6b5e" i] { fill: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#0d6b5e" i] { stroke: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#0d6b5e" i] { stop-color: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#14826f" i] { fill: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#14826f" i] { stroke: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#14826f" i] { stop-color: #94e8d7; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#1e9d8a" i] { fill: #74dcc8; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#1e9d8a" i] { stroke: #74dcc8; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#1e9d8a" i] { stop-color: #74dcc8; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#7a4c00" i] { fill: #ffdf94; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#7a4c00" i] { stroke: #ffdf94; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#7a4c00" i] { stop-color: #ffdf94; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#d8930b" i] { fill: #ffdf94; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#d8930b" i] { stroke: #ffdf94; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#d8930b" i] { stop-color: #ffdf94; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#f6b21e" i] { fill: #ffd36b; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#f6b21e" i] { stroke: #ffd36b; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#f6b21e" i] { stop-color: #ffd36b; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg :is(text, tspan)[fill="#f06a48" i] { fill: #ffa286; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg [stroke="#f06a48" i] { stroke: #ffa286; }
+  :root:not([data-theme="light"]) :is(.article, .hero__art, figure, .viz) svg stop[stop-color="#f06a48" i] { stop-color: #ffa286; }
+}

@@ -115,6 +115,7 @@ The diagram below shows how data flows through a DVC-managed geospatial pipeline
 <svg viewBox="0 0 760 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC geospatial pipeline diagram showing stages from raw imagery through CRS normalization, chip generation, label export, and validation to training-ready outputs" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
   <title>DVC Geospatial Pipeline</title>
   <desc>Data flow diagram for a DVC-managed geospatial training data pipeline: Raw Imagery and Reference Vectors feed into CRS Normalization, which feeds Chip Generator and Label Exporter. Both feed into the Validation Gate, which produces Training-Ready Chips and Masks.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="dvc-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
@@ -220,6 +221,49 @@ git commit -m "feat: initialize geospatial dataset tracking"
 ### Step 3 — Orchestrate Preprocessing with DVC Pipelines
 
 Manual preprocessing scripts break reproducibility because they leave no record of parameter values, execution order, or intermediate file states. DVC pipelines (`dvc.yaml`) enforce deterministic execution, cache intermediate outputs, and skip unchanged stages automatically.
+
+<svg viewBox="0 0 720 290" role="img" aria-label="A DVC stage graph where only the stages downstream of a changed input re-run" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Change one input and only its descendants re-run</title>
+  <desc>Four stages run in sequence: tile the imagery, rasterize the labels, build the training chips and train. Editing the label vectors leaves the tiling stage cached and re-runs rasterize, chips and train. Editing the tile size instead invalidates everything. The dependency graph, not a human, decides which is which.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="dg2-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Inputs -->
+  <rect x="14" y="40" width="136" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 2"/>
+  <text x="82" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">raw/scenes/*.tif</text>
+  <text x="82" y="76" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">unchanged</text>
+  <rect x="14" y="150" width="136" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="82" y="170" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">labels/*.geojson</text>
+  <text x="82" y="186" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.85">edited</text>
+  <!-- Stages -->
+  <rect x="184" y="40" width="120" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 2"/>
+  <text x="244" y="60" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">tile</text>
+  <text x="244" y="76" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">cached, skipped</text>
+  <rect x="184" y="150" width="120" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="244" y="170" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">rasterize</text>
+  <text x="244" y="186" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.85">re-runs</text>
+  <rect x="356" y="94" width="120" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="416" y="115" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">build_chips</text>
+  <text x="416" y="131" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.85">re-runs</text>
+  <rect x="530" y="94" width="120" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="590" y="115" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">train</text>
+  <text x="590" y="131" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.85">re-runs</text>
+  <!-- Edges -->
+  <line x1="150" y1="61" x2="180" y2="61" stroke="currentColor" stroke-width="1.3" marker-end="url(#dg2-arr)" opacity="0.5"/>
+  <line x1="150" y1="171" x2="180" y2="171" stroke="currentColor" stroke-width="1.3" marker-end="url(#dg2-arr)"/>
+  <path d="M304 61 L330 61 L330 106 L352 106" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#dg2-arr)" opacity="0.5"/>
+  <path d="M304 171 L330 171 L330 126 L352 126" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#dg2-arr)"/>
+  <line x1="476" y1="116" x2="526" y2="116" stroke="currentColor" stroke-width="1.3" marker-end="url(#dg2-arr)"/>
+  <!-- Legend -->
+  <rect x="14" y="228" width="20" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="42" y="240" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">invalidated by this edit</text>
+  <rect x="210" y="228" width="20" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 2"/>
+  <text x="238" y="240" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">restored from cache, not recomputed</text>
+  <text x="14" y="270" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">change the tile size instead and the same graph invalidates all four — which is the point of declaring the deps rather than remembering them</text>
+</svg>
 
 ```yaml
 # dvc.yaml
@@ -380,6 +424,41 @@ Never delete `.dvc` metadata files manually — always use `dvc remove` or `git 
 ### Step 6 — Scale for Satellite Imagery and Multi-Temporal Stacks
 
 Single-scene GeoTIFFs often exceed 10 GB, and temporal stacks of the same area multiply storage requirements proportionally. Tracking raw multi-temporal stacks directly causes two problems: DVC must checksum the full file on every `dvc status` call, and each new acquisition invalidates the entire tracked object even when 95% of pixels are unchanged.
+
+<svg viewBox="0 0 720 260" role="img" aria-label="A multi-temporal stack where each acquisition date is versioned separately but shares a tile grid" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>One grid, many dates, independent versions</title>
+  <desc>Three acquisitions over the same area share a single tile grid defined once, so tile 0142 means the same ground on every date. Each date is tracked as its own DVC target, so a re-processed 2025 scene does not invalidate 2024, and a change-detection pair can pin one date at v1 and the other at v3.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Grid definition -->
+  <rect x="20" y="46" width="150" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="95" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">tile grid</text>
+  <text x="95" y="88" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">defined once</text>
+  <text x="95" y="105" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.7">origin · size · CRS</text>
+  <line x1="170" y1="81" x2="212" y2="81" stroke="currentColor" stroke-width="1.5" marker-end="url(#mt-arr)"/>
+  <defs>
+    <marker id="mt-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Dates -->
+  <rect x="214" y="40" width="150" height="82" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="289" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">2024-06-11</text>
+  <text x="289" y="82" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">tracked at v1</text>
+  <text x="289" y="102" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">1 840 tiles</text>
+  <rect x="380" y="40" width="150" height="82" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="455" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">2025-05-28</text>
+  <text x="455" y="82" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">tracked at v3</text>
+  <text x="455" y="102" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">re-processed twice</text>
+  <rect x="546" y="40" width="150" height="82" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="621" y="62" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">2026-04-02</text>
+  <text x="621" y="82" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">tracked at v1</text>
+  <text x="621" y="102" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">1 840 tiles</text>
+  <!-- Pair -->
+  <path d="M289 122 L289 158 L455 158 L455 126" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="372" y="180" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">change-detection pair pins 2024 at v1 and 2025 at v3</text>
+  <text x="372" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the pairing is a property of the experiment, not of the dataset</text>
+  <text x="360" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">re-tiling any date to a different grid breaks the alignment silently — the grid definition is the thing that must never drift</text>
+</svg>
 
 Generate lightweight VRT index files that reference underlying cloud-optimized GeoTIFFs (COGs) stored directly in object storage:
 

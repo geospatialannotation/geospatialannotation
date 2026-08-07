@@ -70,9 +70,10 @@ When a polygon layer annotated in QGIS arrives at a model training job only to c
 
 This page covers the full production workflow: plugin stack deployment, `EPSG:3857`-enforced CRS harmonization, attribute schema constraints, SAM-based pre-label ingestion, FlatGeobuf export, and CI/CD hooks — all grounded in the broader [Labeling Workflows & Toolchain Integration](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/) pipeline.
 
-<svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QGIS annotation pipeline: from raw imagery through plugin stack, CRS enforcement, schema validation, pre-label ingestion, human review, and FlatGeobuf export to ML training" style="width:100%;max-width:820px;display:block;margin:2rem auto;">
+<svg viewBox="-10 30 800 177" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QGIS annotation pipeline: from raw imagery through plugin stack, CRS enforcement, schema validation, pre-label ingestion, human review, and FlatGeobuf export to ML training" style="width:100%;max-width:800px;display:block;margin:2rem auto;">
   <title>QGIS Annotation Pipeline</title>
   <desc>Five-stage pipeline showing raw imagery entering the QGIS plugin stack, passing through CRS harmonization and schema validation, receiving SAM pre-labels, undergoing human-in-the-loop review, and exiting as FlatGeobuf to an ML training job.</desc>
+  <rect x="-10" y="30" width="800" height="177" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.6"/>
@@ -169,6 +170,43 @@ rsync -av ./python/plugins/ ~/.local/share/QGIS/QGIS3/profiles/annotation-prod/p
 
 Misaligned coordinate reference systems are the leading cause of silent topology errors in annotation exports. Even a small datum offset — a few metres between `EPSG:3857` and a local UTM zone — collapses IoU scores for small objects such as vehicles or roof segments.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="Layers in mixed coordinate systems drawn on one canvas, and the difference between reprojecting for display and reprojecting on disk" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>On-the-fly reprojection makes mixed CRS look solved</title>
+  <desc>Three layers arrive in three coordinate systems. QGIS draws them aligned on one canvas by reprojecting for display, which hides the mismatch from the annotator. The files on disk are unchanged, so an export, a spatial join or a snap tolerance still meets the original coordinate systems. Harmonising means writing the layers out in one CRS, not trusting the canvas.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Inputs -->
+  <rect x="20" y="52" width="150" height="40" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="95" y="77" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">imagery · EPSG:32633</text>
+  <rect x="20" y="104" width="150" height="40" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="95" y="129" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">parcels · EPSG:4326</text>
+  <rect x="20" y="156" width="150" height="40" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="95" y="181" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">roads · EPSG:25833</text>
+  <path d="M170 72 L206 72 L206 118 L242 118" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#qg-arr)" opacity="0.7"/>
+  <path d="M170 124 L242 124" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#qg-arr)" opacity="0.7"/>
+  <path d="M170 176 L206 176 L206 130 L242 130" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#qg-arr)" opacity="0.7"/>
+  <defs>
+    <marker id="qg-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Canvas -->
+  <rect x="244" y="88" width="180" height="72" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="334" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">canvas draws them</text>
+  <text x="334" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">perfectly aligned</text>
+  <text x="334" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">reprojected for display only</text>
+  <!-- Two futures -->
+  <path d="M424 108 L460 108 L460 70 L496 70" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#qg-arr)"/>
+  <rect x="498" y="46" width="202" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="599" y="68" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">export / join / snap tolerance</text>
+  <text x="599" y="86" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">meets three CRS again</text>
+  <path d="M424 140 L460 140 L460 190 L496 190" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#qg-arr)"/>
+  <rect x="498" y="166" width="202" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="599" y="188" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">write all three to one CRS</text>
+  <text x="599" y="206" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">now the disk agrees with the canvas</text>
+  <text x="360" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a snap tolerance of 0.5 means half a metre in one layer and half a degree in another —</text>
+  <text x="360" y="268" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">roughly 55 km — which is the bug the aligned canvas hides best</text>
+</svg>
+
 The following PyQGIS script enforces a project-wide CRS at load time. It detects layers that do not match the target CRS and reprojects them using the native processing algorithm, which preserves attribute schemas and handles curved geometries correctly:
 
 ```python
@@ -231,6 +269,34 @@ gdalbuildvrt -resolution highest mosaic.vrt tile_*.tif
 ### Step 3 — Schema Enforcement with Field Constraints
 
 Annotation quality degrades quickly when attribute schemas drift across annotators or sprints. QGIS field constraints block invalid entries at the point of data entry, before errors propagate into export files and corrupt training labels.
+
+<svg viewBox="0 0 720 260" role="img" aria-label="Field constraints that reject a bad attribute at the moment of editing rather than at export" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Constraints that fire while the annotator is still looking at the feature</title>
+  <desc>Four field constraints on the annotation layer: class must be present, class must come from the taxonomy list, confidence must lie between zero and one, and the survey id must be unique. Each rejects the edit in the attribute form, where the annotator has the context to fix it, instead of surfacing days later as a failed export.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="150" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">field</text>
+  <text x="400" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">constraint</text>
+  <text x="610" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">rejected at</text>
+  <line x1="20" y1="46" x2="700" y2="46" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="monospace">class_name</text>
+  <rect x="250" y="60" width="300" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="400" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">NOT NULL</text>
+  <text x="610" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the attribute form</text>
+  <text x="20" y="116" font-size="11" fill="currentColor" font-family="monospace">class_name</text>
+  <rect x="250" y="100" width="300" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="400" y="116" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">value map from taxonomy.json</text>
+  <text x="610" y="116" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the dropdown, by having no</text>
+  <text x="610" y="130" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">other option to pick</text>
+  <text x="20" y="166" font-size="11" fill="currentColor" font-family="monospace">confidence</text>
+  <rect x="250" y="150" width="300" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="400" y="166" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">confidence &gt;= 0 AND confidence &lt;= 1</text>
+  <text x="610" y="166" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the attribute form</text>
+  <text x="20" y="206" font-size="11" fill="currentColor" font-family="monospace">survey_id</text>
+  <rect x="250" y="190" width="300" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="400" y="206" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">UNIQUE</text>
+  <text x="610" y="206" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">commit of the edit buffer</text>
+  <text x="360" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the same rules live in the CI gate — the layer constraints are there to stop the trip to CI being necessary</text>
+</svg>
 
 Define mandatory attributes for every feature class, then apply constraints via PyQGIS:
 
@@ -536,3 +602,12 @@ This workflow is one component of the broader [Labeling Workflows & Toolchain In
 - [Human-in-the-Loop Validation Cycles](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/human-in-the-loop-validation-cycles/) — structure review queues and track annotator disagreement across sprints
 - [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — webhook and REST API bridging between QGIS and Label Studio
 - [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — CRS selection, datum transformation grids, and projection mismatch debugging
+## When the Desktop Is the Right Tool
+
+QGIS earns its place in an annotation stack for one reason: it is the only common tool where a vertex can
+snap to a neighbour's existing node, so a coverage can be made genuinely watertight. Everything else it
+offers — the processing framework, the plugin ecosystem, the CRS handling — is valuable, but it is the
+shared-fabric editing model that a web queue structurally cannot provide. That is also the reason it does
+not scale to bulk work: one editable layer means one editor at a time, which makes the routing question in
+the comparison guide a throughput decision rather than a preference.
+

@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -189,6 +203,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -228,6 +247,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/" class="">Triggering Retraining from New Annotations with DVC</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/" class="">Cold-Start Strategies for New Annotation Projects</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/bootstrapping-labels-with-a-zero-shot-model/" class="">Bootstrapping Labels with a Zero-Shot Model</a></li>
               
             </ul>
             
@@ -349,6 +379,7 @@
 <svg viewBox="0 0 760 430" role="img" aria-label="Six-stage cyclic active learning loop for geospatial annotation" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>The Geospatial Active Learning Loop</title>
   <desc>A cyclic diagram with six stages arranged in a ring: an unlabeled tile pool feeds model inference, which produces predictions scored for uncertainty, which feeds diversity-aware batch tile selection, which routes tiles to human annotation and validation, which supplies data to retrain and evaluate the model. A feedback arrow returns from retrain and evaluate back to the unlabeled tile pool, and a drift signal arrow points from evaluate back into the pool as well.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="al-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -460,6 +491,37 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
 <p>Run this over the full pool on a schedule with the freshest promoted checkpoint. The sorted list is the raw ranking; it is <em>not</em> yet a batch, because the top of the list is exactly where spatial redundancy bites — the most uncertain tiles are usually concentrated in one or two hard scenes.</p>
 <h3 id="stage-3-4-select-a-diverse-high-uncertainty-batch" tabindex="-1"><a class="header-anchor" href="#stage-3-4-select-a-diverse-high-uncertainty-batch" aria-label="Permalink to section &quot;Stage 3 &amp; 4 — Select a Diverse, High-Uncertainty Batch&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Stage 3 &amp; 4 — Select a Diverse, High-Uncertainty Batch</h3>
 <p>Turning the ranking into a batch requires a diversity constraint. A greedy facility-location-style selection works well and is easy to reason about: repeatedly pick the tile that maximizes a blend of its own uncertainty and its distance to the tiles already chosen. Distance can be computed in a learned feature space (embeddings from the model’s penultimate layer) or, as a cheap spatial proxy, in projected map coordinates so that geographically bunched tiles repel each other.</p>
+<svg viewBox="0 0 720 290" role="img" aria-label="A high-uncertainty batch drawn from one small area compared with the same budget spread across the pool" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Spatial autocorrelation collapses a batch onto one field</title>
+  <desc>Taking the top forty tiles by uncertainty selects forty neighbours of one confusing area, because adjacent tiles look alike and therefore score alike. The annotator labels the same field forty times and the model learns one thing. Clustering in feature space first and taking the most uncertain tile per cluster spends the same budget across the pool.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Naive -->
+  <text x="170" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">top-k by score alone</text>
+  <rect x="40" y="48" width="260" height="170" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <g fill="currentColor" opacity="0.5">
+    <rect x="150" y="94" width="12" height="12"/><rect x="166" y="94" width="12" height="12"/><rect x="182" y="94" width="12" height="12"/>
+    <rect x="150" y="110" width="12" height="12"/><rect x="166" y="110" width="12" height="12"/><rect x="182" y="110" width="12" height="12"/>
+    <rect x="150" y="126" width="12" height="12"/><rect x="166" y="126" width="12" height="12"/><rect x="182" y="126" width="12" height="12"/>
+    <rect x="134" y="110" width="12" height="12"/><rect x="198" y="110" width="12" height="12"/>
+    <rect x="166" y="78" width="12" height="12"/><rect x="166" y="142" width="12" height="12"/>
+  </g>
+  <text x="170" y="240" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">one confusing field, forty times</text>
+  <text x="170" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">neighbouring tiles look alike, so they score alike</text>
+  <text x="170" y="276" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">— the batch has one tile's worth of information in it</text>
+  <!-- Diverse -->
+  <text x="530" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">most uncertain per cluster</text>
+  <rect x="400" y="48" width="260" height="170" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <g fill="currentColor" opacity="0.5">
+    <rect x="424" y="66" width="12" height="12"/><rect x="486" y="80" width="12" height="12"/><rect x="560" y="62" width="12" height="12"/>
+    <rect x="628" y="88" width="12" height="12"/><rect x="440" y="118" width="12" height="12"/><rect x="512" y="128" width="12" height="12"/>
+    <rect x="586" y="112" width="12" height="12"/><rect x="632" y="150" width="12" height="12"/><rect x="418" y="176" width="12" height="12"/>
+    <rect x="482" y="188" width="12" height="12"/><rect x="548" y="172" width="12" height="12"/><rect x="606" y="192" width="12" height="12"/>
+    <rect x="464" y="146" width="12" height="12"/>
+  </g>
+  <text x="530" y="240" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">thirteen different confusions</text>
+  <text x="530" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">same annotation budget, spread across the pool</text>
+  <text x="530" y="276" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">— and a validation split that still means something</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -663,6 +725,36 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
 <p>Tiles from a drifted batch are prime candidates for the next round even if the current (now unreliable) model scores them as low-uncertainty — this is exploration forced by evidence rather than by a random draw, and it is how the loop defends itself against confidently-wrong blind spots.</p>
 <h2 id="spatial-specific-failure-modes-in-active-learning" tabindex="-1"><a class="header-anchor" href="#spatial-specific-failure-modes-in-active-learning" aria-label="Permalink to section &quot;Spatial-Specific Failure Modes in Active Learning&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial-Specific Failure Modes in Active Learning</h2>
 <p>Active-learning tutorials written for photo classification quietly assume examples are independent and identically distributed. Geospatial tiles violate that assumption in ways that create failure modes with no analogue in ordinary datasets. The unifying cause is that spatial position is a hidden variable coupled to almost everything else — imagery content, class prevalence, sensor, and acquisition date all correlate with <em>where</em> a tile sits — so a selector that optimizes purely in feature space, blind to geography, will make systematic mistakes. Each failure below is a specific consequence of ignoring that coupling, and each has a concrete guard that a production loop must implement rather than assume away.</p>
+<svg viewBox="0 0 720 270" role="img" aria-label="How the loop's cost per round shifts from annotation to compute as the pool is exhausted" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>What each round of the loop actually costs</title>
+  <desc>Across five rounds the scoring pass over the unlabeled pool stays roughly constant, annotation cost falls as the easy uncertainty is used up, and retraining cost grows with the training set. By round five the loop spends more on compute than on annotators, which is the point at which the stopping criterion should be a measured gain rather than a schedule.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="70" y1="200" x2="660" y2="200" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="128" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 1</text>
+  <text x="244" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 2</text>
+  <text x="360" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 3</text>
+  <text x="476" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 4</text>
+  <text x="592" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 5</text>
+  <!-- Stacked bars: annotate (filled), retrain (outline), score (thin) -->
+  <rect x="100" y="72" width="56" height="128" fill="currentColor" opacity="0.45"/>
+  <rect x="100" y="52" width="56" height="20" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="216" y="96" width="56" height="104" fill="currentColor" opacity="0.45"/>
+  <rect x="216" y="64" width="56" height="32" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="332" y="124" width="56" height="76" fill="currentColor" opacity="0.45"/>
+  <rect x="332" y="76" width="56" height="48" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="448" y="146" width="56" height="54" fill="currentColor" opacity="0.45"/>
+  <rect x="448" y="86" width="56" height="60" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="564" y="162" width="56" height="38" fill="currentColor" opacity="0.45"/>
+  <rect x="564" y="92" width="56" height="70" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <!-- Labels -->
+  <text x="40" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75" transform="rotate(-90 40 140)">cost per round</text>
+  <rect x="100" y="238" width="18" height="12" fill="currentColor" opacity="0.45"/>
+  <text x="126" y="248" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">annotation — falls as the easy uncertainty is used up</text>
+  <rect x="430" y="238" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="456" y="248" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">retraining — grows with the training set</text>
+  <text x="360" y="38" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">stop on measured gain per labelled tile, not on a round count — by round five the loop is buying compute, not information</text>
+</svg>
 <p><strong>Spatial autocorrelation leaking into train/validation.</strong> The most damaging and common error. If tiles are split randomly, adjacent tiles — which overlap and share content — land on both sides of the split, so the validation set is contaminated with near-copies of training tiles. Every metric, including the promotion gate, then reports optimistically, and the loop happily promotes checkpoints that do not actually generalize. Split by spatial block (grid cells, scenes, or administrative regions), never by tile, and keep the same blocks frozen across every round so scores stay comparable.</p>
 <p><strong>Near-duplicate neighbouring tiles inflating a batch.</strong> Uncertainty ranking bunches up, because a genuinely hard scene produces many adjacent high-uncertainty tiles. Selecting the raw top-k then spends an entire round’s budget re-labeling one quarry or one cloud bank from twenty angles. The diversity term in Stage 4 is the direct defence; without it, apparent throughput looks fine while real information gain collapses.</p>
 <p><strong>Cold-start with no seed model.</strong> The loop needs a model to score the pool, but the first model needs labels that do not exist yet. Bootstrapping on uncertainty is impossible at round zero. Seed the pool with a diversity-only selection — group tile embeddings from a pretrained backbone (or even raw spectral statistics) into partitions and sample across those partitions — so the first annotated batch spans the input space before uncertainty scoring takes over in round one.</p>
@@ -745,25 +837,26 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
 <h2 id="production-readiness-checklist" tabindex="-1"><a class="header-anchor" href="#production-readiness-checklist" aria-label="Permalink to section &quot;Production-Readiness Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production-Readiness Checklist</h2>
 <p>Use this checklist to confirm the loop is safe to run unattended before you scale it beyond a pilot region.</p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3513672"><label class="task-list-item-label" for="task-item-3513672"> Score the full unlabeled pool with the freshest promoted checkpoint on a fixed cadence</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8633156"><label class="task-list-item-label" for="task-item-8633156"> Calibrate model probabilities before trusting them as uncertainty signals</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8688340"><label class="task-list-item-label" for="task-item-8688340"> Apply a diversity-aware selector so no batch is dominated by neighbouring tiles</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-165822"><label class="task-list-item-label" for="task-item-165822"> Seed round zero with diversity sampling to escape the cold-start problem</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1349496"><label class="task-list-item-label" for="task-item-1349496"> Split train and validation by spatial block, never by individual tile</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7223512"><label class="task-list-item-label" for="task-item-7223512"> Freeze the validation blocks so scores stay comparable across every round</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1028774"><label class="task-list-item-label" for="task-item-1028774"> Cap the per-region and per-sensor share of each annotation batch</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5592799"><label class="task-list-item-label" for="task-item-5592799"> Carry the uncertainty score forward as annotation task priority</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1366831"><label class="task-list-item-label" for="task-item-1366831"> Pre-label every routed tile so annotators correct rather than draw from scratch</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1011122"><label class="task-list-item-label" for="task-item-1011122"> Gate checkpoint promotion on overall gain with no severe per-class regression</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5692810"><label class="task-list-item-label" for="task-item-5692810"> Track per-class frequency across rounds to catch rare-class starvation</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-216113"><label class="task-list-item-label" for="task-item-216113"> Monitor covariate and label drift and let drift alone trigger a new round</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5117727"><label class="task-list-item-label" for="task-item-5117727"> Version validated annotations so a data change invalidates the training stage</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5549850"><label class="task-list-item-label" for="task-item-5549850"> Log every selection, promotion decision, and drift alert for audit and rollback</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8489650"><label class="task-list-item-label" for="task-item-8489650"> Score the full unlabeled pool with the freshest promoted checkpoint on a fixed cadence</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9168344"><label class="task-list-item-label" for="task-item-9168344"> Calibrate model probabilities before trusting them as uncertainty signals</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9378958"><label class="task-list-item-label" for="task-item-9378958"> Apply a diversity-aware selector so no batch is dominated by neighbouring tiles</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6930518"><label class="task-list-item-label" for="task-item-6930518"> Seed round zero with diversity sampling to escape the cold-start problem</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3360589"><label class="task-list-item-label" for="task-item-3360589"> Split train and validation by spatial block, never by individual tile</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3828601"><label class="task-list-item-label" for="task-item-3828601"> Freeze the validation blocks so scores stay comparable across every round</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1400909"><label class="task-list-item-label" for="task-item-1400909"> Cap the per-region and per-sensor share of each annotation batch</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-627777"><label class="task-list-item-label" for="task-item-627777"> Carry the uncertainty score forward as annotation task priority</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-265786"><label class="task-list-item-label" for="task-item-265786"> Pre-label every routed tile so annotators correct rather than draw from scratch</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7452652"><label class="task-list-item-label" for="task-item-7452652"> Gate checkpoint promotion on overall gain with no severe per-class regression</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8003175"><label class="task-list-item-label" for="task-item-8003175"> Track per-class frequency across rounds to catch rare-class starvation</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9312995"><label class="task-list-item-label" for="task-item-9312995"> Monitor covariate and label drift and let drift alone trigger a new round</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5636911"><label class="task-list-item-label" for="task-item-5636911"> Version validated annotations so a data change invalidates the training stage</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1309664"><label class="task-list-item-label" for="task-item-1309664"> Log every selection, promotion decision, and drift alert for audit and rollback</label></li>
 </ul>
 <p>Start with one region and a few hundred seed tiles, run the loop for three or four rounds, and confirm that accuracy climbs faster than a random-sampling baseline on the same budget before expanding coverage.</p>
 <hr>
 <p><strong>Related</strong></p>
 <ul>
+<li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a> — what to label when there is no model yet, and the calibration check that says when the loop can take over</li>
 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a> — entropy, margin, and BALD scoring to rank unlabeled tiles by informativeness</li>
 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a> — DVC-triggered pipelines, checkpoint promotion gates, and evaluation guards</li>
 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a> — spectral histograms, class-balance monitors, and PSI thresholds that trigger re-labeling</li>
@@ -781,6 +874,11 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
             <a class="related__card" href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">
               <div class="title">Closing the Loop with Automated Model Retraining</div>
               <div class="desc">A geospatial detection team hits this wall constantly: annotators keep validating fresh satellite tiles, the reviewed labels pile up in a bucket, and yet the model in production has not changed in three months. Nobody wired the last step. The deployed checkpoint keeps mis-detecting the exact objects the new annotations</div>
+            </a>
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">
+              <div class="title">Cold-Start Strategies for New Annotation Projects</div>
+              <div class="desc">Active learning has a chicken-and-egg problem at the start of every project: the loop selects tiles the model is unsure about, and there is no model. The usual response is to label a random few thousand tiles and start the loop, which wastes most of that budget — a random sample of an aerial pool is mostly ground with </div>
             </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">
@@ -838,6 +936,8 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -854,6 +954,8 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -867,6 +969,8 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -894,7 +998,11 @@ Predictor <span class="token operator">=</span> Callable<span class="token punct
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

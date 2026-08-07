@@ -109,6 +109,35 @@ The table maps each decision dimension to how the two tools behave. Read it as a
 
 The pattern is consistent: Label Studio wins throughput, model-assist, collaboration, and onboarding; QGIS wins topology, CRS fidelity, and geometric precision. Cost is a wash on licensing and instead trades cheap annotator hours against scarce GIS-expert hours — another reason to route rather than standardise on one tool.
 
+<svg viewBox="0 0 720 290" role="img" aria-label="The edit primitive of each tool: isolated objects on one image against one shared editable fabric" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Isolated-object work against shared-fabric work</title>
+  <desc>Label Studio records each annotation as an independent object over a single image, so two annotators working adjacent tiles never interact — which is what makes parallel throughput possible and why shared boundaries cannot be enforced. QGIS holds every feature of a layer in one editable session where a vertex can snap to a neighbour's node, producing watertight coverage but serialising the work onto whoever holds the layer.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Label Studio -->
+  <text x="170" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Label Studio — isolated objects</text>
+  <rect x="30" y="52" width="130" height="100" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <polygon points="50,74 128,68 134,124 56,132" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.5"/>
+  <text x="95" y="166" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">tile 07 · annotator A</text>
+  <rect x="180" y="52" width="130" height="100" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <polygon points="196,72 274,66 282,122 204,130" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.5"/>
+  <text x="245" y="166" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">tile 08 · annotator B</text>
+  <text x="170" y="196" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the two never see each other</text>
+  <text x="170" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">parallel by construction —</text>
+  <text x="170" y="230" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and the seam between them is nobody's</text>
+  <!-- QGIS -->
+  <text x="530" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">QGIS — one shared fabric</text>
+  <rect x="400" y="52" width="260" height="100" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <polygon points="420,74 520,68 520,124 424,132" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.5"/>
+  <polygon points="520,68 636,64 640,120 520,124" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="520" cy="68" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <circle cx="520" cy="124" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <text x="530" y="166" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">one layer · one editing session</text>
+  <text x="530" y="196" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the shared vertices are real objects</text>
+  <text x="530" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">watertight coverage —</text>
+  <text x="530" y="230" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and serialised onto one editor</text>
+  <text x="360" y="268" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">asking which tool is better is the wrong question; asking whether this batch is isolated-object work or shared-fabric work answers it</text>
+</svg>
+
 One dimension that rarely appears in a feature list but dominates in practice is the shape of the edit primitive. Label Studio records each annotation as an independent object over a single image, so two annotators labelling adjacent tiles never interact; that isolation is exactly what makes parallel throughput possible and exactly why shared boundaries cannot be enforced. QGIS holds all features of a layer in one editable session where a new vertex can snap to a neighbour's existing node, which produces watertight coverage but serialises the work onto whoever holds the layer. Recognising that a project is fundamentally isolated-object work versus shared-fabric work is usually a faster route to the right tool than any single row in the table.
 
 ## A Hybrid Routing Workflow
@@ -118,6 +147,7 @@ The hybrid pipeline treats tool choice as a per-task decision. A scoring functio
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hybrid routing diagram: a task queue splits into a simple path to Label Studio and a complex path to QGIS, then both merge into one versioned dataset" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Hybrid annotation routing: Label Studio for bulk, QGIS for topology</title>
   <desc>A task queue feeds a complexity router. Tasks below the threshold flow to Label Studio for high-throughput web labeling with model-assisted pre-labels. Tasks above the threshold flow to QGIS for precision topology and snapping. Both paths merge into a single validated, versioned dataset.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="rh" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -147,13 +177,13 @@ The hybrid pipeline treats tool choice as a per-task decision. A scoring functio
   <text x="648" y="162" text-anchor="middle" font-size="11.5" fill="currentColor" opacity="0.9" font-family="sans-serif">version</text>
   <!-- Arrows -->
   <line x1="134" y1="150" x2="202" y2="150" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
-  <line x1="295" y1="140" x2="358" y2="82" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
-  <line x1="295" y1="160" x2="358" y2="222" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
-  <line x1="540" y1="78" x2="600" y2="128" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
-  <line x1="540" y1="222" x2="600" y2="172" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
+  <path d="M250 120 L250 75 L356 75" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
+  <path d="M250 180 L250 225 L356 225" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
+  <path d="M540 75 L565 75 L565 138 L586 138" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
+  <path d="M540 225 L565 225 L565 162 L586 162" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#rh)"/>
   <!-- Path labels -->
-  <text x="322" y="102" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">simple</text>
-  <text x="322" y="204" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">complex</text>
+  <text x="300" y="68" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">simple</text>
+  <text x="300" y="243" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.45" font-family="sans-serif">complex</text>
 </svg>
 
 ### Step 1 — Install the Routing Dependencies
@@ -167,6 +197,44 @@ pip install label-studio-sdk==1.0.10 geopandas==0.14.4 pyproj==3.6.1 shapely==2.
 ### Step 2 — Score Each Task by Topological Complexity
 
 A tile is "complex" when its geometry demands shared edges or exact vertex placement — cadastral parcels, road and utility networks, or anything with many vertices. Everything else is bulk work. The score combines vertex count, whether the class requires adjacency, and the object type:
+
+<svg viewBox="0 0 720 280" role="img" aria-label="How the three terms of the complexity score combine, with four worked examples and where they land against the threshold" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>What the score does to four real tiles</title>
+  <desc>The score adds 0.5 for a topology class, 0.3 when shared edges are required, and up to 0.2 for vertex density. A solar panel with eight vertices scores 0.03. A detached building with 22 vertices scores 0.07. A cadastral parcel with 46 vertices scores 0.95. A road segment with 120 vertices scores 1.0. Against a 0.5 threshold the first two go to the bulk queue and the last two escalate.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Terms -->
+  <rect x="20" y="36" width="200" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="120" y="58" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">class in topology set</text>
+  <text x="120" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">+0.50</text>
+  <rect x="240" y="36" width="200" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="340" y="58" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">needs shared edges</text>
+  <text x="340" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">+0.30</text>
+  <rect x="460" y="36" width="240" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="580" y="58" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">vertex density</text>
+  <text x="580" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">+0.20 × min(v/60, 1)</text>
+  <!-- Scale -->
+  <line x1="150" y1="230" x2="670" y2="230" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="150" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.0</text>
+  <text x="410" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.5</text>
+  <text x="670" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1.0</text>
+  <line x1="410" y1="108" x2="410" y2="226" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="404" y="122" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">bulk queue</text>
+  <text x="416" y="122" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">escalate to QGIS</text>
+  <!-- Examples -->
+  <text x="142" y="148" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif">solar panel · 8 vertices</text>
+  <circle cx="164" cy="144" r="5" fill="currentColor" opacity="0.55"/>
+  <text x="176" y="148" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.03</text>
+  <text x="142" y="174" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif">detached building · 22 vertices</text>
+  <circle cx="188" cy="170" r="5" fill="currentColor" opacity="0.55"/>
+  <text x="200" y="174" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.07</text>
+  <text x="142" y="200" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif">cadastral parcel · 46 vertices</text>
+  <circle cx="644" cy="196" r="5" fill="currentColor" opacity="0.55"/>
+  <text x="600" y="200" text-anchor="end" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.95</text>
+  <text x="142" y="226" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif">road segment · 120 vertices</text>
+  <circle cx="670" cy="222" r="5" fill="currentColor" opacity="0.55"/>
+  <text x="626" y="226" text-anchor="end" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">1.00</text>
+  <text x="360" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the class term dominates by design — vertex count alone should never escalate a tile that has no neighbours to agree with</text>
+</svg>
 
 ```python
 from dataclasses import dataclass

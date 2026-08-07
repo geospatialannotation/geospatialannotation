@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -237,6 +256,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/" class="">Triggering Retraining from New Annotations with DVC</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/" class="">Cold-Start Strategies for New Annotation Projects</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/bootstrapping-labels-with-a-zero-shot-model/" class="">Bootstrapping Labels with a Zero-Shot Model</a></li>
               
             </ul>
             
@@ -349,6 +379,7 @@
 <svg viewBox="0 0 840 340" role="img" aria-label="Comparison of least-confidence, margin, and entropy uncertainty scoring computed on the same class-probability vector" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:840px;display:block;margin:1.5rem auto;">
   <title>Three Uncertainty Scores on One Probability Vector</title>
   <desc>Three panels each show the same softmax output of 0.50, 0.30 and 0.20 over classes A, B and C. The least-confidence panel reports 0.50, the margin panel reports 0.80, and the normalized-entropy panel reports 0.94, illustrating how each score reacts differently to the same distribution.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Panel 1: Least confidence -->
   <rect x="15" y="20" width="250" height="300" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
   <text x="140" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Least confidence</text>
@@ -463,6 +494,32 @@
 <p>For a classifier or detector, <code class="inline-code">probs</code> is one vector per tile and any of the three returns a scalar. The choice between them is not cosmetic: on the vector <code class="inline-code">[0.5, 0.3, 0.2]</code> from the diagram above, least-confidence returns 0.50, margin returns 0.80, and normalized entropy returns 0.94, because each score weighs the tail of the distribution differently. The detailed trade-off — when margin’s focus on the top two classes helps and when entropy’s whole-distribution view is worth its cost — is worked through in <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/entropy-vs-margin-sampling-for-segmentation-masks/">entropy vs margin sampling for segmentation masks</a>.</p>
 <h3 id="step-2-aggregate-pixel-scores-to-a-tile-score" tabindex="-1"><a class="header-anchor" href="#step-2-aggregate-pixel-scores-to-a-tile-score" aria-label="Permalink to section &quot;Step 2 — Aggregate pixel scores to a tile score&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Aggregate pixel scores to a tile score</h3>
 <p>A segmenter emits a probability tensor of shape <code class="inline-code">(num_classes, H, W)</code>, so every one of tens of thousands of pixels gets its own uncertainty value. Active learning queues tiles, not pixels, so those maps must reduce to a single number. A plain mean is the wrong reducer: a tile that is 98% confident background with a small, deeply confusing structure in one corner averages out to “confident” and never gets queued — even though that corner is exactly what you want labeled.</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="Three ways of reducing per-pixel uncertainty to one tile score, and the tile each one prefers" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The aggregation decides which tile wins</title>
+  <desc>Two tiles. Tile A has a small strip of very uncertain pixels along one field boundary; tile B is mildly uncertain everywhere. The mean over all pixels ranks B first, because its uncertainty is spread. The top-k mean over the most uncertain 1 percent ranks A first, because that is where a boundary the model cannot resolve actually is. The maximum ranks A too, but is set by a single pixel and is therefore noisy.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Tile A -->
+  <text x="120" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">tile A — concentrated</text>
+  <rect x="40" y="48" width="160" height="120" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="40" y="48" width="160" height="120" fill="currentColor" opacity="0.08"/>
+  <path d="M52 150 L96 96 L142 108 L188 62" fill="none" stroke="currentColor" stroke-width="8" opacity="0.45"/>
+  <text x="120" y="186" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">one unresolvable boundary</text>
+  <!-- Tile B -->
+  <text x="340" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">tile B — diffuse</text>
+  <rect x="260" y="48" width="160" height="120" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="260" y="48" width="160" height="120" fill="currentColor" opacity="0.22"/>
+  <text x="340" y="186" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">mild haze over the whole chip</text>
+  <!-- Rankings -->
+  <text x="470" y="66" font-size="11" fill="currentColor" font-family="monospace">mean over all pixels</text>
+  <text x="470" y="84" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks B first — the strip is diluted</text>
+  <text x="470" y="120" font-size="11" fill="currentColor" font-family="monospace">top-1% mean</text>
+  <text x="470" y="138" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks A first — and is stable</text>
+  <text x="470" y="174" font-size="11" fill="currentColor" font-family="monospace">maximum</text>
+  <text x="470" y="192" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks A too, on one pixel — noisy</text>
+  <rect x="460" y="104" width="250" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="360" y="230" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the annotator can fix A's boundary in a minute; B needs better imagery, not a label</text>
+  <text x="360" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">which is the whole argument for the top-k mean: it asks where a human could actually help</text>
+</svg>
 <p>Use a high-percentile or masked-mean aggregator that preserves local difficulty.</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -646,6 +703,53 @@
 <h2 id="edge-cases-gotchas" tabindex="-1"><a class="header-anchor" href="#edge-cases-gotchas" aria-label="Permalink to section &quot;Edge Cases &amp; Gotchas&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Edge Cases &amp; Gotchas</h2>
 <h3 id="calibration-decides-whether-the-ranking-can-be-trusted" tabindex="-1"><a class="header-anchor" href="#calibration-decides-whether-the-ranking-can-be-trusted" aria-label="Permalink to section &quot;Calibration decides whether the ranking can be trusted&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Calibration decides whether the ranking can be trusted</h3>
 <p>Uncertainty scores are only as honest as the probabilities they read. Modern networks are systematically over-confident, so raw softmax entropy understates true uncertainty and the queue skews toward whichever classes the model shouts loudest. Because ranking needs only the relative order to hold, you rarely need to retrain — temperature scaling, a single learned scalar dividing the logits, is usually enough to restore a trustworthy order. Treat calibrated <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> as a prerequisite, not a nicety, before you let a score drive human effort.</p>
+<svg viewBox="0 0 700 260" role="img" aria-label="Uncertainty scores from an uncalibrated model producing a ranking that does not match real error" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>An uncalibrated model ranks confidently, and wrongly</title>
+  <desc>Six tiles ordered by the model's reported uncertainty against their measured error. Under an uncalibrated model the two orderings barely correspond, so the queue spends the budget on tiles the model merely reports as uncertain. After temperature scaling the same six tiles line up, and the top of the queue is genuinely the top of the error.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Uncalibrated -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">uncalibrated</text>
+  <text x="60" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by score</text>
+  <text x="280" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by real error</text>
+  <g font-family="monospace" font-size="11" fill="currentColor">
+    <text x="60" y="86" text-anchor="middle">t_14</text><text x="280" y="86" text-anchor="middle">t_09</text>
+    <text x="60" y="112" text-anchor="middle">t_31</text><text x="280" y="112" text-anchor="middle">t_14</text>
+    <text x="60" y="138" text-anchor="middle">t_08</text><text x="280" y="138" text-anchor="middle">t_77</text>
+    <text x="60" y="164" text-anchor="middle">t_52</text><text x="280" y="164" text-anchor="middle">t_31</text>
+    <text x="60" y="190" text-anchor="middle">t_09</text><text x="280" y="190" text-anchor="middle">t_52</text>
+    <text x="60" y="216" text-anchor="middle">t_77</text><text x="280" y="216" text-anchor="middle">t_08</text>
+  </g>
+  <g stroke="currentColor" stroke-width="1" opacity="0.45">
+    <line x1="86" y1="82" x2="254" y2="108"/>
+    <line x1="86" y1="108" x2="254" y2="160"/>
+    <line x1="86" y1="134" x2="254" y2="212"/>
+    <line x1="86" y1="160" x2="254" y2="186"/>
+    <line x1="86" y1="186" x2="254" y2="82"/>
+    <line x1="86" y1="212" x2="254" y2="134"/>
+  </g>
+  <text x="170" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the queue is spending on t_14 and t_31</text>
+  <!-- Calibrated -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">after temperature scaling</text>
+  <text x="420" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by score</text>
+  <text x="640" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by real error</text>
+  <g font-family="monospace" font-size="11" fill="currentColor">
+    <text x="420" y="86" text-anchor="middle">t_09</text><text x="640" y="86" text-anchor="middle">t_09</text>
+    <text x="420" y="112" text-anchor="middle">t_14</text><text x="640" y="112" text-anchor="middle">t_14</text>
+    <text x="420" y="138" text-anchor="middle">t_77</text><text x="640" y="138" text-anchor="middle">t_77</text>
+    <text x="420" y="164" text-anchor="middle">t_52</text><text x="640" y="164" text-anchor="middle">t_31</text>
+    <text x="420" y="190" text-anchor="middle">t_31</text><text x="640" y="190" text-anchor="middle">t_52</text>
+    <text x="420" y="216" text-anchor="middle">t_08</text><text x="640" y="216" text-anchor="middle">t_08</text>
+  </g>
+  <g stroke="currentColor" stroke-width="1" opacity="0.45">
+    <line x1="446" y1="82" x2="614" y2="82"/>
+    <line x1="446" y1="108" x2="614" y2="108"/>
+    <line x1="446" y1="134" x2="614" y2="134"/>
+    <line x1="446" y1="160" x2="614" y2="186"/>
+    <line x1="446" y1="186" x2="614" y2="160"/>
+    <line x1="446" y1="212" x2="614" y2="212"/>
+  </g>
+  <text x="530" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the top of the queue is the top of the error</text>
+</svg>
 <h3 id="spatial-autocorrelation-collapses-the-batch" tabindex="-1"><a class="header-anchor" href="#spatial-autocorrelation-collapses-the-batch" aria-label="Permalink to section &quot;Spatial autocorrelation collapses the batch&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial autocorrelation collapses the batch</h3>
 <p>The redundancy problem from Step 3 is not an occasional annoyance; it is the default behaviour of uncertainty sampling on tiled imagery, because Tobler’s first law guarantees nearby tiles resemble each other. If you skip the diversity term, expect the queue to lock onto one difficult scene and drain a batch on it. The per-cluster cap is the minimum defence; for stronger guarantees, add a spatial exclusion radius so no two queued tiles fall within a fixed ground distance of each other.</p>
 <h3 id="cold-start-has-no-signal-to-sample" tabindex="-1"><a class="header-anchor" href="#cold-start-has-no-signal-to-sample" aria-label="Permalink to section &quot;Cold start has no signal to sample&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Cold start has no signal to sample</h3>
@@ -782,6 +886,11 @@
               <div class="desc">A geospatial detection team hits this wall constantly: annotators keep validating fresh satellite tiles, the reviewed labels pile up in a bucket, and yet the model in production has not changed in three months. Nobody wired the last step. The deployed checkpoint keeps mis-detecting the exact objects the new annotations</div>
             </a>
           
+            <a class="related__card" href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">
+              <div class="title">Cold-Start Strategies for New Annotation Projects</div>
+              <div class="desc">Active learning has a chicken-and-egg problem at the start of every project: the loop selects tiles the model is unsure about, and there is no model. The usual response is to label a random few thousand tiles and start the loop, which wastes most of that budget — a random sample of an aerial pool is mostly ground with </div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">
               <div class="title">Detecting Distribution Drift in Spatial Datasets</div>
               <div class="desc">A building-footprint segmenter trained on cloud-free summer imagery ships to production and scores well on the held-out test set. Six months later the same model starts missing rooftops — not because the weights changed, but because the incoming tiles did. Winter acquisitions carry snow cover, low sun angles, and long </div>
@@ -830,6 +939,8 @@
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -846,6 +957,8 @@
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -859,6 +972,8 @@
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -886,7 +1001,11 @@
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

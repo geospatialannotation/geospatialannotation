@@ -92,6 +92,7 @@ A single reprojected raster, shifted polygon vertex, or corrected `.prj` file ca
 <svg viewBox="0 0 740 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DVC snapshot pipeline: raw GeoJSON files flow through CRS validation, SHA-256 hashing, and Parquet manifest generation before being pushed to remote storage" style="width:100%;max-width:740px;height:auto;display:block;margin:1.5rem auto;">
   <title>DVC snapshot pipeline for geospatial annotations</title>
   <desc>Raw GeoJSON annotation files enter a DVC pipeline stage that validates CRS and geometry, computes SHA-256 checksums, writes a Parquet snapshot manifest, and pushes changed chunks to S3/GCS remote storage. Git receives only lightweight dvc.lock pointer files.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -167,6 +168,42 @@ git commit -m "chore: initialise DVC"
 ### Step 2 — Declare the Snapshot Pipeline Stage
 
 Create `dvc.yaml` at the project root. The `deps` list is the contract DVC hashes; any change there triggers a re-run:
+
+<svg viewBox="0 0 720 260" role="img" aria-label="A snapshot stage that only produces a new version when the content hash actually changed" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>A scheduled snapshot that mostly does nothing, on purpose</title>
+  <desc>The nightly job hashes the validated annotations and compares against the last recorded manifest hash. When they match — most nights — it exits without producing a version, so the history stays readable. When they differ it validates, writes a new manifest, pushes the objects and tags the version.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="ds-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="14" y="96" width="120" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="74" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">nightly trigger</text>
+  <text x="74" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">cron / CI schedule</text>
+  <line x1="134" y1="122" x2="160" y2="122" stroke="currentColor" stroke-width="1.5" marker-end="url(#ds-arr)"/>
+  <rect x="162" y="96" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="227" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">hash the tree</text>
+  <text x="227" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">canonical, per feature</text>
+  <line x1="292" y1="122" x2="318" y2="122" stroke="currentColor" stroke-width="1.5" marker-end="url(#ds-arr)"/>
+  <rect x="320" y="96" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="395" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">same as last manifest?</text>
+  <text x="395" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">one string comparison</text>
+  <!-- yes -->
+  <line x1="395" y1="96" x2="395" y2="64" stroke="currentColor" stroke-width="1.5" marker-end="url(#ds-arr)"/>
+  <text x="403" y="82" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">yes</text>
+  <rect x="300" y="24" width="190" height="38" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="395" y="48" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">exit 0, no version created</text>
+  <!-- no -->
+  <line x1="470" y1="122" x2="496" y2="122" stroke="currentColor" stroke-width="1.5" marker-end="url(#ds-arr)"/>
+  <text x="483" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">no</text>
+  <rect x="498" y="96" width="208" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="602" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">validate → write manifest</text>
+  <text x="602" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">→ push → tag</text>
+  <text x="360" y="192" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">most nights take the dashed path, and that is the design working</text>
+  <text x="360" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a job that tags a version every night gives you 365 tags a year and no way to find the three that mattered</text>
+  <text x="360" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">— the hash comparison is what makes the history worth reading</text>
+</svg>
 
 ```yaml
 # dvc.yaml
@@ -388,6 +425,30 @@ DVC writes a `.dvc` pointer file containing only the hash — the binary never e
 ### Step 5 — Automate Snapshots in CI/CD
 
 A GitHub Actions workflow that gates pull requests on pipeline success prevents annotation drift from reaching production training jobs. The `metadata.json` manifest output integrates with experiment trackers such as MLflow — see [Preserving Metadata Across Dataset Versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) for how to embed CRS, geometry type, and label schema into versioned manifests consumed by training scripts.
+
+<svg viewBox="0 32 720 227" role="img" aria-label="Where the snapshot job runs and what each environment can and cannot reach" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The credentials, not the code, decide where this can run</title>
+  <desc>The same snapshot stage runs from a developer machine, from CI and from a scheduled runner. All three need read access to the annotation store and write access to the DVC remote, but only CI should hold the token that can push a tag to the default branch. Giving the scheduled runner that token is how an unreviewed dataset version reaches production.</desc>
+  <rect x="0" y="32" width="720" height="227" style="fill:var(--bg)"/>
+  <rect x="20" y="52" width="200" height="110" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="120" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">developer machine</text>
+  <text x="120" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reads the store ✓</text>
+  <text x="120" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">writes to the remote ✓</text>
+  <text x="120" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">cannot tag the branch</text>
+  <rect x="260" y="52" width="200" height="110" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="360" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">CI, on a merged PR</text>
+  <text x="360" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reads the store ✓</text>
+  <text x="360" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">writes to the remote ✓</text>
+  <text x="360" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">tags the branch ✓</text>
+  <rect x="500" y="52" width="200" height="110" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="600" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">scheduled runner</text>
+  <text x="600" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reads the store ✓</text>
+  <text x="600" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">writes to the remote ✓</text>
+  <text x="600" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">opens a PR, does not tag</text>
+  <text x="360" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">only the reviewed path holds the tagging token</text>
+  <text x="360" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a scheduled job that can tag will eventually publish a dataset version nobody looked at,</text>
+  <text x="360" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">at 03:00, on the night the upstream export was broken</text>
+</svg>
 
 ```yaml
 # .github/workflows/annotation-snapshot.yml

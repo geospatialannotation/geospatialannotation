@@ -98,6 +98,7 @@ The reason detectors drift into over-confidence is structural rather than accide
 <svg viewBox="0 0 480 360" role="img" aria-label="Reliability diagram plotting confidence against accuracy, with a before curve bowing below the diagonal and an after curve sitting on it" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:480px;display:block;margin:1.5rem auto;">
   <title>Reliability diagram before and after temperature scaling</title>
   <desc>Confidence on the horizontal axis versus empirical accuracy on the vertical axis. A thin diagonal marks perfect calibration. The dashed before curve sits well below the diagonal, showing over-confidence. The solid after curve sits on the diagonal, showing calibrated confidence after temperature scaling.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Axes -->
   <line x1="60" y1="300" x2="420" y2="300" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
   <line x1="60" y1="300" x2="60" y2="40" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
@@ -113,7 +114,7 @@ The reason detectors drift into over-confidence is structural rather than accide
   <text x="240" y="340" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.8" font-family="sans-serif">Confidence</text>
   <text x="20" y="170" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.8" font-family="sans-serif" transform="rotate(-90 20 170)">Accuracy</text>
   <!-- Perfect calibration diagonal -->
-  <line x1="60" y1="300" x2="420" y2="40" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3" opacity="0.5"/>
+  <path d="M60 300 L420 40" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3" opacity="0.5"/>
   <text x="360" y="80" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5" font-family="sans-serif">perfect</text>
   <!-- Before curve (over-confident, dashed) -->
   <polyline points="240,209 276,191 312,170 348,149 384,128 420,108" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3" opacity="0.75"/>
@@ -133,6 +134,64 @@ Install the two dependencies once:
 ```bash
 pip install torch==2.3.1 numpy==1.26.4
 ```
+
+Before the code, it is worth seeing exactly what the single fitted scalar does to one
+detection. Dividing every logit by `T` compresses the gaps between them, so the softmax
+spreads mass onto the runner-up classes — but because the division is monotone, the
+ordering, and therefore the predicted label, cannot change.
+
+<svg viewBox="0 0 760 300" role="img" aria-label="One detection's logits divided by the fitted temperature, showing the softmax flattening while the arg-max class stays the same" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>What dividing the logits by T actually does to one detection</title>
+  <desc>A single detection with logits 4.2, 1.1 and 0.6 produces softmax probabilities 0.93, 0.04 and 0.03. Dividing each logit by the fitted temperature of 2.11 gives 1.99, 0.52 and 0.28, whose softmax is 0.71, 0.16 and 0.13. The building class stays highest in both, so the prediction is unchanged while the reported confidence falls from 0.93 to 0.71.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Raw logits column -->
+  <text x="96" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Raw logits z</text>
+  <rect x="26" y="52" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="96" y="74" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">building  4.2</text>
+  <rect x="26" y="96" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="96" y="118" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">road      1.1</text>
+  <rect x="26" y="140" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="96" y="162" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">water     0.6</text>
+  <!-- Divide by T -->
+  <line x1="176" y1="113" x2="216" y2="113" stroke="currentColor" stroke-width="1.5" marker-end="url(#ts-arr)"/>
+  <defs>
+    <marker id="ts-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="196" y="104" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">÷ T</text>
+  <!-- Scaled logits column -->
+  <text x="296" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">z / T   (T = 2.11)</text>
+  <rect x="226" y="52" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="296" y="74" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">building  1.99</text>
+  <rect x="226" y="96" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="296" y="118" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">road      0.52</text>
+  <rect x="226" y="140" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="296" y="162" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">water     0.28</text>
+  <!-- Softmax arrow -->
+  <line x1="376" y1="113" x2="426" y2="113" stroke="currentColor" stroke-width="1.5" marker-end="url(#ts-arr)"/>
+  <text x="401" y="104" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">softmax</text>
+  <!-- Probability bars, before -->
+  <text x="556" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Reported confidence</text>
+  <text x="446" y="60" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">before</text>
+  <rect x="446" y="66" width="252" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+  <rect x="446" y="66" width="235" height="16" rx="3" fill="currentColor" opacity="0.55"/>
+  <text x="708" y="79" font-size="11" fill="currentColor" font-family="monospace">0.93</text>
+  <!-- Probability bars, after -->
+  <text x="446" y="104" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">after</text>
+  <rect x="446" y="110" width="252" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+  <rect x="446" y="110" width="179" height="16" rx="3" fill="currentColor" opacity="0.55"/>
+  <text x="708" y="123" font-size="11" fill="currentColor" font-family="monospace">0.71</text>
+  <!-- Runner-up mass -->
+  <text x="446" y="152" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">road + water, after</text>
+  <rect x="446" y="158" width="252" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+  <rect x="446" y="158" width="73" height="16" rx="3" fill="currentColor" opacity="0.3"/>
+  <text x="708" y="171" font-size="11" fill="currentColor" font-family="monospace">0.29</text>
+  <!-- Invariant callout -->
+  <rect x="26" y="212" width="672" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="362" y="236" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">building stays the arg-max in both columns — the label does not move</text>
+  <text x="362" y="256" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">a monotone division cannot reorder logits, so precision, recall and mAP are untouched</text>
+</svg>
 
 ### Step 1 — Collect Validation Logits and Labels
 
@@ -299,6 +358,42 @@ Running the routine on the synthetic over-confident set produces the representat
 | Fitted temperature `T` | — | 2.11 | over-confident (T > 1) |
 
 The arg-max accuracy is byte-for-byte identical before and after — only the confidence magnitudes moved. That is the whole point: you gain trustworthy uncertainty for the queue without touching detection quality. ECE is the headline number to watch because it is the metric the reliability diagram visualises, but NLL and Brier matter as guards: it is possible to lower ECE while leaving the per-example ranking of confidences noisier, and tracking all three catches that. Re-fit the temperature on a fresh validation slice whenever the model is retrained or the sensor mix changes, and store `T` in the dataset version manifest so the exact calibration used for any queue can be reproduced later. Feeding these calibrated scores into the [active learning loop](https://www.geospatialannotation.com/active-learning-model-feedback-loops/) makes each retraining round select genuinely informative tiles instead of loud but wrong ones.
+
+<svg viewBox="131 21 541 289" role="img" aria-label="Grouped bar chart comparing expected calibration error, negative log-likelihood and Brier score before and after temperature scaling" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:541px;display:block;margin:1.5rem auto;">
+  <title>All three calibration metrics fall, on one shared scale</title>
+  <desc>Horizontal bars on a shared zero-to-1.1 scale. Expected calibration error falls from 0.182 to 0.021. Negative log-likelihood falls from 1.046 to 0.731. Brier score falls from 0.402 to 0.318. The filled bar in each pair is the raw model and the outlined bar is the temperature-scaled model.</desc>
+  <rect x="131" y="21" width="541" height="289" style="fill:var(--bg)"/>
+  <!-- ECE -->
+  <text x="180" y="52" text-anchor="end" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">ECE</text>
+  <text x="180" y="72" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">raw</text>
+  <rect x="190" y="60" width="50" height="15" rx="2" fill="currentColor" opacity="0.55"/>
+  <text x="248" y="72" font-size="11" fill="currentColor" font-family="monospace">0.182</text>
+  <text x="180" y="94" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">scaled</text>
+  <rect x="190" y="82" width="6" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="248" y="94" font-size="11" fill="currentColor" font-family="monospace">0.021</text>
+  <!-- NLL -->
+  <text x="180" y="132" text-anchor="end" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">NLL</text>
+  <text x="180" y="152" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">raw</text>
+  <rect x="190" y="140" width="285" height="15" rx="2" fill="currentColor" opacity="0.55"/>
+  <text x="483" y="152" font-size="11" fill="currentColor" font-family="monospace">1.046</text>
+  <text x="180" y="174" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">scaled</text>
+  <rect x="190" y="162" width="199" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="397" y="174" font-size="11" fill="currentColor" font-family="monospace">0.731</text>
+  <!-- Brier -->
+  <text x="180" y="212" text-anchor="end" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Brier</text>
+  <text x="180" y="232" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">raw</text>
+  <rect x="190" y="220" width="110" height="15" rx="2" fill="currentColor" opacity="0.55"/>
+  <text x="308" y="232" font-size="11" fill="currentColor" font-family="monospace">0.402</text>
+  <text x="180" y="254" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">scaled</text>
+  <rect x="190" y="242" width="87" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="285" y="254" font-size="11" fill="currentColor" font-family="monospace">0.318</text>
+  <!-- Scale -->
+  <line x1="190" y1="272" x2="490" y2="272" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  <text x="190" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">0</text>
+  <text x="326" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">0.5</text>
+  <text x="463" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">1.0</text>
+  <text x="620" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">lower is better</text>
+</svg>
 
 ## Common Errors and Fixes
 

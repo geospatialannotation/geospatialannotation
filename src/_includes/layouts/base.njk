@@ -28,7 +28,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 

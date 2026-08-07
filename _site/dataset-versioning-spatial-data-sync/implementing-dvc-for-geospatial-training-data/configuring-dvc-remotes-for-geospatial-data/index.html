@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -261,6 +280,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/" class="">Reproducible Train/Validation Splits for Spatial Data</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/detecting-train-test-leakage-in-tiled-datasets/" class="">Detecting Train/Test Leakage in Tiled Datasets</a></li>
               
             </ul>
             
@@ -372,10 +402,37 @@
 <p>To version terabytes of satellite and drone imagery without stalling your team, configure a <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">DVC</a> remote — on S3, Google Cloud Storage, or Azure Blob — that is tuned for multi-gigabyte Cloud-Optimized GeoTIFFs rather than the small text files DVC ships defaults for. Three settings carry the load: raise <code class="inline-code">jobs</code> so DVC transfers file chunks in parallel, point a shared <code class="inline-code">cache.dir</code> with a reflink or symlink <code class="inline-code">cache.type</code> at fast local storage so huge rasters are never re-hashed or duplicated, and resolve credentials through environment variables or a cloud profile instead of writing keys into tracked config. The entire configuration is two commands — <code class="inline-code">dvc remote add</code> to register the bucket and <code class="inline-code">dvc remote modify</code> to tune it.</p>
 <h2 id="why-remote-tuning-decides-whether-versioning-scales" tabindex="-1"><a class="header-anchor" href="#why-remote-tuning-decides-whether-versioning-scales" aria-label="Permalink to section &quot;Why Remote Tuning Decides Whether Versioning Scales&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Remote Tuning Decides Whether Versioning Scales</h2>
 <p>DVC’s defaults are built for a repository of code and small artifacts, where a naive copy-and-hash checkout costs nothing. Geospatial training data breaks those assumptions. A single mosaic can exceed 20 GB, an annotated tile set can run to hundreds of thousands of COGs, and a working copy of the dataset may not fit twice on one disk. Left untuned, <code class="inline-code">dvc push</code> opens too few connections and crawls across a link that could saturate, while <code class="inline-code">dvc checkout</code> copies every raster into the workspace and computes a fresh content hash on each one — turning a five-minute pull into an hour.</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="Throughput against the number of parallel jobs for large rasters, showing the plateau and then the decline" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>More parallel jobs stops helping, then starts hurting</title>
+  <desc>Throughput climbs steeply from one to about eight parallel jobs, flattens between eight and sixteen as the link saturates, and falls beyond about twenty-four as connection setup, retries and memory pressure from large multipart buffers take over. The useful setting is the knee, not the maximum the tool accepts.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axes -->
+  <line x1="80" y1="220" x2="640" y2="220" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="80" y1="220" x2="80" y2="40" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="80" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1</text>
+  <text x="220" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">8</text>
+  <text x="360" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">16</text>
+  <text x="500" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">24</text>
+  <text x="640" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">32</text>
+  <text x="360" y="262" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.75">jobs</text>
+  <text x="46" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75" transform="rotate(-90 46 130)">throughput</text>
+  <!-- Curve -->
+  <path d="M80 208 L115 168 L150 136 L185 112 L220 96 L255 90 L290 86 L325 84 L360 84 L395 88 L430 96 L465 108 L500 124 L535 144 L570 166 L605 188 L640 206" fill="none" stroke="currentColor" stroke-width="2.5"/>
+  <!-- Knee -->
+  <line x1="220" y1="60" x2="220" y2="216" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="228" y="58" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the knee — where extra jobs stop paying</text>
+  <line x1="500" y1="60" x2="500" y2="216" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="508" y="58" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">retries and buffers win</text>
+  <!-- Zones -->
+  <text x="150" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">link filling</text>
+  <text x="360" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">link saturated</text>
+  <text x="570" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">contention</text>
+</svg>
 <p>The fix is to align three layers with the shape of the data. Parallelism (<code class="inline-code">jobs</code>) matches transfer concurrency to the many-large-files profile. A shared cache with reflinks eliminates redundant copies and re-hashing so identical imagery costs disk space once. And credential handling through profiles keeps long-lived keys out of the config that every collaborator clones. Get these right once and the same remote serves an <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">annotation team</a> across sites; get them wrong and every pull is a bottleneck.</p>
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of a local DVC cache exchanging chunked Cloud-Optimized GeoTIFFs in parallel with an S3, GCS, or Azure remote" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Chunked parallel transfer between a local DVC cache and a cloud remote</title>
   <desc>On the left, a local shared cache holds content-addressed COG blobs. In the centre, four parallel transfer lanes carry file chunks. On the right, an object-store remote labelled S3, GCS, or Azure receives the chunks. The jobs setting controls how many lanes run at once.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrowRight" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -495,6 +552,41 @@ dvc remote modify <span class="token parameter variable">--local</span> azstore 
 </div>
 <h3 id="step-4-configure-a-shared-cache-for-rasters" tabindex="-1"><a class="header-anchor" href="#step-4-configure-a-shared-cache-for-rasters" aria-label="Permalink to section &quot;Step 4 — Configure a Shared Cache for Rasters&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Configure a Shared Cache for Rasters</h3>
 <p>The cache is where the real geospatial savings live. Point <code class="inline-code">cache.dir</code> at fast local storage on the same filesystem as your workspace, and set <code class="inline-code">cache.type</code> so checkouts link rather than copy. <code class="inline-code">reflink</code> gives copy-on-write with no re-hashing on filesystems that support it (XFS, Btrfs, APFS); <code class="inline-code">symlink</code> is the portable fallback:</p>
+<svg viewBox="0 0 700 280" role="img" aria-label="A shared cache directory letting several workspaces reference one copy of each tracked file by hard link" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>One cache, three workspaces, no third copy</title>
+  <desc>Three checkouts on the same machine — a training workspace, an evaluation workspace and a notebook sandbox — all point at one shared cache directory. Each workspace file is a hard link to the cached object, so a 400 gigabyte dataset checked out three ways still occupies 400 gigabytes. Without the shared cache each workspace keeps its own copy.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="cache-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="20" y="46" width="170" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="66" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">~/work/train</text>
+  <text x="105" y="83" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">checked out at v2.4.0</text>
+  <rect x="20" y="112" width="170" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">~/work/eval</text>
+  <text x="105" y="149" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">checked out at v2.3.1</text>
+  <rect x="20" y="178" width="170" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="198" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">~/work/sandbox</text>
+  <text x="105" y="215" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">checked out at v2.4.0</text>
+  <line x1="190" y1="69" x2="286" y2="120" stroke="currentColor" stroke-width="1.3" marker-end="url(#cache-arr)" opacity="0.6"/>
+  <line x1="190" y1="135" x2="286" y2="135" stroke="currentColor" stroke-width="1.3" marker-end="url(#cache-arr)" opacity="0.6"/>
+  <line x1="190" y1="201" x2="286" y2="150" stroke="currentColor" stroke-width="1.3" marker-end="url(#cache-arr)" opacity="0.6"/>
+  <rect x="288" y="106" width="180" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="378" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">/srv/dvc-cache</text>
+  <text x="378" y="148" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">one object per content hash</text>
+  <text x="238" y="96" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">hard links</text>
+  <!-- Totals -->
+  <rect x="500" y="60" width="180" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="590" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">shared cache</text>
+  <text x="590" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≈ 400 GB</text>
+  <rect x="500" y="130" width="180" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="590" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">a cache per workspace</text>
+  <text x="590" y="170" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≈ 1.2 TB</text>
+  <text x="350" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">hard links need the cache and the workspace on one filesystem — across a mount boundary DVC silently falls back to copying,</text>
+  <text x="350" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and the disk usage goes back to the dashed number</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">bash</span>
@@ -682,6 +774,8 @@ Fix: move the cache to the same volume as the workspace, or drop <code class="in
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -698,6 +792,8 @@ Fix: move the cache to the same volume as the workspace, or drop <code class="in
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -711,6 +807,8 @@ Fix: move the cache to the same volume as the workspace, or drop <code class="in
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -738,7 +836,11 @@ Fix: move the cache to the same volume as the workspace, or drop <code class="in
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

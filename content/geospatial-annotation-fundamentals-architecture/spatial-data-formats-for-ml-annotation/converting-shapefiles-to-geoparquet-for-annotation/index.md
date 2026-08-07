@@ -93,9 +93,10 @@ A Shapefile is not one file; it is a minimum of three and usually four, and ever
 
 GeoParquet removes each failure mode. It is a single Parquet file whose geometry column is stored as Well-Known Binary and whose CRS is written as PROJJSON into a file-level `geo` metadata key, so the projection travels inside the bytes that hold the coordinates. Parquet's schema imposes no practical limit on column-name length, so full annotation field names survive. And because Parquet is columnar and compressed, a loader that needs only geometry and a label reads those columns alone.
 
-<svg viewBox="0 0 720 300" role="img" aria-label="Diagram contrasting a four-file Shapefile sidecar cluster with a single GeoParquet file that embeds the CRS and full field names" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="14 -4 702 264" role="img" aria-label="Diagram contrasting a four-file Shapefile sidecar cluster with a single GeoParquet file that embeds the CRS and full field names" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:702px;display:block;margin:1.5rem auto;">
   <title>Shapefile sidecar cluster consolidated into a single GeoParquet file</title>
   <desc>On the left, four separate files labelled .shp, .shx, .dbf, and .prj are grouped as a fragile cluster, with notes that the .dbf truncates field names to ten characters and the .prj holds the CRS separately. An arrow labelled geopandas convert points to the right, where a single GeoParquet file contains embedded WKB geometry, the CRS as PROJJSON metadata, and full-length field names.</desc>
+  <rect x="14" y="-4" width="702" height="264" style="fill:var(--bg)"/>
   <defs>
     <marker id="gpq-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -203,6 +204,58 @@ Assigning the wrong code when coordinate values disagree with the `.prj` is its 
 
 The `.dbf` clipped every field name to 10 characters on write. GeoParquet will happily store the full names, but only if you restore them first. Supply an explicit rename map keyed by the truncated name, and guard against the collisions truncation can create:
 
+<svg viewBox="0 0 740 290" role="img" aria-label="Field names before and after the ten-character DBF truncation, showing two distinct names colliding and the repair mapping" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Ten characters is the whole DBF budget — and collisions follow</title>
+  <desc>Four intended field names are truncated to ten characters by the DBF format. building_height and building_height_m both become building_h, so the driver disambiguates the second as building_1. The repair restores the intended names from a mapping and writes them to GeoParquet, which has no length limit.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Column headers -->
+  <text x="120" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">intended name</text>
+  <text x="370" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">what the .dbf holds</text>
+  <text x="620" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">restored in GeoParquet</text>
+  <line x1="20" y1="44" x2="720" y2="44" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <defs>
+    <marker id="fx-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Row 1 -->
+  <text x="120" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">building_height</text>
+  <line x1="228" y1="72" x2="268" y2="72" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="370" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">building_h</text>
+  <line x1="478" y1="72" x2="518" y2="72" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="620" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">building_height</text>
+  <!-- Row 2 -->
+  <text x="120" y="112" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">building_height_m</text>
+  <line x1="228" y1="108" x2="268" y2="108" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="370" y="112" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">building_1</text>
+  <line x1="478" y1="108" x2="518" y2="108" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="620" y="112" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">building_height_m</text>
+  <!-- Collision bracket -->
+  <path d="M446 62 L456 62 L456 116 L446 116" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="462" y="94" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">collision</text>
+  <!-- Row 3 -->
+  <text x="120" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">annotation_timestamp</text>
+  <line x1="228" y1="148" x2="268" y2="148" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="370" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">annotatio</text>
+  <line x1="478" y1="148" x2="518" y2="148" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="620" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">annotation_timestamp</text>
+  <!-- Row 4 -->
+  <text x="120" y="188" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">annotator_id</text>
+  <line x1="228" y1="184" x2="268" y2="184" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="370" y="188" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">annotator_</text>
+  <line x1="478" y1="184" x2="518" y2="184" stroke="currentColor" stroke-width="1.2" marker-end="url(#fx-arr)" opacity="0.7"/>
+  <text x="620" y="188" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">annotator_id</text>
+  <!-- Notes -->
+  <rect x="20" y="212" width="340" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="190" y="234" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the truncation is lossy and silent</text>
+  <text x="190" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">nothing in the file records what the name was,</text>
+  <text x="190" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">so the mapping has to be written by hand</text>
+  <rect x="380" y="212" width="340" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="550" y="234" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">GeoParquet has no length limit</text>
+  <text x="550" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">names, dtypes and the CRS all survive the</text>
+  <text x="550" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">write, so the repair only has to happen once</text>
+</svg>
+
 ```python
 def restore_field_names(
     gdf: gpd.GeoDataFrame,
@@ -267,6 +320,43 @@ out = write_geoparquet(gdf, Path("annotations/parcels.parquet"))
 ## Step 5 — Validate the Roundtrip
 
 A conversion you have not verified is a conversion you cannot trust. Read the GeoParquet back and assert two things: every geometry equals its source geometry, and the CRS matches exactly. Use `geom_equals` for a topological comparison that tolerates the WKB re-encoding, and compare CRS via authority code:
+
+<svg viewBox="0 0 740 270" role="img" aria-label="The five assertions that make up the roundtrip validation between the source Shapefile and the written GeoParquet" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>What the roundtrip check actually compares</title>
+  <desc>The source Shapefile and the written GeoParquet are read back and compared on five points: feature count, coordinate reference system, geometry equality within tolerance, attribute dtypes, and null counts per column. A mismatch on any one of them fails the conversion rather than shipping a file that looks plausible.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="rp-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Sources -->
+  <rect x="20" y="46" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="95" y="68" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">parcels.shp</text>
+  <text x="95" y="85" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">read as source</text>
+  <rect x="20" y="146" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="95" y="168" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">parcels.parquet</text>
+  <text x="95" y="185" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">read back after write</text>
+  <line x1="170" y1="72" x2="212" y2="112" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.7"/>
+  <line x1="170" y1="172" x2="212" y2="132" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.7"/>
+  <!-- Comparator -->
+  <rect x="216" y="96" width="128" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="280" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">compare</text>
+  <text x="280" y="135" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">five assertions</text>
+  <line x1="344" y1="122" x2="384" y2="122" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)"/>
+  <!-- Assertions -->
+  <rect x="388" y="24" width="326" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="402" y="46" font-size="11" fill="currentColor" font-family="sans-serif">feature count identical</text>
+  <rect x="388" y="66" width="326" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="402" y="88" font-size="11" fill="currentColor" font-family="sans-serif">CRS survives as the same authority code</text>
+  <rect x="388" y="108" width="326" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="402" y="130" font-size="11" fill="currentColor" font-family="sans-serif">geometries equal within 1e-9 degrees</text>
+  <rect x="388" y="150" width="326" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="402" y="172" font-size="11" fill="currentColor" font-family="sans-serif">attribute dtypes preserved, not stringified</text>
+  <rect x="388" y="192" width="326" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="402" y="214" font-size="11" fill="currentColor" font-family="sans-serif">null counts per column unchanged</text>
+  <text x="551" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">any one failing fails the conversion — a plausible-looking file is the failure mode</text>
+</svg>
 
 ```python
 def validate_roundtrip(

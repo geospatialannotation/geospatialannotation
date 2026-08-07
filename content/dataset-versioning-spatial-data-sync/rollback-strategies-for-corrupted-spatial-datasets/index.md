@@ -76,9 +76,10 @@ This page covers the complete recovery workflow: pre-flight triage, distributed 
 
 ---
 
-<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
+<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="-10 50 710 168" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:710px;height:auto;display:block;margin:1.5rem auto;">
   <title>Five-Phase Spatial Dataset Rollback Workflow</title>
   <desc>A left-to-right flow diagram showing the five phases of a spatial dataset rollback: Detect and Triage, Lock Registry, Stage Snapshot, Atomic Swap, and Verify and Resume. Arrows connect each phase sequentially. A dashed arc below returns from the Verify phase back to Stage Snapshot to indicate automatic revert on failure.</desc>
+  <rect x="-10" y="50" width="710" height="168" style="fill:var(--bg)"/>
   <defs>
     <marker id="rb-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
@@ -197,6 +198,29 @@ Store both files alongside the dataset commit. In a DVC-tracked repo they become
 
 Validation runs as a CI gate before training jobs consume data. It checks checksums, confirms CRS conformance, and validates vector schema structure.
 
+<svg viewBox="0 0 720 270" role="img" aria-label="Corruption signatures caught by pre-flight triage, ordered from cheapest to most expensive to detect" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Triage in the order that costs least to run</title>
+  <desc>Four checks in increasing cost: byte size against the manifest costs a stat call, header readability costs one small read, structural validity costs a header parse, and a pixel checksum costs a full decode. Running them in this order means most corrupt files are rejected before anything expensive touches them.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="72" font-size="11" fill="currentColor" font-family="sans-serif">1 · byte size differs from the manifest</text>
+  <text x="500" y="66" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">one stat() call</text>
+  <text x="500" y="80" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">catches truncated transfers</text>
+  <rect x="20" y="100" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="126" font-size="11" fill="currentColor" font-family="sans-serif">2 · header will not open</text>
+  <text x="500" y="120" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">a few KB read</text>
+  <text x="500" y="134" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">catches a partial or wrong-format write</text>
+  <rect x="20" y="154" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="180" font-size="11" fill="currentColor" font-family="sans-serif">3 · opens, but is no longer a valid COG</text>
+  <text x="500" y="174" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">header parse</text>
+  <text x="500" y="188" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">catches a re-save that dropped the overviews</text>
+  <rect x="20" y="208" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="40" y="234" font-size="11" fill="currentColor" font-family="sans-serif">4 · pixel checksum differs</text>
+  <text x="500" y="228" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">full decode</text>
+  <text x="500" y="242" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">the only one that catches silent bit rot</text>
+  <text x="360" y="34" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">cheapest first — a truncated file should never reach the decoder</text>
+</svg>
+
 ```python
 import json
 import logging
@@ -292,6 +316,39 @@ For distributed Kubernetes environments replace `FileLock` with a Kubernetes `Le
 ### Step 4 — Atomic Snapshot Restoration
 
 Write the target version to a staging directory, verify it fully, then swap it into the production path in a single `os.rename()` call. On POSIX-compliant local filesystems this rename is atomic — consumers see either the old state or the fully restored state, never a hybrid.
+
+<svg viewBox="0 0 720 280" role="img" aria-label="An atomic restore that stages into a new directory and flips a pointer, compared with overwriting in place" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Restore beside the live path, then move the pointer</title>
+  <desc>Restoring in place leaves the dataset half-old and half-new for the length of the copy, and a failure in the middle leaves it that way permanently. Staging the restore into a fresh directory and then repointing a symlink means readers see either the whole old version or the whole new one, and an abort costs only the staging directory.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="rb-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- In place -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">restore in place</text>
+  <rect x="30" y="52" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="170" y="74" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">data/current/</text>
+  <text x="170" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">overwritten tile by tile</text>
+  <rect x="30" y="118" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="170" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">during the copy: half v2, half v3</text>
+  <text x="170" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a reader mid-copy gets a mixture</text>
+  <text x="170" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">an abort here leaves it mixed</text>
+  <text x="170" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">with nothing recording which tiles moved</text>
+  <!-- Atomic -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">stage, then flip</text>
+  <rect x="390" y="52" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="530" y="74" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">data/restore-v2-tmp/</text>
+  <text x="530" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">built and verified while v3 still serves</text>
+  <line x1="530" y1="104" x2="530" y2="116" stroke="currentColor" stroke-width="1.4" marker-end="url(#rb-arr)"/>
+  <rect x="390" y="118" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="530" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">data/current → restore-v2-tmp</text>
+  <text x="530" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">one rename, no window</text>
+  <text x="530" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">an abort costs a staging directory</text>
+  <text x="530" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and readers never saw a mixture</text>
+  <text x="360" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">verify the staged copy against the integrity manifest BEFORE the flip — after it, the bad version is the live one</text>
+</svg>
 
 ```python
 import os

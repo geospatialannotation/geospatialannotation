@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -189,6 +203,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -223,11 +242,26 @@
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/" class="is-active">Overview</a></li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/" class="">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/computing-boundary-iou-for-footprint-quality/" class="">Computing Boundary IoU for Footprint Quality</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/measuring-inter-annotator-agreement-with-cohens-kappa/" class="">Measuring Inter-Annotator Agreement with Cohen&#39;s Kappa</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="">Confidence Scoring for Geospatial Labels</a>
             
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/" class="">Weighting Training Loss by Annotation Confidence</a></li>
               
             </ul>
             
@@ -397,9 +431,10 @@
 </div><hr>
 <h2 id="annotation-pipeline-architecture" tabindex="-1"><a class="header-anchor" href="#annotation-pipeline-architecture" aria-label="Permalink to section &quot;Annotation Pipeline Architecture&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Annotation Pipeline Architecture</h2>
 <p>A production-grade geospatial annotation system is an orchestrated sequence of ingestion, normalization, labeling, validation, export, and feedback stages—not a single tool. The diagram below shows the canonical data flow.</p>
-<svg viewBox="0 0 820 340" role="img" aria-label="Geospatial annotation pipeline: five stages from raw data ingestion through training feedback loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="-10 90 810 243" role="img" aria-label="Geospatial annotation pipeline: five stages from raw data ingestion through training feedback loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:810px;height:auto;display:block;margin:1.5rem auto;">
   <title>Geospatial Annotation Pipeline Architecture</title>
   <desc>Five-stage pipeline: Raw Imagery Ingestion flows to CRS Normalization and Tiling, then to Annotation Interface, then to Geometry and QA Validation, then to Export and ML Training, with an Active Learning Feedback arrow returning from Export and ML Training back to Annotation Interface.</desc>
+  <rect x="-10" y="90" width="810" height="243" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrow-pipe" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -598,6 +633,7 @@
 <svg viewBox="0 0 720 280" role="img" aria-label="Hierarchical label taxonomy for land-cover geospatial annotation showing parent and child class relationships" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;height:auto;display:block;margin:1.5rem auto;">
   <title>Hierarchical Label Taxonomy for Land-Cover Annotation</title>
   <desc>Three-level taxonomy tree. Root: land_cover. Level 2 children: vegetation, built_environment, water. Under vegetation: forest (coniferous, deciduous), cropland, grassland. Under built_environment: buildings, roads, infrastructure. Under water: open_water, wetland, seasonal_flood.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrow-tax" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
       <path d="M0,0 L0,6 L6,3 z" fill="currentColor" opacity="0.5"/>
@@ -660,6 +696,50 @@
 <hr>
 <h2 id="spatial-specific-failure-modes" tabindex="-1"><a class="header-anchor" href="#spatial-specific-failure-modes" aria-label="Permalink to section &quot;Spatial-Specific Failure Modes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Spatial-Specific Failure Modes</h2>
 <p>The following failure patterns are endemic to geospatial annotation pipelines and rarely surface until late in the ML development cycle.</p>
+<svg viewBox="0 0 760 330" role="img" aria-label="Matrix mapping each spatial failure mode to the pipeline stage that introduces it and the stage where it is usually noticed" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Each failure mode is introduced early and noticed late</title>
+  <desc>Six failure modes plotted against five pipeline stages: ingest and tile, annotate, validate, export, and train and evaluate. A filled marker shows where each defect is introduced and an outlined marker where it typically surfaces. CRS drift, coordinate rounding, spatial autocorrelation, multi-temporal misalignment, sliver polygons and annotator disagreement are all introduced at or before validation but surface at training and evaluation.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Column headers -->
+  <text x="300" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ingest</text>
+  <text x="300" y="43" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">&amp; tile</text>
+  <text x="392" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">annotate</text>
+  <text x="484" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">validate</text>
+  <text x="576" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">export</text>
+  <text x="668" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">train &amp;</text>
+  <text x="668" y="43" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">evaluate</text>
+  <line x1="254" y1="52" x2="714" y2="52" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Rows -->
+  <text x="246" y="76" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">CRS drift at tile boundaries</text>
+  <circle cx="300" cy="72" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="72" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="311" y1="72" x2="657" y2="72" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="116" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">topology loss from rounding</text>
+  <circle cx="576" cy="112" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="112" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="587" y1="112" x2="657" y2="112" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="156" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">spatial autocorrelation in splits</text>
+  <circle cx="484" cy="152" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="152" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="495" y1="152" x2="657" y2="152" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="196" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">multi-temporal misalignment</text>
+  <circle cx="300" cy="192" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="192" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="311" y1="192" x2="657" y2="192" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="236" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">sliver polygons from digitizing</text>
+  <circle cx="392" cy="232" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="232" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="403" y1="232" x2="657" y2="232" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="276" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">annotator disagreement</text>
+  <circle cx="392" cy="272" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="272" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="403" y1="272" x2="657" y2="272" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <!-- Legend -->
+  <circle cx="264" cy="308" r="7" fill="currentColor" opacity="0.55"/>
+  <text x="278" y="312" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">introduced here</text>
+  <circle cx="410" cy="308" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="424" y="312" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">noticed here — after the cost is sunk</text>
+</svg>
 <p><strong>CRS drift at tile boundaries.</strong> When imagery is tiled before CRS normalization, tile edges may carry different implicit projections. Annotations that straddle tile boundaries inherit mismatched coordinate systems, producing ghost polygons and IoU artifacts at inference time. Always normalize CRS before tiling.</p>
 <p><strong>Topology corruption from coordinate rounding.</strong> Serializing geometries to JSON with insufficient decimal precision (fewer than 7 decimal places for <code class="inline-code">EPSG:4326</code>) rounds coordinates and can collapse thin polygons into self-intersections. Use at least 8 decimal places for geographic coordinates and 3 for projected metre coordinates.</p>
 <p><strong>Class imbalance amplified by spatial autocorrelation.</strong> Geospatial datasets exhibit strong spatial autocorrelation—nearby pixels or polygons belong to the same class. Naive random train/validation splits place spatially adjacent samples in both sets, inflating validation accuracy by up to 15–20 IoU points. Always split on spatial grid tiles or geographic regions, not on individual features. <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/">Calculating IoU thresholds for geospatial object detection</a> covers how projection choice affects IoU computation and what thresholds are appropriate per sensor type.</p>
@@ -735,23 +815,61 @@
 </div>
 <p><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback strategies for corrupted spatial datasets</a> covers how to recover from annotation batches that pass CI locally but fail downstream schema validation after format translation.</p>
 <hr>
+<h2 id="why-spatial-annotation-is-not-image-annotation-with-coordinates" tabindex="-1"><a class="header-anchor" href="#why-spatial-annotation-is-not-image-annotation-with-coordinates" aria-label="Permalink to section &quot;Why Spatial Annotation Is Not Image Annotation With Coordinates&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Spatial Annotation Is Not Image Annotation With Coordinates</h2>
+<p>Teams arriving from general computer vision usually expect geospatial annotation to be the same work with a
+projection attached. The projection is real, and it is the smallest of the differences. Four properties of
+spatial data change the shape of the pipeline rather than decorating it.</p>
+<p><strong>Objects have true size, and size is the label.</strong> A building’s footprint area is not an artefact of how it
+was drawn; it is a measurement someone will use. That makes annotation geometry a quantitative output rather
+than a training convenience, and it is why area must be computed in projected metres and why a bounding box
+is a lossy answer for anything whose extent matters.</p>
+<p><strong>Samples are not independent.</strong> Two adjacent tiles share objects, illumination, sensor geometry and
+processing. Every statistical assumption that treats samples as independent — a random train/validation
+split, a confidence interval on an accuracy figure, a class-balance estimate — is wrong by an amount that
+depends on the autocorrelation range rather than on sample size. Adding more tiles from the same area does
+not fix it; it entrenches it.</p>
+<p><strong>The same ground can be annotated many times.</strong> Multi-temporal work makes a feature’s identity a question
+rather than a fact: the building in the 2024 imagery and the building in the 2026 imagery are the same
+object, unless it was rebuilt. Nothing in the file format expresses that, so the pipeline has to.</p>
+<p><strong>Truth is a moving target.</strong> A label can be correct at annotation time and wrong two years later because
+the ground changed. General image datasets rarely have this property, and it is why dataset versioning in
+this field is not merely engineering hygiene: without it there is no way to distinguish a labelling error
+from a real-world change, which is the single most common source of confused drift investigations.</p>
+<h2 id="the-contracts-every-stage-depends-on" tabindex="-1"><a class="header-anchor" href="#the-contracts-every-stage-depends-on" aria-label="Permalink to section &quot;The Contracts Every Stage Depends On&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> The Contracts Every Stage Depends On</h2>
+<p>Almost every failure in the sections that follow is a broken contract rather than a bug, and there are only
+four contracts worth naming explicitly.</p>
+<p>The <strong>CRS contract</strong> says every artifact declares its coordinate reference system and every stage transforms
+deliberately. It is broken by tools that assume a default, by exports that drop the declaration, and by
+files whose declaration is simply wrong. Its failure mode is silent: geometries still load, they are just
+somewhere else.</p>
+<p>The <strong>geometry contract</strong> says every stored geometry is valid — closed rings, no self-intersections,
+consistent winding. It is broken by editors that permit invalid shapes and by simplification that pushes a
+vertex through an edge. Its failure mode is loud at export time and silent at training time, where an
+invalid polygon becomes an empty mask.</p>
+<p>The <strong>taxonomy contract</strong> says every class in the data exists in a versioned taxonomy, and that a class
+means today what it meant when the annotation was made. It is broken by adding classes without versioning
+them, and by refining a definition without recording that the definition moved.</p>
+<p>The <strong>georeference contract</strong> says that any pixel coordinate can be mapped back to the ground. It is broken
+whenever imagery is chipped, rendered or uploaded without carrying the transform along, which is most of
+the ways imagery reaches an annotation tool.</p>
 <h2 id="implementation-checklist-for-production-deployment" tabindex="-1"><a class="header-anchor" href="#implementation-checklist-for-production-deployment" aria-label="Permalink to section &quot;Implementation Checklist for Production Deployment&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Implementation Checklist for Production Deployment</h2>
 <p>Before scaling geospatial annotation workflows to enterprise datasets, verify the following architectural baselines:</p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7515868"> CRS governance enforced at ingestion with explicit transformation logging to <code class="inline-code">EPSG:32610</code><label class="task-list-item-label" for="task-item-7515868"> CRS governance enforced at ingestion with explicit transformation logging to `EPSG:32610` or project-standard CRS</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2154129"><label class="task-list-item-label" for="task-item-2154129"> Topology validation integrated into pre-export CI/CD pipelines; merges blocked on geometry failures</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2020222"><label class="task-list-item-label" for="task-item-2020222"> Label taxonomy documented with hierarchical parent-child relationships and per-class attribute schemas</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8850905"><label class="task-list-item-label" for="task-item-8850905"> Minimum area and minimum length thresholds defined per mission type and enforced in the validation layer</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1231432"><label class="task-list-item-label" for="task-item-1231432"> Multi-temporal datasets versioned using STAC or DVC with full acquisition metadata linked to each annotation snapshot</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4531274"><label class="task-list-item-label" for="task-item-4531274"> Confidence scoring attached to every annotation for loss weighting and active learning routing</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1413449"><label class="task-list-item-label" for="task-item-1413449"> Export formats mapped to downstream framework requirements: COCO for instance segmentation, GeoParquet for tabular analytics, mask GeoTIFF for semantic segmentation</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5504764"><label class="task-list-item-label" for="task-item-5504764"> Spatial train/validation split enforced on geographic grid tiles, not random feature selection</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2250953"><label class="task-list-item-label" for="task-item-2250953"> Active learning hooks configured to route uncertain or edge-case samples to senior annotators</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1532586"><label class="task-list-item-label" for="task-item-1532586"> Data lineage tracked from raw imagery through annotation, validation, format translation, and training splits</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9322841"> CRS governance enforced at ingestion with explicit transformation logging to <code class="inline-code">EPSG:32610</code><label class="task-list-item-label" for="task-item-9322841"> CRS governance enforced at ingestion with explicit transformation logging to `EPSG:32610` or project-standard CRS</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1785213"><label class="task-list-item-label" for="task-item-1785213"> Topology validation integrated into pre-export CI/CD pipelines; merges blocked on geometry failures</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-586199"><label class="task-list-item-label" for="task-item-586199"> Label taxonomy documented with hierarchical parent-child relationships and per-class attribute schemas</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8867724"><label class="task-list-item-label" for="task-item-8867724"> Minimum area and minimum length thresholds defined per mission type and enforced in the validation layer</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2709948"><label class="task-list-item-label" for="task-item-2709948"> Multi-temporal datasets versioned using STAC or DVC with full acquisition metadata linked to each annotation snapshot</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-513380"><label class="task-list-item-label" for="task-item-513380"> Confidence scoring attached to every annotation for loss weighting and active learning routing</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-696154"><label class="task-list-item-label" for="task-item-696154"> Export formats mapped to downstream framework requirements: COCO for instance segmentation, GeoParquet for tabular analytics, mask GeoTIFF for semantic segmentation</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-211458"><label class="task-list-item-label" for="task-item-211458"> Spatial train/validation split enforced on geographic grid tiles, not random feature selection</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5290208"><label class="task-list-item-label" for="task-item-5290208"> Active learning hooks configured to route uncertain or edge-case samples to senior annotators</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-543484"><label class="task-list-item-label" for="task-item-543484"> Data lineage tracked from raw imagery through annotation, validation, format translation, and training splits</label></li>
 </ul>
 <hr>
 <h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
 <ul>
+<li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a> — boundary IoU, Cohen’s kappa and the adjudication queue that turns disagreement into a guide update</li>
 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">Vector vs. Raster Annotation Workflows</a> — labeling interface selection, export format rules, and validation patterns per modality</li>
 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">Coordinate Reference Systems in Annotation Pipelines</a> — projection selection, transformation hooks, and CRS metadata preservation</li>
 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">Defining ROI Label Taxonomies for Aerial Imagery</a> — hierarchical class design, attribute schemas, and resolution-aware labeling guidelines</li>
@@ -765,6 +883,11 @@
       <section class="related" aria-label="Subsections">
         <h2>Dive deeper</h2>
         <div class="related__grid">
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">
+              <div class="title">Annotation Quality Metrics &amp; Inter-Annotator Agreement</div>
+              <div class="desc">A geospatial annotation project can report 96% agreement between its annotators and still be shipping unusable labels. The number is real; it is measured on a class distribution where nine in ten features are buildings, so two annotators who default to building on everything ambiguous agree almost perfectly while contr</div>
+            </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">
               <div class="title">Confidence Scoring for Geospatial Labels</div>
@@ -836,6 +959,8 @@
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -852,6 +977,8 @@
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -865,6 +992,8 @@
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -892,7 +1021,11 @@
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

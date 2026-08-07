@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -276,6 +295,17 @@
           </li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/" class="">Orchestrating Annotation Pipelines with Airflow</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/backfilling-a-month-of-annotation-harvests/" class="">Backfilling a Month of Annotation Harvests</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
             
             <ul>
@@ -283,6 +313,17 @@
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
               
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/" class="">Label Studio vs QGIS for Geospatial Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/" class="">Serving Imagery Tiles to Annotation Tools</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/adding-an-xyz-tile-layer-to-label-studio-tasks/" class="">Adding an XYZ Tile Layer to Label Studio Tasks</a></li>
               
             </ul>
             
@@ -423,9 +464,10 @@ brew <span class="token function">install</span> gdal proj
 </ul>
 <p>For foundational context on building labeling infrastructure, see the <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/">Labeling Workflows &amp; Toolchain Integration</a> pipeline overview.</p>
 <hr>
-<svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio geospatial pipeline: GeoTIFF to Tile Server to Label Studio UI to Webhook Validator to GeoJSON Export" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 10 784 173" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio geospatial pipeline: GeoTIFF to Tile Server to Label Studio UI to Webhook Validator to GeoJSON Export" style="width:100%;max-width:784px;display:block;margin:1.5rem auto;">
   <title>Label Studio Geospatial Annotation Pipeline</title>
   <desc>Five-stage pipeline showing GeoTIFF source converted to tile pyramid, served to Label Studio, annotations validated via webhook middleware, then exported as GeoJSON with reconstructed geographic coordinates.</desc>
+  <rect x="-12" y="10" width="784" height="173" style="fill:var(--bg)"/>
   <defs>
     <marker id="ls-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -758,6 +800,7 @@ logger <span class="token operator">=</span> logging<span class="token punctuati
 <svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coordinate reconstruction diagram: Label Studio pixel space versus geographic space, showing y-axis inversion" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
   <title>Label Studio Coordinate Reconstruction — Y-Axis Inversion</title>
   <desc>Two side-by-side coordinate systems. Left: Label Studio image space with y=0 at top-left, increasing downward. Right: Geographic space with y=min at bottom-left, increasing upward. Arrows show the mapping formula applied to convert between them.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ls-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -903,6 +946,39 @@ logger <span class="token operator">=</span> logging<span class="token punctuati
 <p>Adhere to the RFC 7946 GeoJSON specification (coordinates in <code class="inline-code">EPSG:4326</code>, right-hand winding order for exterior rings) to ensure interoperability with PostGIS, QGIS, and vector databases. For converting the resulting GeoJSON into COCO or YOLO formats for model training, see <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/converting-label-studio-exports-to-yolov8-format/">converting Label Studio exports to YOLOv8 format</a> and the broader treatment of <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">preserving metadata across dataset versions</a>.</p>
 <h3 id="step-6-automate-the-pipeline-with-webhooks" tabindex="-1"><a class="header-anchor" href="#step-6-automate-the-pipeline-with-webhooks" aria-label="Permalink to section &quot;Step 6: Automate the Pipeline with Webhooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 6: Automate the Pipeline with Webhooks</h3>
 <p>Webhooks eliminate the manual export bottleneck and enforce a “validate-before-persist” contract. Register a webhook in Label Studio that fires on <code class="inline-code">ANNOTATION_CREATED</code> and <code class="inline-code">ANNOTATION_UPDATED</code> events; your handler validates geometry and writes approved annotations directly to storage.</p>
+<svg viewBox="-4 40 728 237" role="img" aria-label="A Label Studio webhook firing on task completion and the handler steps it triggers, with the queue that absorbs bursts" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:728px;display:block;margin:1.5rem auto;">
+  <title>What happens between a submit click and a versioned dataset</title>
+  <desc>Submitting an annotation fires an ANNOTATION_CREATED webhook. The receiver acknowledges within its timeout and enqueues the payload rather than working inline. A worker then reconstructs geographic coordinates, validates topology, appends to the GeoParquet store and stages a DVC commit. Acknowledging first is what keeps a slow validation from making Label Studio retry the same event.</desc>
+  <rect x="-4" y="40" width="728" height="237" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="wh-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="16" y="60" width="132" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="82" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">annotator submits</text>
+  <text x="82" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">task 4471</text>
+  <line x1="148" y1="88" x2="176" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="178" y="60" width="152" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="254" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">ANNOTATION_CREATED</text>
+  <text x="254" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">webhook POST</text>
+  <line x1="330" y1="88" x2="358" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="360" y="60" width="152" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="436" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">ack, then enqueue</text>
+  <text x="436" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">200 within the timeout</text>
+  <line x1="512" y1="88" x2="540" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="542" y="60" width="162" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="623" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">queue</text>
+  <text x="623" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">absorbs the submit burst</text>
+  <!-- Worker chain -->
+  <line x1="623" y1="116" x2="623" y2="146" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="16" y="148" width="688" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="170" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">worker, off the request path</text>
+  <text x="360" y="192" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reconstruct world coordinates → validate topology → append to GeoParquet → stage a DVC commit</text>
+  <!-- Note -->
+  <text x="360" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">validating inline instead means a slow topology check trips the webhook timeout,</text>
+  <text x="360" y="254" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">Label Studio retries the delivery, and the same annotation is processed twice</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -1224,9 +1300,19 @@ logger <span class="token operator">=</span> logging<span class="token punctuati
               <div class="desc">Automated pre-labeling consistently produces prediction batches where 15–40% of geometries contain topological errors, coordinate reference system ambiguities, or semantic misclassifications that compound into training noise. A well-structured human-in-the-loop validation cycle intercepts these defects before they reac</div>
             </a>
           
+            <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">
+              <div class="title">Orchestrating Annotation Pipelines with Airflow</div>
+              <div class="desc">An annotation pipeline that works when a person runs four scripts in order stops working the first night nobody runs them. The steps are not hard — harvest yesterday&#39;s completed annotations, validate the geometry, export a training artifact, version it — but they need a schedule, credentials, retries that distinguish a</div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">
               <div class="title">QGIS Plugin Ecosystem for Annotation Teams</div>
               <div class="desc">When a polygon layer annotated in QGIS arrives at a model training job only to collapse IoU scores by 30 percentage points, the culprit is rarely the annotators. It is almost always a silent coordinate reference system mismatch between the QGIS project, the background imagery, and the export format — compounded by miss</div>
+            </a>
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">
+              <div class="title">Serving Imagery Tiles to Annotation Tools</div>
+              <div class="desc">An annotation platform wants an image. A geospatial archive holds forty thousand Cloud-Optimized GeoTIFFs in object storage, each one 40 000 pixels square, and copying chips out of them into the platform is the step that quietly turns a 2 TB archive into a 6 TB one and loses the georeferencing on the way. The alternati</div>
             </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">
@@ -1277,6 +1363,8 @@ logger <span class="token operator">=</span> logging<span class="token punctuati
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -1293,6 +1381,8 @@ logger <span class="token operator">=</span> logging<span class="token punctuati
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -1306,6 +1396,8 @@ logger <span class="token operator">=</span> logging<span class="token punctuati
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1333,7 +1425,11 @@ logger <span class="token operator">=</span> logging<span class="token punctuati
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

@@ -111,6 +111,7 @@ The diagram below shows how vector annotations and raster masks fit into the sam
 <svg viewBox="0 0 800 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vector and raster annotation pipeline architecture" style="width:100%;max-width:800px;height:auto;display:block;margin:1.5rem auto;">
   <title>Vector and raster annotation pipeline architecture</title>
   <desc>Flowchart showing source imagery ingested into the annotation tool, producing vector annotations (GeoJSON/GeoPackage) that are validated and stored in version control. At training time, a data loader rasterizes vectors to pixel masks on the fly, feeding both object detection and segmentation model heads.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-vr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
@@ -158,6 +159,56 @@ The diagram below shows how vector annotations and raster masks fit into the sam
 ## Step 1 — Ingest Source Imagery and Verify the Affine Transform
 
 Before any annotation begins, extract and record the affine transform, shape, and CRS from every source tile. Store these in a sidecar JSON so that downstream rasterization can always reconstruct the exact pixel grid.
+
+<svg viewBox="0 0 740 300" role="img" aria-label="The six affine coefficients mapping pixel row and column to world coordinates, with the pixel-corner convention marked" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>The six numbers that tie pixels to the ground</title>
+  <desc>An affine transform maps a pixel column and row to world x and y. The origin c and f name the upper-left corner of the upper-left pixel, not its centre. The pixel size a is positive eastward while e is negative because rows increase southward. The rotation terms b and d are zero for a north-up image, and a non-zero value there is the signature of an unrectified product.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Pixel grid -->
+  <text x="130" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">pixel space</text>
+  <rect x="50" y="48" width="160" height="120" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="90" y1="48" x2="90" y2="168" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="130" y1="48" x2="130" y2="168" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="170" y1="48" x2="170" y2="168" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="50" y1="88" x2="210" y2="88" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="50" y1="128" x2="210" y2="128" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <circle cx="50" cy="48" r="4" fill="currentColor"/>
+  <text x="58" y="42" font-size="10" fill="currentColor" font-family="monospace">(0, 0)</text>
+  <text x="130" y="188" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">col →</text>
+  <text x="36" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7" transform="rotate(-90 36 112)">row ↓</text>
+  <!-- Transform box -->
+  <line x1="216" y1="108" x2="256" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#af-arr)"/>
+  <defs>
+    <marker id="af-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="258" y="60" width="220" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="368" y="86" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">x = a·col + b·row + c</text>
+  <text x="368" y="110" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">y = d·col + e·row + f</text>
+  <text x="368" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">the .transform of the source raster</text>
+  <line x1="484" y1="108" x2="524" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#af-arr)"/>
+  <!-- World -->
+  <text x="620" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">world space</text>
+  <rect x="530" y="48" width="180" height="120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <circle cx="530" cy="48" r="4" fill="currentColor"/>
+  <text x="538" y="42" font-size="10" fill="currentColor" font-family="monospace">(c, f)</text>
+  <text x="620" y="112" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">metres in the raster CRS</text>
+  <text x="620" y="188" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">x → east</text>
+  <!-- Coefficient notes -->
+  <rect x="50" y="212" width="200" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="150" y="234" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">c, f</text>
+  <text x="150" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">upper-LEFT CORNER of the</text>
+  <text x="150" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">first pixel, not its centre</text>
+  <rect x="270" y="212" width="200" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="370" y="234" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">a &gt; 0, e &lt; 0</text>
+  <text x="370" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">rows increase southward, so</text>
+  <text x="370" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the y step is negative</text>
+  <rect x="490" y="212" width="200" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="590" y="234" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">b, d ≠ 0</text>
+  <text x="590" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">rotation present — the image is</text>
+  <text x="590" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">not north-up; rectify first</text>
+</svg>
 
 ```python
 import rasterio
@@ -558,6 +609,46 @@ Wire this as a pytest fixture or a pre-commit hook:
 | Versioning & rollback | GeoJSON diffs via DVC | Binary diff (poor) | GeoJSON diffs via DVC |
 
 The hybrid approach — vector annotation stored in version control, lazy rasterization at the data-loader stage — preserves full editability while satisfying model input requirements without duplicate storage.
+
+<svg viewBox="0 0 740 280" role="img" aria-label="Vector and raster label storage compared across editability, area accuracy, class overlap, file size and dataloader cost" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Where each storage choice wins, and what it costs</title>
+  <desc>Five criteria compared between vector label storage and rasterized masks. Vector wins on editability, area accuracy and file size, and can represent overlapping classes. Raster wins on dataloader cost and on pixel-exact class boundaries at inference resolution, but bakes in a resolution and loses the ability to re-cut classes without re-rendering.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Headers -->
+  <text x="330" y="38" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">vector (GeoParquet / GeoJSON)</text>
+  <text x="600" y="38" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">raster mask (GeoTIFF)</text>
+  <line x1="20" y1="50" x2="720" y2="50" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Rows -->
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="sans-serif">edit a boundary after review</text>
+  <rect x="240" y="64" width="180" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="77" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">move one vertex</text>
+  <rect x="500" y="64" width="200" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="600" y="77" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">repaint, then re-render</text>
+  <text x="20" y="116" font-size="11" fill="currentColor" font-family="sans-serif">area accuracy</text>
+  <rect x="240" y="104" width="180" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="117" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">exact in projected metres</text>
+  <rect x="500" y="104" width="200" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="600" y="117" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">quantised to the pixel</text>
+  <text x="20" y="156" font-size="11" fill="currentColor" font-family="sans-serif">two classes on one spot</text>
+  <rect x="240" y="144" width="180" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="157" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">overlapping features allowed</text>
+  <rect x="500" y="144" width="200" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="600" y="157" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">one value per pixel — last wins</text>
+  <text x="20" y="196" font-size="11" fill="currentColor" font-family="sans-serif">bytes on disk</text>
+  <rect x="240" y="184" width="180" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="197" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">scales with vertices</text>
+  <rect x="500" y="184" width="200" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="600" y="197" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">scales with pixels × classes</text>
+  <text x="20" y="236" font-size="11" fill="currentColor" font-family="sans-serif">cost per training batch</text>
+  <rect x="240" y="224" width="180" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="330" y="237" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">rasterize on the fly</text>
+  <rect x="500" y="224" width="200" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="600" y="237" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">read the array, no work</text>
+  <!-- Legend -->
+  <rect x="240" y="256" width="18" height="14" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="264" y="268" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the side that wins this row</text>
+  <text x="500" y="268" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">keep vector as the source of truth; cache masks</text>
+</svg>
 
 ---
 

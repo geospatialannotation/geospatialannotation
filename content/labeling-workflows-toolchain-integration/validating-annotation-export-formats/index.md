@@ -99,9 +99,46 @@ This is the failure mode export validation exists to prevent. An annotation expo
 
 Before writing a validator you need a clear picture of what each format promises and, more importantly, what it does not. COCO carries structure but no geometry validity guarantees and no georeferencing. YOLO carries almost nothing — just class index and normalized box — and pushes every other concern onto convention. GeoJSON is the only one of the three with a formal specification (RFC 7946) that mandates coordinate order and geometry semantics, yet it still says nothing about the coordinate reference system beyond an assumed default. The matrix below shows which checks each format requires you to enforce yourself.
 
+<svg viewBox="0 0 740 260" role="img" aria-label="What each export format guarantees and what it leaves to a sidecar, across geometry, class ids, coordinate reference system and pixel geotransform" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>What the file promises, and what it quietly leaves to you</title>
+  <desc>COCO guarantees geometry and class ids but carries no coordinate reference system and no geotransform. YOLO guarantees only normalized boxes and a class index, with no names, no CRS and no geotransform. GeoJSON guarantees geometry and, by specification, WGS84, but has no pixel geotransform. Anything a format does not guarantee has to travel beside it in a sidecar or it is simply lost.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="330" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">geometry</text>
+  <text x="440" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">class names</text>
+  <text x="560" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">CRS</text>
+  <text x="670" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">geotransform</text>
+  <line x1="20" y1="48" x2="720" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="84" font-size="12" fill="currentColor" font-family="monospace">COCO</text>
+  <text x="20" y="102" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">pixel space, one JSON per split</text>
+  <circle cx="330" cy="80" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="440" cy="80" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="560" cy="80" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <circle cx="670" cy="80" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <line x1="20" y1="116" x2="720" y2="116" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+  <text x="20" y="148" font-size="12" fill="currentColor" font-family="monospace">YOLO</text>
+  <text x="20" y="166" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">one .txt per image, values in 0–1</text>
+  <circle cx="330" cy="144" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="440" cy="144" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <circle cx="560" cy="144" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <circle cx="670" cy="144" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <line x1="20" y1="180" x2="720" y2="180" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+  <text x="20" y="212" font-size="12" fill="currentColor" font-family="monospace">GeoJSON</text>
+  <text x="20" y="230" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">world space, RFC 7946</text>
+  <circle cx="330" cy="208" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="440" cy="208" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="560" cy="208" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="670" cy="208" r="9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <!-- Legend -->
+  <circle cx="30" cy="252" r="8" fill="currentColor" opacity="0.55"/>
+  <text x="44" y="256" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">guaranteed by the format</text>
+  <circle cx="220" cy="252" r="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+  <text x="234" y="256" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">must travel in a sidecar, or it is lost</text>
+</svg>
+
 <svg viewBox="0 0 820 340" role="img" aria-label="Validation gate matrix comparing COCO, YOLO, and GeoJSON across schema, geometry, CRS, and referential integrity checks" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;display:block;margin:1.5rem auto;">
   <title>Validation Gate Matrix Across COCO, YOLO, and GeoJSON</title>
   <desc>A four-by-three grid showing which validation gates — schema conformance, geometry validity, CRS and geotransform, and referential integrity — are enforced natively, must be added by the validator, or are not applicable for the COCO, YOLO, and GeoJSON annotation formats.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Column headers -->
   <text x="360" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor" font-family="sans-serif">COCO</text>
   <text x="530" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor" font-family="sans-serif">YOLO</text>
@@ -462,6 +499,36 @@ It is tempting to treat the sidecar as a nice-to-have. For a purely pixel-space 
 ### GeoJSON winding order silently flips polygon meaning
 
 Reversing a polygon's exterior ring produces valid, parseable GeoJSON, but a strict RFC 7946 consumer interprets a clockwise exterior as an interior hole. In the worst case a reversed outer ring is read as a hole punched in an implied planet-sized polygon, and the feature's area computes as enormous or negative. Normalizing with `shapely.geometry.polygon.orient(geom, sign=1.0)` during validation — rather than only flagging it — keeps geometry meaning stable no matter which library reads the file next.
+
+<svg viewBox="0 0 700 290" role="img" aria-label="The two winding orders of a polygon ring and what each means to a reader that honours the specification" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Winding order is meaning, not formatting</title>
+  <desc>RFC 7946 requires exterior rings to wind counter-clockwise and holes clockwise. The same five coordinates written in the opposite order describe, to a strict reader, a hole rather than a footprint. Most tools tolerate it and a few do not, which is why the export step normalises winding rather than trusting whatever the editor produced.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Correct -->
+  <text x="170" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">counter-clockwise exterior</text>
+  <polygon points="80,70 260,70 260,190 80,190" fill="currentColor" opacity="0.18"/>
+  <polygon points="80,70 260,70 260,190 80,190" fill="none" stroke="currentColor" stroke-width="2"/>
+  <path d="M100 190 L100 88" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#wd-arr)"/>
+  <path d="M100 70 L240 70" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#wd-arr)" opacity="0.6"/>
+  <defs>
+    <marker id="wd-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="170" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">a footprint</text>
+  <text x="170" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">shapely: is_ccw → True</text>
+  <text x="170" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">what RFC 7946 requires</text>
+  <!-- Reversed -->
+  <text x="500" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">the same points, reversed</text>
+  <polygon points="410,70 590,70 590,190 410,190" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 3"/>
+  <path d="M430 70 L430 172" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#wd-arr)"/>
+  <path d="M430 190 L570 190" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#wd-arr)" opacity="0.6"/>
+  <text x="500" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">a hole, to a strict reader</text>
+  <text x="500" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">shapely: is_ccw → False</text>
+  <text x="500" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">accepted silently by most tools</text>
+  <!-- Note -->
+  <text x="350" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">normalise winding on export with orient(); do not rely on the editor, and do not rely on the reader being lenient</text>
+</svg>
 
 ### Coordinate precision loss on roundtrip
 

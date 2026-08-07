@@ -86,9 +86,10 @@ Before designing the pipeline, align your team on three spatial primitives that 
 
 A production geospatial annotation pipeline operates as a directed acyclic graph. Data flows through five stages, each with explicit contracts on format, CRS, and validation state.
 
-<svg viewBox="0 0 860 250" role="img" aria-label="Five-stage geospatial annotation pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:2rem auto;">
+<svg viewBox="-12 40 884 211" role="img" aria-label="Five-stage geospatial annotation pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:884px;display:block;margin:2rem auto;">
   <title>Geospatial Annotation Pipeline Architecture</title>
   <desc>Five-stage pipeline showing data flow: Stage 1 Ingestion (COG/Zarr, S3/GCS/Blob), Stage 2 Preprocessing (tile and CRS normalize, radiometry and mask), Stage 3 Annotation (web UI and desktop, pre-label assist), Stage 4 Validation (topology and CRS, consensus and QA), Stage 5 Export and Training (COCO/YOLO/GeoJSON, DVC manifest, GPU training loop). A dashed arc shows active learning feedback from the Export stage back to Ingestion.</desc>
+  <rect x="-12" y="40" width="884" height="211" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.55"/>
@@ -219,6 +220,36 @@ Teams processing large tile queues benefit from model-assisted pre-labeling. By 
 ### Stage 4 — Quality Assurance and Validation
 
 Label quality dictates model performance. In geospatial AI, errors are rarely isolated: a misclassified polygon can propagate across adjacent tiles, corrupt spatial joins, or introduce systematic bias in regional models.
+
+<svg viewBox="0 0 720 300" role="img" aria-label="Three review tiers acting as a funnel, with the share of annotations each tier resolves and what it passes on" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Three tiers, each one cheaper than the one it protects</title>
+  <desc>Every completed annotation enters tier one, automated spatial checks, which resolve the bulk of defects at no human cost. What survives goes to tier two peer review, and only genuinely ambiguous cases reach tier three adjudication. The funnel narrows because each tier is dramatically more expensive per item than the one before it.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="qa-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Tier 1 -->
+  <rect x="30" y="46" width="620" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="46" y="70" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">tier 1 — automated spatial checks</text>
+  <text x="46" y="90" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">geometry validity · CRS match · self-intersection · minimum area · class in taxonomy</text>
+  <text x="634" y="78" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">seconds, no human</text>
+  <line x1="340" y1="102" x2="340" y2="128" stroke="currentColor" stroke-width="1.5" marker-end="url(#qa-arr)"/>
+  <text x="350" y="120" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">what passes the machine</text>
+  <!-- Tier 2 -->
+  <rect x="110" y="130" width="460" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="126" y="154" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">tier 2 — peer review on a sample</text>
+  <text x="126" y="174" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">boundary quality, class calls, agreement measured as pairwise IoU</text>
+  <line x1="340" y1="186" x2="340" y2="212" stroke="currentColor" stroke-width="1.5" marker-end="url(#qa-arr)"/>
+  <text x="350" y="204" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">disagreements only</text>
+  <!-- Tier 3 -->
+  <rect x="200" y="214" width="280" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="216" y="238" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">tier 3 — adjudication</text>
+  <text x="216" y="258" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">a senior annotator rules, and the ruling updates the guide</text>
+  <!-- Cost annotation -->
+  <text x="666" y="160" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8" transform="rotate(90 666 160)">cost per item rises</text>
+</svg>
 
 Implement a three-tier review system:
 
@@ -411,6 +442,49 @@ The CI/CD layer also tracks annotator throughput, label error rates by class and
 
 Geospatial datasets frequently contain sensitive content: critical infrastructure coordinates, private property boundaries, or defense-relevant imagery. Production pipelines must enforce access controls and maintain immutable provenance records.
 
+<svg viewBox="0 0 740 260" role="img" aria-label="An append-only audit record for one annotation, each entry carrying the actor, the action, the geometry hash and the hash of the previous entry" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>An audit trail that cannot be quietly rewritten</title>
+  <desc>Four entries in the life of one annotation: created by an annotator, corrected in QGIS, approved by a reviewer, and exported to a training set. Each entry records the actor, the timestamp, the hash of the geometry at that moment and the hash of the previous entry, so removing or editing any entry breaks the chain at every entry after it.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="au-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="16" y="60" width="160" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="96" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">created</text>
+  <text x="96" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">annotator a.ruiz</text>
+  <text x="96" y="118" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">geom 4f2a…</text>
+  <text x="96" y="134" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">prev  ——</text>
+  <text x="96" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.6">2026-03-02T09:14Z</text>
+  <line x1="176" y1="108" x2="204" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#au-arr)"/>
+  <rect x="206" y="60" width="160" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="286" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">corrected</text>
+  <text x="286" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">QGIS edit buffer</text>
+  <text x="286" y="118" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">geom 91c7…</text>
+  <text x="286" y="134" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">prev  4f2a…</text>
+  <text x="286" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.6">2026-03-02T14:41Z</text>
+  <line x1="366" y1="108" x2="394" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#au-arr)"/>
+  <rect x="396" y="60" width="160" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="476" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">approved</text>
+  <text x="476" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reviewer m.oyelaran</text>
+  <text x="476" y="118" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">geom 91c7…</text>
+  <text x="476" y="134" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">prev  91c7…</text>
+  <text x="476" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.6">2026-03-03T08:02Z</text>
+  <line x1="556" y1="108" x2="584" y2="108" stroke="currentColor" stroke-width="1.5" marker-end="url(#au-arr)"/>
+  <rect x="586" y="60" width="140" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="656" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">exported</text>
+  <text x="656" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">into v2.4.0</text>
+  <text x="656" y="118" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">geom 91c7…</text>
+  <text x="656" y="134" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.75">prev  e5d0…</text>
+  <text x="656" y="150" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.6">2026-03-03T09:30Z</text>
+  <!-- Notes -->
+  <text x="370" y="38" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">one annotation, four entries, append-only</text>
+  <text x="370" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">each entry commits to the one before it</text>
+  <text x="370" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">so an entry removed or edited after the fact breaks every hash downstream of it —</text>
+  <text x="370" y="232" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">which is the property an auditor is actually asking about</text>
+</svg>
+
 **Data residency.** Store imagery and annotations in region-specific cloud buckets (`us-east-1`, `eu-west-1`) to comply with data sovereignty regulations. Tag every object with a `data_classification` label and enforce bucket policies that block cross-region replication for restricted tiers.
 
 **Role-based access control.** Restrict annotators to their assigned tile queues via the annotation platform's RBAC. Separate export permissions from annotation permissions — only data engineers with explicit grants should be able to trigger bulk exports or access raw imagery.
@@ -466,6 +540,47 @@ def validate_export(export_path: Path) -> tuple[int, int]:
 
 The [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) workflow extends this validation to cover dataset-level consistency: matching tile counts, CRS uniformity across all features, and class distribution within expected bounds.
 
+## Choosing Where Each Piece of Work Happens
+
+A geospatial annotation toolchain is rarely one tool, and the interesting decisions are about which work
+belongs where rather than which product is better. Three splits recur.
+
+**Bulk against precision.** High-throughput web queues are optimised for many annotators working
+independently on isolated objects; desktop GIS is optimised for one person maintaining a topologically
+consistent fabric. A project that needs both — most cadastral and utility work does — is better served by
+routing tasks between the two than by forcing either to do the other's job. The routing rule can be as
+simple as a complexity score computed from the class and the vertex count.
+
+**Human against machine.** Model proposals are cheap and unreliable; human attention is expensive and
+scarce. The productive division gives the model the work that is mechanical and verifiable — tracing an
+outline, proposing a candidate, flagging a topology error — and reserves human judgement for the decisions
+that need context the model does not have. The moment a proposal starts carrying a class the model guessed,
+that division has been quietly crossed.
+
+**Now against later.** Some checks belong in the annotator's loop, where the context is fresh and the fix is
+seconds of work: a field constraint that refuses an out-of-range confidence, a snapping tolerance that
+prevents a sliver. Others belong in a batch gate, where they can see the whole dataset: class balance, split
+leakage, duplicate content. Putting a dataset-level check in the annotator's loop makes the tool feel slow;
+putting a per-feature check in a nightly job means every defect is found a day after it was cheap to fix.
+
+## What Integration Actually Costs
+
+Every boundary in this pipeline is a place where geospatial context can be dropped, and the cost of an
+integration is mostly the cost of not dropping it.
+
+Imagery entering an annotation tool loses its coordinate reference system unless something carries it —
+either a sidecar manifest or a task field. Annotations leaving the tool arrive as pixels or percentages and
+need the same information to be put back on the ground. Exports to training formats lose the CRS a second
+time, because COCO and YOLO have nowhere to put it. Each of those three boundaries is individually easy to
+handle and collectively responsible for most of the "the labels are in the wrong place" incidents this
+section exists to prevent.
+
+The second cost is credential and access management, which is invisible in a prototype and dominant in
+production. Imagery is frequently licensed in ways that forbid unauthenticated distribution, annotation
+platforms hold personal data about who labelled what, and the tile URLs baked into a task are effectively
+permanent. Deciding authentication before the first batch is created is far cheaper than retrofitting it
+across thousands of stored task payloads.
+
 ## Implementation Checklist
 
 Use this checklist to align engineering, GIS, and ML teams on production-readiness gates before scaling beyond pilot datasets.
@@ -492,6 +607,8 @@ Start with a pilot dataset of 500–2,000 tiles. Validate end-to-end latency, sp
 
 **Related**
 
+- [Serving Imagery Tiles to Annotation Tools](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/) — dynamic tiling from COGs, a pinned render contract, and the georeferencing an XYZ tile cannot carry
+- [Orchestrating Annotation Pipelines with Airflow](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/) — harvest, validate, export and version on a schedule, with interval-scoped paths that make reruns and backfills safe
 - [Integrating Label Studio with Geospatial Workflows](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/) — configure tile servers, custom interfaces, and webhook-driven task routing
 - [QGIS Plugin Ecosystem for Annotation Teams](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) — topology checks, batch validation, and desktop-to-cloud sync
 - [Automating Pre-Labeling with Foundation Models](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/automating-pre-labeling-with-foundation-models/) — SAM prompt tuning, confidence thresholding, and fallback routing

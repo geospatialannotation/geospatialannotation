@@ -100,9 +100,10 @@ The table below summarizes modality-to-format mappings that govern annotation to
 
 A production-grade geospatial annotation system is an orchestrated sequence of ingestion, normalization, labeling, validation, export, and feedback stages—not a single tool. The diagram below shows the canonical data flow.
 
-<svg viewBox="0 0 820 340" role="img" aria-label="Geospatial annotation pipeline: five stages from raw data ingestion through training feedback loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;height:auto;display:block;margin:1.5rem auto;">
+<svg viewBox="-10 90 810 243" role="img" aria-label="Geospatial annotation pipeline: five stages from raw data ingestion through training feedback loop" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:810px;height:auto;display:block;margin:1.5rem auto;">
   <title>Geospatial Annotation Pipeline Architecture</title>
   <desc>Five-stage pipeline: Raw Imagery Ingestion flows to CRS Normalization and Tiling, then to Annotation Interface, then to Geometry and QA Validation, then to Export and ML Training, with an Active Learning Feedback arrow returning from Export and ML Training back to Annotation Interface.</desc>
+  <rect x="-10" y="90" width="810" height="243" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrow-pipe" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -275,6 +276,7 @@ The diagram below illustrates a hierarchical taxonomy structure for land-cover c
 <svg viewBox="0 0 720 280" role="img" aria-label="Hierarchical label taxonomy for land-cover geospatial annotation showing parent and child class relationships" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;height:auto;display:block;margin:1.5rem auto;">
   <title>Hierarchical Label Taxonomy for Land-Cover Annotation</title>
   <desc>Three-level taxonomy tree. Root: land_cover. Level 2 children: vegetation, built_environment, water. Under vegetation: forest (coniferous, deciduous), cropland, grassland. Under built_environment: buildings, roads, infrastructure. Under water: open_water, wetland, seasonal_flood.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrow-tax" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
       <path d="M0,0 L0,6 L6,3 z" fill="currentColor" opacity="0.5"/>
@@ -345,6 +347,51 @@ Change detection models perform best when annotation pipelines explicitly label 
 ## Spatial-Specific Failure Modes
 
 The following failure patterns are endemic to geospatial annotation pipelines and rarely surface until late in the ML development cycle.
+
+<svg viewBox="0 0 760 330" role="img" aria-label="Matrix mapping each spatial failure mode to the pipeline stage that introduces it and the stage where it is usually noticed" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Each failure mode is introduced early and noticed late</title>
+  <desc>Six failure modes plotted against five pipeline stages: ingest and tile, annotate, validate, export, and train and evaluate. A filled marker shows where each defect is introduced and an outlined marker where it typically surfaces. CRS drift, coordinate rounding, spatial autocorrelation, multi-temporal misalignment, sliver polygons and annotator disagreement are all introduced at or before validation but surface at training and evaluation.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Column headers -->
+  <text x="300" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ingest</text>
+  <text x="300" y="43" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">&amp; tile</text>
+  <text x="392" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">annotate</text>
+  <text x="484" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">validate</text>
+  <text x="576" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">export</text>
+  <text x="668" y="30" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">train &amp;</text>
+  <text x="668" y="43" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">evaluate</text>
+  <line x1="254" y1="52" x2="714" y2="52" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Rows -->
+  <text x="246" y="76" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">CRS drift at tile boundaries</text>
+  <circle cx="300" cy="72" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="72" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="311" y1="72" x2="657" y2="72" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="116" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">topology loss from rounding</text>
+  <circle cx="576" cy="112" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="112" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="587" y1="112" x2="657" y2="112" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="156" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">spatial autocorrelation in splits</text>
+  <circle cx="484" cy="152" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="152" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="495" y1="152" x2="657" y2="152" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="196" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">multi-temporal misalignment</text>
+  <circle cx="300" cy="192" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="192" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="311" y1="192" x2="657" y2="192" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="236" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">sliver polygons from digitizing</text>
+  <circle cx="392" cy="232" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="232" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="403" y1="232" x2="657" y2="232" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <text x="246" y="276" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">annotator disagreement</text>
+  <circle cx="392" cy="272" r="7" fill="currentColor" opacity="0.55"/>
+  <circle cx="668" cy="272" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <line x1="403" y1="272" x2="657" y2="272" stroke="currentColor" stroke-width="1" stroke-dasharray="3 4" opacity="0.4"/>
+  <!-- Legend -->
+  <circle cx="264" cy="308" r="7" fill="currentColor" opacity="0.55"/>
+  <text x="278" y="312" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">introduced here</text>
+  <circle cx="410" cy="308" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="424" y="312" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">noticed here — after the cost is sunk</text>
+</svg>
 
 **CRS drift at tile boundaries.** When imagery is tiled before CRS normalization, tile edges may carry different implicit projections. Annotations that straddle tile boundaries inherit mismatched coordinate systems, producing ghost polygons and IoU artifacts at inference time. Always normalize CRS before tiling.
 
@@ -417,6 +464,55 @@ stages:
 
 ---
 
+## Why Spatial Annotation Is Not Image Annotation With Coordinates
+
+Teams arriving from general computer vision usually expect geospatial annotation to be the same work with a
+projection attached. The projection is real, and it is the smallest of the differences. Four properties of
+spatial data change the shape of the pipeline rather than decorating it.
+
+**Objects have true size, and size is the label.** A building's footprint area is not an artefact of how it
+was drawn; it is a measurement someone will use. That makes annotation geometry a quantitative output rather
+than a training convenience, and it is why area must be computed in projected metres and why a bounding box
+is a lossy answer for anything whose extent matters.
+
+**Samples are not independent.** Two adjacent tiles share objects, illumination, sensor geometry and
+processing. Every statistical assumption that treats samples as independent — a random train/validation
+split, a confidence interval on an accuracy figure, a class-balance estimate — is wrong by an amount that
+depends on the autocorrelation range rather than on sample size. Adding more tiles from the same area does
+not fix it; it entrenches it.
+
+**The same ground can be annotated many times.** Multi-temporal work makes a feature's identity a question
+rather than a fact: the building in the 2024 imagery and the building in the 2026 imagery are the same
+object, unless it was rebuilt. Nothing in the file format expresses that, so the pipeline has to.
+
+**Truth is a moving target.** A label can be correct at annotation time and wrong two years later because
+the ground changed. General image datasets rarely have this property, and it is why dataset versioning in
+this field is not merely engineering hygiene: without it there is no way to distinguish a labelling error
+from a real-world change, which is the single most common source of confused drift investigations.
+
+## The Contracts Every Stage Depends On
+
+Almost every failure in the sections that follow is a broken contract rather than a bug, and there are only
+four contracts worth naming explicitly.
+
+The **CRS contract** says every artifact declares its coordinate reference system and every stage transforms
+deliberately. It is broken by tools that assume a default, by exports that drop the declaration, and by
+files whose declaration is simply wrong. Its failure mode is silent: geometries still load, they are just
+somewhere else.
+
+The **geometry contract** says every stored geometry is valid — closed rings, no self-intersections,
+consistent winding. It is broken by editors that permit invalid shapes and by simplification that pushes a
+vertex through an edge. Its failure mode is loud at export time and silent at training time, where an
+invalid polygon becomes an empty mask.
+
+The **taxonomy contract** says every class in the data exists in a versioned taxonomy, and that a class
+means today what it meant when the annotation was made. It is broken by adding classes without versioning
+them, and by refining a definition without recording that the definition moved.
+
+The **georeference contract** says that any pixel coordinate can be mapped back to the ground. It is broken
+whenever imagery is chipped, rendered or uploaded without carrying the transform along, which is most of
+the ways imagery reaches an annotation tool.
+
 ## Implementation Checklist for Production Deployment
 
 Before scaling geospatial annotation workflows to enterprise datasets, verify the following architectural baselines:
@@ -436,6 +532,7 @@ Before scaling geospatial annotation workflows to enterprise datasets, verify th
 
 ## Related
 
+- [Annotation Quality Metrics & Inter-Annotator Agreement](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/) — boundary IoU, Cohen’s kappa and the adjudication queue that turns disagreement into a guide update
 - [Vector vs. Raster Annotation Workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) — labeling interface selection, export format rules, and validation patterns per modality
 - [Coordinate Reference Systems in Annotation Pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) — projection selection, transformation hooks, and CRS metadata preservation
 - [Defining ROI Label Taxonomies for Aerial Imagery](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/) — hierarchical class design, attribute schemas, and resolution-aware labeling guidelines

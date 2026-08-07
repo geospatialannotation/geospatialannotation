@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -252,6 +271,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/" class="">Reproducible Train/Validation Splits for Spatial Data</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/detecting-train-test-leakage-in-tiled-datasets/" class="">Detecting Train/Test Leakage in Tiled Datasets</a></li>
               
             </ul>
             
@@ -400,9 +430,10 @@ orjson==3.10.3   # optional high-throughput JSON parsing for large datasets
 <p>For foundational context on the broader pipeline these hashes live within, see the parent <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/">Dataset Versioning &amp; Spatial Data Sync</a> overview, which covers DVC integration, metadata preservation, and rollback architecture.</p>
 <h2 id="sha-hashing-pipeline-architecture-overview" tabindex="-1"><a class="header-anchor" href="#sha-hashing-pipeline-architecture-overview" aria-label="Permalink to section &quot;SHA Hashing Pipeline: Architecture Overview&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> SHA Hashing Pipeline: Architecture Overview</h2>
 <p>The pipeline follows five deterministic stages. Every stage either transforms the annotation data into a more canonical form or uses the canonical form to make a binary pass/fail decision.</p>
-<svg viewBox="0 0 780 200" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+<svg viewBox="-14 36 808 116" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:808px;display:block;margin:1.5rem auto;">
   <title>SHA-256 Annotation Hashing Pipeline</title>
   <desc>Five sequential pipeline stages connected by arrows: Raw Annotation (GeoJSON or COCO input), Normalize Payload (strip volatile keys, sort, round coordinates), Compute SHA-256 (hashlib.sha256), Build Manifest (version registry JSON), and Validation Gate (pass or halt training).</desc>
+  <rect x="-14" y="36" width="808" height="116" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-sha" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
       <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>
@@ -489,6 +520,28 @@ VOLATILE_KEYS<span class="token punctuation">:</span> <span class="token builtin
 <p>The round-trip through <code class="inline-code">json.dumps</code>/<code class="inline-code">json.loads</code> with <code class="inline-code">sort_keys=True</code> collapses any Python dict ordering variance into a single canonical form without requiring an external library.</p>
 <h3 id="step-2-canonicalize-spatial-geometry" tabindex="-1"><a class="header-anchor" href="#step-2-canonicalize-spatial-geometry" aria-label="Permalink to section &quot;Step 2: Canonicalize Spatial Geometry&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2: Canonicalize Spatial Geometry</h3>
 <p>Generic normalization is not sufficient for geospatial annotations. Two sources of hash divergence are unique to spatial data and must be addressed before serialization.</p>
+<svg viewBox="0 0 700 270" role="img" aria-label="Geometry canonicalisation steps that make two spellings of the same polygon hash identically" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Four rewrites that make the same shape produce the same digest</title>
+  <desc>The same polygon can be written starting from any vertex, wound either way, with any coordinate precision and with or without a repeated closing point. Canonicalisation fixes all four: rotate the ring to start at its lexicographically smallest vertex, force counter-clockwise winding, round to a fixed precision, and drop the duplicate closing coordinate before serialising.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="36" y="66" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">1 · rotate the ring</text>
+  <text x="36" y="84" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">start at the lexicographically smallest vertex</text>
+  <rect x="360" y="46" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="376" y="66" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">2 · fix the winding</text>
+  <text x="376" y="84" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">exteriors counter-clockwise, holes clockwise</text>
+  <rect x="20" y="106" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="36" y="126" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">3 · round the coordinates</text>
+  <text x="36" y="144" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">7 decimals for degrees, 3 for metres</text>
+  <rect x="360" y="106" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="376" y="126" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">4 · drop the closing duplicate</text>
+  <text x="376" y="144" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">one representation, not two equivalent ones</text>
+  <!-- Result -->
+  <rect x="120" y="176" width="460" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="350" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">only then serialise and hash</text>
+  <text x="350" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">sha256(canonical_wkb) → 91c7e4…</text>
+  <text x="350" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">skip any one of the four and a re-save through a different library reports every feature as changed</text>
+</svg>
 <p><strong>Coordinate precision:</strong> Different GIS tools serialize <code class="inline-code">EPSG:4326</code> coordinates to different decimal place counts — see the full projection decision matrix on the <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> page. A coordinate written as <code class="inline-code">12.300000000000001</code> by QGIS and <code class="inline-code">12.3</code> by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (approximately 0.11 m at the equator, well within sub-meter imagery resolution) before hashing.</p>
 <p><strong>Polygon vertex ordering:</strong> GeoJSON polygons can be written starting at any vertex and traversing either clockwise or counter-clockwise. IETF RFC 7946 mandates counter-clockwise exterior rings, but many tools ignore this. Two annotators drawing the same field boundary will produce geometrically identical but byte-level different polygons. Canonicalize by rotating each ring to start at its lexicographically smallest coordinate pair and enforcing RFC 7946 winding order.</p>
 <div class="code-block">
@@ -628,6 +681,7 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
 <svg viewBox="0 0 680 260" role="img" aria-label="Manifest validation flow: current manifest compared against baseline, branching to pass or fail paths" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
   <title>Annotation Manifest Baseline Comparison</title>
   <desc>Flowchart showing current manifest and baseline manifest feeding into a comparison step. If hashes match the training run proceeds (pass path). If hashes differ, errors are logged and training is halted (fail path), with an optional rollback to the last known-good state.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-val" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
       <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>
@@ -950,16 +1004,16 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
 <h2 id="production-checklist" tabindex="-1"><a class="header-anchor" href="#production-checklist" aria-label="Permalink to section &quot;Production Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Checklist</h2>
 <p>Use this checklist before treating annotation hashing as a production integrity gate:</p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1134821"> All annotation sources normalized to <code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-1134821"> All annotation sources normalized to `EPSG:4326` (or an agreed projected CRS) before hashing</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2325938"> <code class="inline-code">VOLATILE_KEYS</code> list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio <code class="inline-code">reviewed_by</code>, CVAT <code class="inline-code">z_order</code><label class="task-list-item-label" for="task-item-2325938"> `VOLATILE_KEYS` list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio `reviewed_by`, CVAT `z_order`)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9919572"> Shapely and GEOS versions pinned (<code class="inline-code">shapely==2.0.6</code>, <code class="inline-code">GEOS&gt;=3.12</code>) and locked in <label class="task-list-item-label" for="task-item-9919572"> Shapely and GEOS versions pinned (`shapely==2.0.6`, `GEOS>=3.12`) and locked in `requirements.txt`</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3507816"> <code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-3507816"> `make_valid()` geometry-type changes logged and flagged; features that change type are quarantined before manifest inclusion</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1046274"> COCO feature lists sorted by <code class="inline-code">(image_id, category_id, bbox[0], bbox[1])</code> before hashing, not by raw <label class="task-list-item-label" for="task-item-1046274"> COCO feature lists sorted by `(image_id, category_id, bbox[0], bbox[1])` before hashing, not by raw `id`</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9328873"><label class="task-list-item-label" for="task-item-9328873"> Imagery acquisition date included as a non-volatile field to distinguish multi-temporal annotation sets</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5719917"><label class="task-list-item-label" for="task-item-5719917"> Baseline manifest stored in append-only object storage (S3/GCS/R2) with versioning enabled; semantic version incremented on every intentional update</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5742419"><label class="task-list-item-label" for="task-item-5742419"> Validation gate wired into CI and training trigger; a manifest mismatch halts the run before any GPU cost is incurred</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5357328"> Perceptual hash (<code class="inline-code">imagehash.phash</code><label class="task-list-item-label" for="task-item-5357328"> Perceptual hash (`imagehash.phash`) added to manifest for raster tile sidecars alongside the SHA-256 digest</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-847822"><label class="task-list-item-label" for="task-item-847822"> Audit log receives manifest diffs with annotator-ID attribution for drift frequency tracking per tool</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2930261"> All annotation sources normalized to <code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-2930261"> All annotation sources normalized to `EPSG:4326` (or an agreed projected CRS) before hashing</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3951097"> <code class="inline-code">VOLATILE_KEYS</code> list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio <code class="inline-code">reviewed_by</code>, CVAT <code class="inline-code">z_order</code><label class="task-list-item-label" for="task-item-3951097"> `VOLATILE_KEYS` list reviewed and extended to cover all tool-specific metadata fields (e.g. Label Studio `reviewed_by`, CVAT `z_order`)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3881612"> Shapely and GEOS versions pinned (<code class="inline-code">shapely==2.0.6</code>, <code class="inline-code">GEOS&gt;=3.12</code>) and locked in <label class="task-list-item-label" for="task-item-3881612"> Shapely and GEOS versions pinned (`shapely==2.0.6`, `GEOS>=3.12`) and locked in `requirements.txt`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3425734"> <code class="inline-code">make_valid()</code><label class="task-list-item-label" for="task-item-3425734"> `make_valid()` geometry-type changes logged and flagged; features that change type are quarantined before manifest inclusion</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3991374"> COCO feature lists sorted by <code class="inline-code">(image_id, category_id, bbox[0], bbox[1])</code> before hashing, not by raw <label class="task-list-item-label" for="task-item-3991374"> COCO feature lists sorted by `(image_id, category_id, bbox[0], bbox[1])` before hashing, not by raw `id`</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9077141"><label class="task-list-item-label" for="task-item-9077141"> Imagery acquisition date included as a non-volatile field to distinguish multi-temporal annotation sets</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-935769"><label class="task-list-item-label" for="task-item-935769"> Baseline manifest stored in append-only object storage (S3/GCS/R2) with versioning enabled; semantic version incremented on every intentional update</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3556832"><label class="task-list-item-label" for="task-item-3556832"> Validation gate wired into CI and training trigger; a manifest mismatch halts the run before any GPU cost is incurred</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-292287"> Perceptual hash (<code class="inline-code">imagehash.phash</code><label class="task-list-item-label" for="task-item-292287"> Perceptual hash (`imagehash.phash`) added to manifest for raster tile sidecars alongside the SHA-256 digest</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2185006"><label class="task-list-item-label" for="task-item-2185006"> Audit log receives manifest diffs with annotator-ID attribution for drift frequency tracking per tool</label></li>
 </ul>
 <h2 id="production-best-practices" tabindex="-1"><a class="header-anchor" href="#production-best-practices" aria-label="Permalink to section &quot;Production Best Practices&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Best Practices</h2>
 <p><strong>Pre-commit hooks for local drift detection.</strong> Run a lightweight hash check with <code class="inline-code">pre-commit</code> on every commit to the annotation repository. Use fast mode that only hashes modified files rather than rebuilding the full manifest.</p>
@@ -1012,6 +1066,11 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
             <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">
               <div class="title">Preserving Metadata Across Dataset Versions</div>
               <div class="desc">Geospatial ML pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving t</div>
+            </a>
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">
+              <div class="title">Reproducible Train/Validation Splits for Spatial Data</div>
+              <div class="desc">A model reports 0.84 IoU on validation and 0.61 in production, and nothing in between changed. The usual cause is not the model: it is a train/validation split drawn by shuffling tiles, which put the tile north of a warehouse in training and the tile south of it in validation. The two share the roof, the shadow, the se</div>
             </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">
@@ -1067,6 +1126,8 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -1083,6 +1144,8 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -1096,6 +1159,8 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1123,7 +1188,11 @@ SAMPLE_FEATURE <span class="token operator">=</span> <span class="token punctuat
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

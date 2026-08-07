@@ -91,6 +91,49 @@ To retrain automatically when reviewers approve fresh labels, define a [DVC](htt
 
 The naive approach — retrain on every push to the annotations repo — collapses the moment your team scales. Reviewers touch the annotations directory dozens of times a day: fixing a mislabeled building, adjusting a polygon vertex, adding a note in a sidecar file. Most of those edits are far too small to shift a geospatial detector's weights, yet each one would enqueue an expensive run and pollute your checkpoint registry with near-identical models you then have to evaluate and prune.
 
+<svg viewBox="0 0 720 260" role="img" aria-label="A commit hook firing on commits that change nothing, against a content hash firing only on real change" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Six commits, one real change</title>
+  <desc>Across six commits touching the annotation directory, five are re-exports, formatting changes or reverted edits that leave the content identical, and one genuinely adds features. A commit hook starts a training run on all six. A content-hash trigger starts one, because five of the six leave the canonical hash unchanged.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Commits -->
+  <text x="20" y="42" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">commits touching annotations/</text>
+  <g font-family="monospace" font-size="10" fill="currentColor">
+    <text x="60" y="76" text-anchor="middle">c1</text>
+    <text x="170" y="76" text-anchor="middle">c2</text>
+    <text x="280" y="76" text-anchor="middle">c3</text>
+    <text x="390" y="76" text-anchor="middle">c4</text>
+    <text x="500" y="76" text-anchor="middle">c5</text>
+    <text x="610" y="76" text-anchor="middle">c6</text>
+  </g>
+  <g font-family="sans-serif" font-size="9" fill="currentColor" opacity="0.7">
+    <text x="60" y="94" text-anchor="middle">re-export</text>
+    <text x="170" y="94" text-anchor="middle">reformat</text>
+    <text x="280" y="94" text-anchor="middle">+ 412 features</text>
+    <text x="390" y="94" text-anchor="middle">edit + revert</text>
+    <text x="500" y="94" text-anchor="middle">re-export</text>
+    <text x="610" y="94" text-anchor="middle">touch mtime</text>
+  </g>
+  <!-- Hook row -->
+  <text x="20" y="136" font-size="11" fill="currentColor" font-family="sans-serif">commit hook fires</text>
+  <g fill="currentColor" opacity="0.5">
+    <rect x="46" y="146" width="28" height="28" rx="4"/><rect x="156" y="146" width="28" height="28" rx="4"/>
+    <rect x="266" y="146" width="28" height="28" rx="4"/><rect x="376" y="146" width="28" height="28" rx="4"/>
+    <rect x="486" y="146" width="28" height="28" rx="4"/><rect x="596" y="146" width="28" height="28" rx="4"/>
+  </g>
+  <text x="660" y="165" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">6 runs</text>
+  <!-- Hash row -->
+  <text x="20" y="212" font-size="11" fill="currentColor" font-family="sans-serif">content hash differs</text>
+  <g>
+    <rect x="46" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="156" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="266" y="222" width="28" height="28" rx="4" fill="currentColor" opacity="0.55"/>
+    <rect x="376" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="486" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="596" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+  </g>
+  <text x="660" y="241" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">1 run</text>
+</svg>
+
 Content hashing solves this at the level DVC already operates on. DVC records a hash of every tracked dependency in `dvc.lock`; a stage is "changed" only when the recomputed hash of its inputs differs from the recorded one. By pointing the dataset-build stage at the validated-annotations directory, you get a precise, reproducible signal — the same one that survives across machines and CI runners — instead of the noisy "someone committed something" signal a Git hook gives you. Layering a minimum-new-features threshold on top means the pipeline distinguishes a meaningful batch of new labels from a one-line touch, and only the former reaches the training stage.
 
 ## The Pipeline: Annotations, Dataset Build, Train
@@ -144,6 +187,7 @@ The `validate_annotations` stage matters: it is the boundary between raw reviewe
 <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow from a dependency-hash change through dvc repro to the train stage" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Hash-change to retraining flow</title>
   <desc>Newly validated annotations change the content hash of the annotations directory. dvc status detects the mismatch against dvc.lock. A manifest threshold gate checks the count of new features. When the count exceeds the minimum, dvc repro rebuilds the dataset stage and runs the train stage, producing a new checkpoint.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -176,12 +220,12 @@ The `validate_annotations` stage matters: it is the boundary between raw reviewe
   <line x1="85" y1="88" x2="85" y2="126" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
   <line x1="160" y1="157" x2="208" y2="157" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
   <line x1="360" y1="157" x2="468" y2="157" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
-  <line x1="580" y1="140" x2="620" y2="90" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
-  <text x="612" y="118" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">yes</text>
+  <path d="M580 157 L620 157 L620 92" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
+  <text x="630" y="120" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">yes</text>
   <line x1="635" y1="88" x2="635" y2="198" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
   <!-- no path -->
   <line x1="525" y1="194" x2="525" y2="222" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" opacity="0.4"/>
-  <text x="525" y="238" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" font-family="sans-serif">no — skip, wait for more</text>
+  <text x="515" y="238" text-anchor="end" font-size="10" fill="currentColor" opacity="0.5" font-family="sans-serif">no — skip, wait for more</text>
 </svg>
 
 ## The Manifest-Driven Trigger
@@ -304,6 +348,35 @@ Exit code `78` is a neutral "nothing to do" that many CI systems treat as a non-
 ## Threshold Reference
 
 Tune these guards to your model's data appetite and the cost of a run. Start conservative — a threshold too low is worse than too high, because a flood of marginal checkpoints is expensive to evaluate.
+
+<svg viewBox="0 0 700 250" role="img" aria-label="Two thresholds the trigger has to clear before it spends a GPU hour" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Two thresholds, and why one is not enough</title>
+  <desc>The trigger requires both a minimum count of new features and a minimum share of the existing set. On a 2000-feature dataset, 150 new features clears the count but is 7.5 percent, under the 10 percent floor, so it waits. On a 40 000-feature dataset the same 10 percent would be 4000 features and might never arrive, which is why a maximum age also forces a run.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="200" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">absolute floor</text>
+  <text x="120" y="92" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≥ 100 new features</text>
+  <text x="120" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">stops trivial runs</text>
+  <rect x="250" y="46" width="200" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="350" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">relative floor</text>
+  <text x="350" y="92" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≥ 10% of the set</text>
+  <text x="350" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">scales with the dataset</text>
+  <rect x="480" y="46" width="200" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="580" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">maximum age</text>
+  <text x="580" y="92" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">or 14 days</text>
+  <text x="580" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the escape hatch</text>
+  <!-- Worked cases -->
+  <text x="20" y="164" font-size="11" fill="currentColor" font-family="sans-serif">2 000 features, 150 new</text>
+  <text x="300" y="164" font-size="11" fill="currentColor" font-family="monospace">count ✓ · share 7.5% ✗</text>
+  <text x="560" y="164" font-size="11" fill="currentColor" font-family="sans-serif">waits</text>
+  <text x="20" y="192" font-size="11" fill="currentColor" font-family="sans-serif">2 000 features, 260 new</text>
+  <text x="300" y="192" font-size="11" fill="currentColor" font-family="monospace">count ✓ · share 13% ✓</text>
+  <text x="560" y="192" font-size="11" fill="currentColor" font-family="sans-serif">runs</text>
+  <text x="20" y="220" font-size="11" fill="currentColor" font-family="sans-serif">40 000 features, 900 new, 21 days old</text>
+  <text x="300" y="220" font-size="11" fill="currentColor" font-family="monospace">share 2.3% ✗ · age ✓</text>
+  <text x="560" y="220" font-size="11" fill="currentColor" font-family="sans-serif">runs on age</text>
+  <text x="350" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">without the age clause a large dataset simply stops retraining, and nobody notices for a quarter</text>
+</svg>
 
 | Guard | Purpose | Suggested starting value | When to raise it |
 |---|---|---|---|

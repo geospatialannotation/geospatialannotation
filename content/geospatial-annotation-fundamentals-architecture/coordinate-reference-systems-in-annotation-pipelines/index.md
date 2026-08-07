@@ -89,9 +89,10 @@ This guide covers the complete CRS normalization workflow for production [geospa
 
 ---
 
-<svg viewBox="0 0 860 220" role="img" aria-label="Five-stage CRS normalization pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 30 880 130" role="img" aria-label="Five-stage CRS normalization pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:880px;display:block;margin:1.5rem auto;">
   <title>CRS Normalization Pipeline</title>
   <desc>Five-stage pipeline showing Ingest, Validate Bounds, Reproject, Export, and CI Gate steps connected by arrows, each with a brief description</desc>
+  <rect x="-12" y="30" width="880" height="130" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -169,6 +170,7 @@ Before writing any reprojection code, understand the axis-order problem that cat
 <svg viewBox="0 0 700 260" role="img" aria-label="Axis-order comparison diagram: EPSG:4326 latitude-first vs longitude-first convention" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
   <title>EPSG:4326 Axis Order: Authority vs. Convention</title>
   <desc>Side-by-side comparison showing the authority-defined latitude-first order of EPSG:4326 on the left, and the longitude-first convention used by GeoJSON and web tools on the right, with an arrow indicating the always_xy=True fix in the middle</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Left box: Authority order -->
   <rect x="10" y="30" width="270" height="200" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
   <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Authority (EPSG:4326)</text>
@@ -290,6 +292,49 @@ def validate_bounds_and_topology(gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 ### Step 3 — Standardize to Target Projection
 
 Transform validated geometries to the pipeline's canonical CRS. For [vector vs raster annotation workflows](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/), coordinate transformations must be applied to both vector labels and their corresponding raster footprints to maintain pixel-to-geometry alignment across tiles.
+
+<svg viewBox="0 0 760 300" role="img" aria-label="Choosing the UTM zone from longitude: six-degree strips numbered around the globe, with a dataset straddling a zone boundary" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Picking the target projection from the data's own longitude</title>
+  <desc>UTM divides the world into six-degree strips numbered from one at 180 degrees west. A dataset centred at nine degrees east falls in zone 32, giving EPSG 32632 in the northern hemisphere. A second dataset straddles the boundary between zones 32 and 33, where the rule is to project the whole batch into one zone chosen from the centroid rather than splitting it, accepting a small scale error at the far edge.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Strip band -->
+  <rect x="40" y="60" width="680" height="72" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
+  <line x1="153" y1="60" x2="153" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="266" y1="60" x2="266" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="380" y1="60" x2="380" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="493" y1="60" x2="493" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="606" y1="60" x2="606" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <text x="96" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 30</text>
+  <text x="210" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 31</text>
+  <text x="323" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.9" font-weight="600">zone 32</text>
+  <text x="436" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 33</text>
+  <text x="550" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 34</text>
+  <text x="663" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 35</text>
+  <text x="96" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">6°W–0°</text>
+  <text x="210" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">0°–6°E</text>
+  <text x="323" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">6°E–12°E</text>
+  <text x="436" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">12°E–18°E</text>
+  <text x="550" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">18°E–24°E</text>
+  <text x="663" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">24°E–30°E</text>
+  <!-- Dataset A, comfortably inside -->
+  <rect x="288" y="82" width="60" height="28" rx="3" fill="currentColor" opacity="0.25"/>
+  <rect x="288" y="82" width="60" height="28" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="318" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">batch A</text>
+  <!-- Dataset B, straddling -->
+  <rect x="350" y="82" width="76" height="28" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="388" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">batch B</text>
+  <!-- Outcomes -->
+  <rect x="40" y="186" width="330" height="86" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="205" y="208" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">batch A — centroid at 9°E</text>
+  <text x="205" y="228" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">EPSG:32632</text>
+  <text x="205" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">zone number = floor((lon + 180) / 6) + 1</text>
+  <text x="205" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">326xx north of the equator, 327xx south</text>
+  <rect x="390" y="186" width="330" height="86" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="555" y="208" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">batch B — straddles 12°E</text>
+  <text x="555" y="228" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">project the whole batch into one zone</text>
+  <text x="555" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">chosen from the centroid, never split per feature —</text>
+  <text x="555" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">two zones in one dataset make areas incomparable</text>
+</svg>
 
 ```python
 import geopandas as gpd

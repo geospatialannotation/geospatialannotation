@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -241,11 +260,26 @@
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/" class="">Overview</a></li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/" class="">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/computing-boundary-iou-for-footprint-quality/" class="">Computing Boundary IoU for Footprint Quality</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/measuring-inter-annotator-agreement-with-cohens-kappa/" class="">Measuring Inter-Annotator Agreement with Cohen&#39;s Kappa</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="">Confidence Scoring for Geospatial Labels</a>
             
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/" class="">Weighting Training Loss by Annotation Confidence</a></li>
               
             </ul>
             
@@ -377,6 +411,7 @@
 <svg viewBox="0 0 640 300" role="img" aria-label="Diagram showing vector polygons and an image pixel grid combined through rasterize into a class-indexed mask aligned to the image transform" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Rasterizing vector labels onto the image grid</title>
   <desc>On the left, two overlapping vector polygons labelled with class values sit over a georeferenced image pixel grid. A central rasterize step consumes the image affine transform and output shape. On the right, a class-indexed segmentation mask shows discrete pixel cells coloured by class, aligned one-to-one with the input grid.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ar" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -404,7 +439,7 @@
   <polygon points="96,110 168,104 176,182 104,192" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="2" stroke-dasharray="5 3" stroke-opacity="0.8"/>
   <text x="140" y="160" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85" font-family="sans-serif">building = 2</text>
   <!-- Center: rasterize -->
-  <line x1="196" y1="125" x2="250" y2="125" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ar)"/>
+  <line x1="178" y1="125" x2="250" y2="125" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ar)"/>
   <rect x="256" y="95" width="128" height="72" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
   <text x="320" y="123" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.9" font-family="sans-serif" font-weight="bold">rasterize()</text>
   <text x="320" y="141" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6" font-family="sans-serif">transform + out_shape</text>
@@ -569,6 +604,53 @@
 </div>
 <h3 id="step-4-rasterize-with-out-shape-and-transform" tabindex="-1"><a class="header-anchor" href="#step-4-rasterize-with-out-shape-and-transform" aria-label="Permalink to section &quot;Step 4 — Rasterize With out_shape and transform&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Rasterize With out_shape and transform</h3>
 <p>This is the core call. Pass the ordered shapes, the raster <code class="inline-code">out_shape</code> as <code class="inline-code">(height, width)</code>, the imagery’s <code class="inline-code">transform</code>, a background <code class="inline-code">fill</code>, and an integer <code class="inline-code">dtype</code>. Keep <code class="inline-code">all_touched=False</code> for area classes so only pixel centres inside a polygon are burned:</p>
+<svg viewBox="0 0 700 300" role="img" aria-label="The same polygon rasterized with all_touched false and true, showing which pixels each rule claims" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>all_touched changes which pixels the label owns</title>
+  <desc>One polygon over a pixel grid, rasterized twice. With all_touched false, only pixels whose centre falls inside the polygon are burned, so thin features can vanish entirely. With all_touched true, every pixel the polygon touches is burned, which recovers thin features but inflates area and lets neighbouring classes fight over the same boundary pixels.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Panel A -->
+  <text x="160" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">all_touched=False</text>
+  <text x="160" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">pixel centre must fall inside</text>
+  <g>
+    <rect x="60" y="60" width="200" height="160" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+    <rect x="100" y="100" width="120" height="80" fill="currentColor" opacity="0.28"/>
+    <line x1="100" y1="60" x2="100" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="140" y1="60" x2="140" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="180" y1="60" x2="180" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="220" y1="60" x2="220" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="60" y1="100" x2="260" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="60" y1="140" x2="260" y2="140" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="60" y1="180" x2="260" y2="180" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <polygon points="86,126 214,92 232,168 108,196" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="120" cy="120" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="160" cy="120" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="200" cy="120" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="120" cy="160" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="160" cy="160" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="200" cy="160" r="2.5" fill="currentColor" opacity="0.5"/>
+  </g>
+  <text x="160" y="244" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">6 pixels burned</text>
+  <text x="160" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">a footpath narrower than one pixel</text>
+  <text x="160" y="278" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">disappears from the mask entirely</text>
+  <!-- Panel B -->
+  <text x="500" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">all_touched=True</text>
+  <text x="500" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">any overlap claims the pixel</text>
+  <g>
+    <rect x="400" y="60" width="200" height="160" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+    <rect x="400" y="100" width="200" height="120" fill="currentColor" opacity="0.28"/>
+    <line x1="440" y1="60" x2="440" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="480" y1="60" x2="480" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="520" y1="60" x2="520" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="560" y1="60" x2="560" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="400" y1="100" x2="600" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="400" y1="140" x2="600" y2="140" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="400" y1="180" x2="600" y2="180" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <polygon points="426,126 554,92 572,168 448,196" fill="none" stroke="currentColor" stroke-width="2"/>
+  </g>
+  <text x="500" y="244" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">15 pixels burned</text>
+  <text x="500" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">thin features survive, but area inflates and</text>
+  <text x="500" y="278" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">adjacent classes contend for edge pixels</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -634,6 +716,30 @@
 </div>
 <h3 id="step-6-validate-alignment-by-overlay" tabindex="-1"><a class="header-anchor" href="#step-6-validate-alignment-by-overlay" aria-label="Permalink to section &quot;Step 6 — Validate Alignment by Overlay&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 6 — Validate Alignment by Overlay</h3>
 <p>Rasterization never throws on misalignment, so validate deliberately. Re-read the mask, assert its transform and shape match the imagery exactly, then confirm that burned pixels fall inside the original polygons by sampling a geometry’s representative point back through the inverse transform:</p>
+<svg viewBox="0 0 720 290" role="img" aria-label="Overlay check comparing a correctly aligned mask against one shifted by half a pixel, with the resulting IoU" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The overlay check that catches a half-pixel origin error</title>
+  <desc>Two overlays of the rendered mask on the source imagery footprint. On the left the mask edge follows the roof line and the IoU against a reference rasterization is 0.99. On the right the mask sits half a pixel up and left, because the transform origin was read as a pixel centre rather than a corner; the edges no longer coincide and the IoU falls to 0.86, which at 30 cm ground sample distance is a 15 centimetre systematic shift on every label.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Correct -->
+  <text x="170" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">origin read as pixel corner</text>
+  <rect x="60" y="46" width="220" height="150" fill="none" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <polygon points="100,86 240,74 250,158 110,172" fill="none" stroke="currentColor" stroke-width="2"/>
+  <polygon points="100,86 240,74 250,158 110,172" fill="currentColor" opacity="0.2"/>
+  <text x="170" y="126" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">mask edge on the roof line</text>
+  <text x="170" y="220" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">IoU 0.99</text>
+  <text x="170" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">residual is antialiasing at the corners</text>
+  <!-- Shifted -->
+  <text x="530" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">origin read as pixel centre</text>
+  <rect x="420" y="46" width="220" height="150" fill="none" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <polygon points="460,86 600,74 610,158 470,172" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+  <polygon points="452,78 592,66 602,150 462,164" fill="currentColor" opacity="0.2"/>
+  <polygon points="452,78 592,66 602,150 462,164" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="530" y="126" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">mask sits half a pixel up and left</text>
+  <text x="530" y="220" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">IoU 0.86</text>
+  <text x="530" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">15 cm of systematic shift at 30 cm GSD —</text>
+  <text x="530" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">on every label, in the same direction</text>
+  <text x="170" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">run this on one tile before rendering the batch</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -802,6 +908,8 @@ Fix: rasterize narrow classes in a separate pass with <code class="inline-code">
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -818,6 +926,8 @@ Fix: rasterize narrow classes in a separate pass with <code class="inline-code">
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -831,6 +941,8 @@ Fix: rasterize narrow classes in a separate pass with <code class="inline-code">
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -858,7 +970,11 @@ Fix: rasterize narrow classes in a separate pass with <code class="inline-code">
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

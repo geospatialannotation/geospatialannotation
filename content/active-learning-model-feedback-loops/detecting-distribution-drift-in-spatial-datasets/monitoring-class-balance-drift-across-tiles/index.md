@@ -95,6 +95,7 @@ Per-class frequency is the cheapest drift signal you can compute. It needs no im
 <svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grouped bar chart comparing reference and current class-prior distributions for four classes, alongside a horizontal PSI gauge with stable, watch, and drift zones" style="width:100%;max-width:660px;display:block;margin:1.5rem auto;">
   <title>Reference versus current class priors with a PSI drift gauge</title>
   <desc>Left panel: grouped bars for four classes — building, road, vehicle, vegetation — showing the reference prior against the current batch prior. Vehicle rises sharply while building falls. Right panel: a horizontal PSI gauge divided into stable, watch, and drift zones with a marker sitting in the drift zone at PSI 0.34.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Left panel axis -->
   <line x1="40" y1="240" x2="360" y2="240" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
   <text x="40" y="40" font-size="12" fill="currentColor" opacity="0.85" font-family="sans-serif" font-weight="bold">Class-prior distribution</text>
@@ -223,6 +224,43 @@ def build_reference_prior(
 
 PSI is a sum over classes of `(current - reference) * ln(current / reference)`. Compute the per-class contribution so you can flag *which* class drifted, not merely that the batch as a whole moved. Align both vectors on the full class index first so a class missing from one side still contributes.
 
+<svg viewBox="0 0 720 270" role="img" aria-label="Per-class population stability index across a batch, with the action band each class falls into" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>PSI per class, and the band each one lands in</title>
+  <desc>Six classes scored against the reference priors. Building at 0.04 and road at 0.07 sit in the stable band below 0.10. Cropland at 0.16 and water at 0.19 sit in the investigate band. Solar farm at 0.31 and substation at 0.44 clear 0.25 and trigger a re-label review. The bands are marked on the axis rather than left to a reader's judgement.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="180" y1="222" x2="670" y2="222" stroke="currentColor" stroke-width="1.4" opacity="0.6"/>
+  <text x="180" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.00</text>
+  <text x="278" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.10</text>
+  <text x="425" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.25</text>
+  <text x="670" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.50</text>
+  <text x="425" y="262" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">population stability index against the reference priors</text>
+  <line x1="278" y1="44" x2="278" y2="218" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <line x1="425" y1="44" x2="425" y2="218" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="228" y="40" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">stable</text>
+  <text x="351" y="40" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">investigate</text>
+  <text x="545" y="40" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">re-label review</text>
+  <!-- Bars -->
+  <text x="172" y="66" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">building</text>
+  <rect x="180" y="54" width="39" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="227" y="66" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.04</text>
+  <text x="172" y="94" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">road</text>
+  <rect x="180" y="82" width="69" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="257" y="94" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.07</text>
+  <text x="172" y="122" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">cropland</text>
+  <rect x="180" y="110" width="157" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="345" y="122" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.16</text>
+  <text x="172" y="150" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">water_body</text>
+  <rect x="180" y="138" width="186" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="374" y="150" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.19</text>
+  <text x="172" y="178" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">solar_farm</text>
+  <rect x="180" y="166" width="304" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="492" y="178" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.31</text>
+  <text x="172" y="206" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">substation</text>
+  <rect x="180" y="194" width="431" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="619" y="206" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.44</text>
+</svg>
+
 ```python
 def psi_per_class(
     current_counts: pd.Series,
@@ -251,6 +289,34 @@ def psi_per_class(
 ### Step 4 — Emit an Alert Table
 
 Band each per-class PSI, compute the total PSI for the batch, and mark any class above 0.25 for targeted re-labeling. The `action` column feeds straight into an annotation-queue routing step.
+
+<svg viewBox="0 0 700 260" role="img" aria-label="A rare class whose share barely moves while its instance count collapses, and the count column that reveals it" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>A share that barely moves can hide a class disappearing</title>
+  <desc>Between the reference and the current batch, the substation class falls from 180 instances to 22. Because it was only 1.2 percent of the set to begin with, its share moves to 0.15 percent and any share-based alert stays quiet. The count column makes the collapse obvious, which is why the alert table carries both.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="200" y="40" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">share of the batch</text>
+  <text x="530" y="40" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">instance count</text>
+  <line x1="20" y1="50" x2="680" y2="50" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Share bars -->
+  <text x="20" y="82" font-size="11" fill="currentColor" font-family="monospace">reference</text>
+  <rect x="120" y="70" width="6" height="16" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="134" y="83" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">1.20%</text>
+  <text x="20" y="116" font-size="11" fill="currentColor" font-family="monospace">current</text>
+  <rect x="120" y="104" width="2" height="16" rx="1" fill="currentColor" opacity="0.5"/>
+  <text x="134" y="117" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">0.15%</text>
+  <text x="120" y="148" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a share-only alert sees a 1 point move</text>
+  <text x="120" y="164" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and stays quiet</text>
+  <!-- Count bars -->
+  <rect x="380" y="66" width="240" height="24" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="628" y="83" font-size="11" fill="currentColor" font-family="monospace">180</text>
+  <rect x="380" y="100" width="29" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="417" y="117" font-size="11" fill="currentColor" font-family="monospace">22</text>
+  <text x="380" y="148" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the count column shows an 88% collapse</text>
+  <text x="380" y="164" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">in a class the model can least afford to lose</text>
+  <rect x="120" y="188" width="500" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="370" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">carry both columns, and alert on either</text>
+  <text x="370" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">rare classes are exactly the ones a proportional metric is worst at watching</text>
+</svg>
 
 ```python
 from dataclasses import dataclass

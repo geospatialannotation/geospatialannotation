@@ -98,6 +98,7 @@ The diagram below contrasts the two hashing strategies on two re-exports of one 
 <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparison of a raw-file SHA that changes across re-exports versus a content SHA over pixels and geo-metadata that stays stable" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Raw-file SHA versus content SHA across two re-exports</title>
   <desc>Two re-exports of the same imagery are shown. The raw-file SHA reads the whole file including volatile header bytes and produces two different digests. The content SHA reads only decoded pixels plus canonical transform and EPSG, and produces one identical digest for both re-exports.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Export A -->
   <rect x="16" y="24" width="150" height="120" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
   <text x="91" y="44" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif" font-weight="bold">Re-export A</text>
@@ -164,6 +165,36 @@ def _hash_pixels(dataset: DatasetReader, digest: "hashlib._Hash") -> None:
 
 Use a single `hashlib.sha256` object and `update()` it per band rather than concatenating every band into one buffer. This bounds peak memory to a single band and makes the order of bands explicit — a property that becomes part of the content identity:
 
+<svg viewBox="0 40 720 217" role="img" aria-label="Hashing decoded bands one at a time so memory stays flat regardless of scene size" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Feed the hasher band by band, not scene by scene</title>
+  <desc>Each band is decoded into a buffer, fed to the running SHA-256 state and discarded before the next band is read. Peak memory is one band, not four, and the digest is identical to hashing the concatenated array. The band order must be fixed, because feeding the same four bands in a different sequence produces a different digest.</desc>
+  <rect x="0" y="40" width="720" height="217" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="hb-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="20" y="60" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="66" y="88" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 1</text>
+  <rect x="20" y="116" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="66" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 2</text>
+  <rect x="130" y="60" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="176" y="88" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 3</text>
+  <rect x="130" y="116" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="176" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 4</text>
+  <text x="121" y="184" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">read in a fixed order, one at a time</text>
+  <line x1="224" y1="111" x2="272" y2="111" stroke="currentColor" stroke-width="1.5" marker-end="url(#hb-arr)"/>
+  <rect x="274" y="82" width="170" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="359" y="106" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">h.update(buffer)</text>
+  <text x="359" y="124" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">state is 32 bytes, always</text>
+  <line x1="444" y1="111" x2="490" y2="111" stroke="currentColor" stroke-width="1.5" marker-end="url(#hb-arr)"/>
+  <rect x="492" y="82" width="208" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="596" y="106" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">then transform + EPSG</text>
+  <text x="596" y="124" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">h.hexdigest()</text>
+  <text x="360" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">peak memory is one band, whatever the scene size — and the digest matches hashing the whole array at once</text>
+  <text x="360" y="234" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">provided the band order never varies, because the hasher has no idea it is looking at bands</text>
+</svg>
+
 ```python
 def _new_digest() -> "hashlib._Hash":
     """A fresh SHA-256 accumulator, domain-separated with a version tag."""
@@ -177,6 +208,32 @@ The leading version tag (`cog-content-hash-v1`) domain-separates this scheme, so
 ### Step 3 — Append Canonicalized Transform and EPSG
 
 Pixels alone are not the whole identity: two rasters can share pixel values while sitting at different map locations. Fold the georeferencing in, but *canonicalize* it first so formatting noise cannot leak in. Serialize the affine transform to six fixed-precision floats and reduce the CRS to its authority code. The first raster in your pipeline is typically stored in a projected CRS such as [`EPSG:32633`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/); reducing it to that integer code makes the hash independent of the exact WKT string GDAL happened to emit:
+
+<svg viewBox="0 0 720 260" role="img" aria-label="A canonical form for the transform and CRS before they enter the hash" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Canonicalise the spatial metadata or it will hash differently every time</title>
+  <desc>The same transform can be printed as 0.3 or 0.30000000000000004 depending on the code path, and the same CRS can arrive as an EPSG code, a PROJ string or a multi-kilobyte WKT with different whitespace. Both are reduced to one form — fixed-precision decimals and the integer authority code — before being appended to the hash.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="180" y="38" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">as it arrives</text>
+  <text x="540" y="38" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">as it is hashed</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <rect x="20" y="62" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="36" y="86" font-size="10" fill="currentColor" font-family="monospace">0.30000000000000004</text>
+  <text x="36" y="106" font-size="10" fill="currentColor" font-family="monospace">512340.2000000001</text>
+  <text x="36" y="128" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">float repr varies by code path</text>
+  <rect x="380" y="62" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="396" y="86" font-size="10" fill="currentColor" font-family="monospace">"0.300000"</text>
+  <text x="396" y="106" font-size="10" fill="currentColor" font-family="monospace">"512340.200000"</text>
+  <text x="396" y="128" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">six decimals, always — a sub-micron rule</text>
+  <rect x="20" y="152" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="36" y="176" font-size="10" fill="currentColor" font-family="monospace">PROJCS["ETRS89 / UTM zone 32N",…</text>
+  <text x="36" y="196" font-size="10" fill="currentColor" font-family="monospace">+proj=utm +zone=32 +ellps=GRS80…</text>
+  <text x="36" y="218" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">same CRS, three spellings, different bytes</text>
+  <rect x="380" y="152" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="396" y="180" font-size="12" fill="currentColor" font-family="monospace">25832</text>
+  <text x="396" y="204" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the integer authority code, resolved once</text>
+  <text x="396" y="220" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">with to_epsg(); fail loudly if it is None</text>
+  <text x="360" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">canonicalise before hashing, not after comparing — the second is a debugging session, the first is a rule</text>
+</svg>
 
 ```python
 from rasterio.transform import Affine

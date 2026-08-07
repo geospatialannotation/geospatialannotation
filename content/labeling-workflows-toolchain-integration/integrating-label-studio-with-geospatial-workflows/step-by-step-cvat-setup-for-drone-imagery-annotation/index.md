@@ -78,9 +78,10 @@ Deploy CVAT v2.14+ via Docker Compose, tile GeoTIFF orthomosaics into 2048 × 20
 
 Drone survey orthomosaics arrive as large GeoTIFF files (5–40 GB) referenced to a UTM zone such as `EPSG:32632` or a local equivalent. Uploading a raw GeoTIFF directly to CVAT produces three failure modes that compound each other: CRS loss (the geotransform is stripped, leaving pixel-only coordinates with no route back to the geodetic frame), browser OOM (Chrome's ~4 GB canvas cap causes frames above roughly 4096 × 4096 pixels to render blank or crash the tab silently), and annotation drift across tile boundaries that makes post-export [vector vs raster annotation](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/) validation fragile. The four-step workflow below eliminates all three before annotation starts.
 
-<svg viewBox="0 0 760 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four-stage CVAT drone annotation pipeline from raw GeoTIFF to georeferenced GeoJSON" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="-16 -12 788 157" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four-stage CVAT drone annotation pipeline from raw GeoTIFF to georeferenced GeoJSON" style="width:100%;max-width:788px;display:block;margin:1.5rem auto;">
   <title>CVAT Drone Annotation Pipeline</title>
   <desc>Four-stage pipeline: raw GeoTIFF orthomosaic is tiled by GDAL alongside a sidecar CRS manifest; tiles are ingested into CVAT tasks via cvat-sdk; annotators draw polygons and bounding boxes; exported COCO JSON is joined with the CRS manifest and an affine transform produces georeferenced GeoJSON.</desc>
+  <rect x="-16" y="-12" width="788" height="157" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0,8 3,0 6" fill="currentColor" opacity="0.7"/>
@@ -124,6 +125,45 @@ Drone survey orthomosaics arrive as large GeoTIFF files (5–40 GB) referenced t
 
 Map volumes to a fast NVMe drive before the first `docker compose up`; retrofitting storage paths after data is written requires a full database export and re-import.
 
+<svg viewBox="0 0 700 250" role="img" aria-label="The read pattern an annotation server produces, and why it is random rather than sequential" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Annotation traffic is random reads, not a stream</title>
+  <desc>Twelve annotators each open a different tile, so the server issues small reads scattered across the whole chip store rather than reading any file end to end. That access pattern is what network storage and spinning disks are worst at, and it is why the chip store belongs on a local NVMe volume while finished annotations go to object storage.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Annotators -->
+  <text x="90" y="40" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">12 annotators</text>
+  <rect x="30" y="56" width="120" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="90" y="73" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">opens t_0142</text>
+  <rect x="30" y="88" width="120" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="90" y="105" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">opens t_0871</text>
+  <rect x="30" y="120" width="120" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="90" y="137" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">opens t_0033</text>
+  <rect x="30" y="152" width="120" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="90" y="169" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">opens t_1590</text>
+  <text x="90" y="196" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">…and eight more</text>
+  <!-- Store -->
+  <text x="420" y="40" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">chip store — 1 800 tiles</text>
+  <rect x="270" y="56" width="300" height="120" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="290" y="70" width="16" height="16" fill="currentColor" opacity="0.55"/>
+  <rect x="420" y="70" width="16" height="16" fill="currentColor" opacity="0.55"/>
+  <rect x="330" y="102" width="16" height="16" fill="currentColor" opacity="0.55"/>
+  <rect x="520" y="102" width="16" height="16" fill="currentColor" opacity="0.55"/>
+  <rect x="370" y="140" width="16" height="16" fill="currentColor" opacity="0.55"/>
+  <rect x="470" y="140" width="16" height="16" fill="currentColor" opacity="0.55"/>
+  <text x="420" y="196" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">the reads land everywhere at once</text>
+  <line x1="152" y1="68" x2="266" y2="76" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <line x1="152" y1="100" x2="266" y2="108" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <line x1="152" y1="132" x2="266" y2="144" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <line x1="152" y1="164" x2="266" y2="150" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Verdict -->
+  <rect x="596" y="56" width="80" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="636" y="80" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">NVMe</text>
+  <text x="636" y="98" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">chips live here</text>
+  <rect x="596" y="122" width="80" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="636" y="146" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">object</text>
+  <text x="636" y="164" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">exports go here</text>
+  <text x="350" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a network mount adds its latency to every tile switch, which annotators experience as the tool being slow</text>
+</svg>
+
 ```bash
 git clone https://github.com/cvat-ai/cvat.git
 cd cvat
@@ -159,6 +199,33 @@ All containers must report `healthy` or `running` before proceeding.
 ## Step 2 — Tile GeoTIFFs and Build a CRS Manifest
 
 CVAT's canvas handles images up to ~4096 × 4096 px reliably. Use `gdal_retile.py` to produce 2048 × 2048 JPEG tiles with 200-pixel overlap, then record the pixel-to-world geotransform for every tile in a manifest CSV.
+
+<svg viewBox="0 0 720 280" role="img" aria-label="A tile manifest row carrying everything needed to put an annotation back on the ground" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The manifest row is what makes a tile reversible</title>
+  <desc>CVAT sees only a PNG chip and pixel coordinates. One manifest row per tile records the parent scene, the pixel origin of the tile within it, the ground sample distance and the CRS. With that row, any pixel coordinate returned by CVAT maps back to the ground; without it, the annotation is stranded in a coordinate system that describes nothing outside the chip.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Scene -->
+  <rect x="20" y="52" width="180" height="150" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="110" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">parent scene</text>
+  <line x1="80" y1="52" x2="80" y2="202" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+  <line x1="140" y1="52" x2="140" y2="202" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+  <line x1="20" y1="102" x2="200" y2="102" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+  <line x1="20" y1="152" x2="200" y2="152" stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+  <rect x="80" y="102" width="60" height="50" fill="currentColor" opacity="0.25"/>
+  <text x="110" y="132" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">t_0142</text>
+  <text x="110" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">one scene, 6 × 4 tiles</text>
+  <!-- Manifest row -->
+  <rect x="250" y="46" width="450" height="160" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="475" y="70" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">manifest row for t_0142</text>
+  <text x="270" y="96" font-size="11" fill="currentColor" font-family="monospace">tile_id      t_0142.png</text>
+  <text x="270" y="118" font-size="11" fill="currentColor" font-family="monospace">scene        20260214_alpha.tif</text>
+  <text x="270" y="140" font-size="11" fill="currentColor" font-family="monospace">origin_px    (1024, 512)</text>
+  <text x="270" y="162" font-size="11" fill="currentColor" font-family="monospace">gsd_m        0.048</text>
+  <text x="270" y="184" font-size="11" fill="currentColor" font-family="monospace">crs          EPSG:32633</text>
+  <!-- Note -->
+  <text x="360" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">write the manifest in the same pass that writes the tiles — reconstructing it afterwards from filenames</text>
+  <text x="360" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">works right up until someone renames a scene or re-tiles with a different overlap</text>
+</svg>
 
 ```bash
 gdal_retile.py \

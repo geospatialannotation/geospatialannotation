@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -261,6 +280,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/" class="">Reproducible Train/Validation Splits for Spatial Data</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/detecting-train-test-leakage-in-tiled-datasets/" class="">Detecting Train/Test Leakage in Tiled Datasets</a></li>
               
             </ul>
             
@@ -377,6 +407,7 @@
 <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparison of a raw-file SHA that changes across re-exports versus a content SHA over pixels and geo-metadata that stays stable" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Raw-file SHA versus content SHA across two re-exports</title>
   <desc>Two re-exports of the same imagery are shown. The raw-file SHA reads the whole file including volatile header bytes and produces two different digests. The content SHA reads only decoded pixels plus canonical transform and EPSG, and produces one identical digest for both re-exports.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Export A -->
   <rect x="16" y="24" width="150" height="120" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
   <text x="91" y="44" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.85" font-family="sans-serif" font-weight="bold">Re-export A</text>
@@ -453,6 +484,35 @@
 <p><code class="inline-code">band.tobytes(order=&quot;C&quot;)</code> serializes the array in a fixed row-major order so the byte stream never depends on NumPy’s internal memory layout. Because <code class="inline-code">read()</code> returns the values exactly as stored, <code class="inline-code">float32</code> and <code class="inline-code">int16</code> rasters are bit-reproducible across machines.</p>
 <h3 id="step-2-hash-pixel-buffers-incrementally" tabindex="-1"><a class="header-anchor" href="#step-2-hash-pixel-buffers-incrementally" aria-label="Permalink to section &quot;Step 2 — Hash Pixel Buffers Incrementally&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Hash Pixel Buffers Incrementally</h3>
 <p>Use a single <code class="inline-code">hashlib.sha256</code> object and <code class="inline-code">update()</code> it per band rather than concatenating every band into one buffer. This bounds peak memory to a single band and makes the order of bands explicit — a property that becomes part of the content identity:</p>
+<svg viewBox="0 40 720 217" role="img" aria-label="Hashing decoded bands one at a time so memory stays flat regardless of scene size" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Feed the hasher band by band, not scene by scene</title>
+  <desc>Each band is decoded into a buffer, fed to the running SHA-256 state and discarded before the next band is read. Peak memory is one band, not four, and the digest is identical to hashing the concatenated array. The band order must be fixed, because feeding the same four bands in a different sequence produces a different digest.</desc>
+  <rect x="0" y="40" width="720" height="217" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="hb-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="20" y="60" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="66" y="88" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 1</text>
+  <rect x="20" y="116" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="66" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 2</text>
+  <rect x="130" y="60" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="176" y="88" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 3</text>
+  <rect x="130" y="116" width="92" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="176" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">band 4</text>
+  <text x="121" y="184" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">read in a fixed order, one at a time</text>
+  <line x1="224" y1="111" x2="272" y2="111" stroke="currentColor" stroke-width="1.5" marker-end="url(#hb-arr)"/>
+  <rect x="274" y="82" width="170" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="359" y="106" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">h.update(buffer)</text>
+  <text x="359" y="124" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">state is 32 bytes, always</text>
+  <line x1="444" y1="111" x2="490" y2="111" stroke="currentColor" stroke-width="1.5" marker-end="url(#hb-arr)"/>
+  <rect x="492" y="82" width="208" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="596" y="106" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">then transform + EPSG</text>
+  <text x="596" y="124" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">h.hexdigest()</text>
+  <text x="360" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">peak memory is one band, whatever the scene size — and the digest matches hashing the whole array at once</text>
+  <text x="360" y="234" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">provided the band order never varies, because the hasher has no idea it is looking at bands</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -473,6 +533,31 @@
 <p>The leading version tag (<code class="inline-code">cog-content-hash-v1</code>) domain-separates this scheme, so if you ever change what goes into the hash you can bump the tag and avoid silent collisions with previously computed ids.</p>
 <h3 id="step-3-append-canonicalized-transform-and-epsg" tabindex="-1"><a class="header-anchor" href="#step-3-append-canonicalized-transform-and-epsg" aria-label="Permalink to section &quot;Step 3 — Append Canonicalized Transform and EPSG&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Append Canonicalized Transform and EPSG</h3>
 <p>Pixels alone are not the whole identity: two rasters can share pixel values while sitting at different map locations. Fold the georeferencing in, but <em>canonicalize</em> it first so formatting noise cannot leak in. Serialize the affine transform to six fixed-precision floats and reduce the CRS to its authority code. The first raster in your pipeline is typically stored in a projected CRS such as <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:32633</code></a>; reducing it to that integer code makes the hash independent of the exact WKT string GDAL happened to emit:</p>
+<svg viewBox="0 0 720 260" role="img" aria-label="A canonical form for the transform and CRS before they enter the hash" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Canonicalise the spatial metadata or it will hash differently every time</title>
+  <desc>The same transform can be printed as 0.3 or 0.30000000000000004 depending on the code path, and the same CRS can arrive as an EPSG code, a PROJ string or a multi-kilobyte WKT with different whitespace. Both are reduced to one form — fixed-precision decimals and the integer authority code — before being appended to the hash.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="180" y="38" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">as it arrives</text>
+  <text x="540" y="38" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">as it is hashed</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <rect x="20" y="62" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="36" y="86" font-size="10" fill="currentColor" font-family="monospace">0.30000000000000004</text>
+  <text x="36" y="106" font-size="10" fill="currentColor" font-family="monospace">512340.2000000001</text>
+  <text x="36" y="128" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">float repr varies by code path</text>
+  <rect x="380" y="62" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="396" y="86" font-size="10" fill="currentColor" font-family="monospace">"0.300000"</text>
+  <text x="396" y="106" font-size="10" fill="currentColor" font-family="monospace">"512340.200000"</text>
+  <text x="396" y="128" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">six decimals, always — a sub-micron rule</text>
+  <rect x="20" y="152" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="36" y="176" font-size="10" fill="currentColor" font-family="monospace">PROJCS["ETRS89 / UTM zone 32N",…</text>
+  <text x="36" y="196" font-size="10" fill="currentColor" font-family="monospace">+proj=utm +zone=32 +ellps=GRS80…</text>
+  <text x="36" y="218" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">same CRS, three spellings, different bytes</text>
+  <rect x="380" y="152" width="320" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="396" y="180" font-size="12" fill="currentColor" font-family="monospace">25832</text>
+  <text x="396" y="204" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the integer authority code, resolved once</text>
+  <text x="396" y="220" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">with to_epsg(); fail loudly if it is None</text>
+  <text x="360" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">canonicalise before hashing, not after comparing — the second is a debugging session, the first is a rule</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -703,6 +788,8 @@ Fix: the <code class="inline-code">_canonical_geo</code> guard handles this by e
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -719,6 +806,8 @@ Fix: the <code class="inline-code">_canonical_geo</code> guard handles this by e
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -732,6 +821,8 @@ Fix: the <code class="inline-code">_canonical_geo</code> guard handles this by e
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -759,7 +850,11 @@ Fix: the <code class="inline-code">_canonical_geo</code> guard handles this by e
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

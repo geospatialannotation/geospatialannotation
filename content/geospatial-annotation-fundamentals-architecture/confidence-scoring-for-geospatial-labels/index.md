@@ -134,6 +134,7 @@ The diagram below shows how raw annotations flow from ingestion through scoring 
 <svg viewBox="0 0 760 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Confidence scoring pipeline: five stages from ingest through routing" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>Confidence Scoring Pipeline</title>
   <desc>Five-stage pipeline diagram. Stage 1: Ingest and Normalize (CRS and validity). Stage 2: Extract Signals (IoU, geometry, model probability). Stage 3: Calibrate and Aggregate (weighted geometric mean). Stage 4: Score and Threshold (per-class gates). Stage 5 forks into Training Shard for scores at or above 0.85, and QA Queue for scores below 0.60.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -226,6 +227,7 @@ The diagram below illustrates how each signal type targets a distinct source of 
 <svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three orthogonal confidence signals feeding into composite score" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
   <title>Three Orthogonal Confidence Signals</title>
   <desc>Three signal sources feed a composite score. Signal 1: Inter-annotator IoU — detects labeler disagreement on boundary placement. Signal 2: Geometric consistency — detects topology errors and scale anomalies. Signal 3: Model-assisted probability — detects out-of-distribution or low-certainty predictions. All three flow via weighted geometric mean into the composite confidence score.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -337,6 +339,50 @@ The `epsilon` guard prevents `RuntimeWarning` when a normalized signal exactly r
 ### Step 4 — Apply QA Routing Thresholds by Confidence Tier
 
 Once composite scores are computed, route labels into three tiers. Thresholds below are starting points and should be swept per-class (see the configuration table in the next section).
+
+<svg viewBox="0 0 740 300" role="img" aria-label="A batch's composite scores as a distribution, cut by two thresholds into a training tier, a weighted tier and a review tier" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Two cut points turn one score distribution into three queues</title>
+  <desc>A histogram of composite confidence scores across a batch. Everything at or above 0.85 goes straight to the training shard at full loss weight. Scores between 0.60 and 0.84 are admitted with a reduced loss weight. Scores below 0.60 are held back for manual review. The two thresholds are the only knobs; moving them trades annotator hours against label noise.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Histogram bars -->
+  <rect x="72" y="196" width="26" height="34" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="102" y="180" width="26" height="50" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="132" y="158" width="26" height="72" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="162" y="140" width="26" height="90" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="192" y="150" width="26" height="80" fill="currentColor" opacity="0.28"/>
+  <rect x="222" y="132" width="26" height="98" fill="currentColor" opacity="0.28"/>
+  <rect x="252" y="112" width="26" height="118" fill="currentColor" opacity="0.28"/>
+  <rect x="282" y="98" width="26" height="132" fill="currentColor" opacity="0.28"/>
+  <rect x="312" y="86" width="26" height="144" fill="currentColor" opacity="0.28"/>
+  <rect x="342" y="74" width="26" height="156" fill="currentColor" opacity="0.55"/>
+  <rect x="372" y="62" width="26" height="168" fill="currentColor" opacity="0.55"/>
+  <rect x="402" y="70" width="26" height="160" fill="currentColor" opacity="0.55"/>
+  <rect x="432" y="92" width="26" height="138" fill="currentColor" opacity="0.55"/>
+  <!-- Axis -->
+  <line x1="66" y1="230" x2="470" y2="230" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="72" y="248" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.40</text>
+  <text x="190" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.60</text>
+  <text x="340" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.85</text>
+  <text x="464" y="248" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1.00</text>
+  <text x="268" y="272" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">composite confidence score</text>
+  <!-- Cut lines -->
+  <line x1="190" y1="40" x2="190" y2="230" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="340" y1="40" x2="340" y2="230" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Tier callouts -->
+  <text x="128" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">review</text>
+  <text x="265" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">weighted</text>
+  <text x="405" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">train</text>
+  <!-- Destinations -->
+  <rect x="510" y="52" width="212" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="616" y="74" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">training shard, full weight</text>
+  <text x="616" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">score ≥ 0.85</text>
+  <rect x="510" y="120" width="212" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="616" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">admitted, loss weight scaled</text>
+  <text x="616" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.60 ≤ score &lt; 0.85</text>
+  <rect x="510" y="188" width="212" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="616" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">held for manual review</text>
+  <text x="616" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">score &lt; 0.60</text>
+</svg>
 
 | Tier | Score Range | Action |
 |------|------------|--------|

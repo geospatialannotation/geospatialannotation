@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -237,6 +256,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/" class="">Triggering Retraining from New Annotations with DVC</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/" class="">Cold-Start Strategies for New Annotation Projects</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/bootstrapping-labels-with-a-zero-shot-model/" class="">Bootstrapping Labels with a Zero-Shot Model</a></li>
               
             </ul>
             
@@ -348,6 +378,7 @@
 <svg viewBox="0 0 900 320" role="img" aria-label="Retraining promotion pipeline: new annotations flow into a dataset version, a candidate is trained, an evaluation gate decides between promote and reject with rollback" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;display:block;margin:1.5rem auto;">
   <title>Retraining Promotion Pipeline</title>
   <desc>A left-to-right pipeline. New annotations feed a build-dataset-version step, which feeds a train-candidate step, which feeds an evaluation gate drawn as a diamond. A passing gate promotes the candidate to production; a failing gate rejects it and a dashed feedback arrow restores the last known-good checkpoint.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="rp-arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.65"/>
@@ -377,10 +408,10 @@
   <line x1="150" y1="156" x2="183" y2="156" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
   <line x1="335" y1="156" x2="368" y2="156" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
   <line x1="510" y1="156" x2="513" y2="156" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
-  <line x1="643" y1="130" x2="738" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
-  <text x="678" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">pass</text>
-  <line x1="643" y1="182" x2="738" y2="230" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
-  <text x="678" y="220" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">fail</text>
+  <path d="M600 105 L600 73 L736 73" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
+  <text x="668" y="66" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">pass</text>
+  <path d="M600 207 L600 239 L736 239" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
+  <text x="668" y="232" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">fail</text>
   <path d="M815,272 L815,300 L440,300 L440,194" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#rp-arr)" opacity="0.55"/>
   <text x="600" y="315" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">restore last known-good checkpoint</text>
 </svg>
@@ -414,10 +445,10 @@ pip <span class="token function">install</span> <span class="token assign-left v
 <p>The loop assumes your training data is already under <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">DVC versioning</a>, so that each dataset revision is content-addressed and every model can be traced to the exact tiles it saw. It also assumes annotations arrive pre-normalized to a single coordinate reference system — mixing projections silently shifts geometry and poisons a retraining set. Because distance-sensitive evaluation such as IoU depends on a metric CRS, keep the pipeline on a local UTM zone rather than <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/"><code class="inline-code">EPSG:4326</code></a>.</p>
 <p><strong>Baseline checklist before wiring the loop:</strong></p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5120467"><label class="task-list-item-label" for="task-item-5120467"> Base training set is DVC-tracked with a resolvable revision hash</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7520269"><label class="task-list-item-label" for="task-item-7520269"> A frozen hold-out evaluation region exists and is excluded from all labeling</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6119638"><label class="task-list-item-label" for="task-item-6119638"> The deployed checkpoint and its hold-out score are recorded as the baseline</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5291760"><label class="task-list-item-label" for="task-item-5291760"> A rollback path can restore the previous checkpoint and dataset revision atomically</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8665816"><label class="task-list-item-label" for="task-item-8665816"> Base training set is DVC-tracked with a resolvable revision hash</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-421338"><label class="task-list-item-label" for="task-item-421338"> A frozen hold-out evaluation region exists and is excluded from all labeling</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6710676"><label class="task-list-item-label" for="task-item-6710676"> The deployed checkpoint and its hold-out score are recorded as the baseline</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7162637"><label class="task-list-item-label" for="task-item-7162637"> A rollback path can restore the previous checkpoint and dataset revision atomically</label></li>
 </ul>
 <hr>
 <h2 id="core-retraining-loop-workflow" tabindex="-1"><a class="header-anchor" href="#core-retraining-loop-workflow" aria-label="Permalink to section &quot;Core Retraining Loop Workflow&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Core Retraining Loop Workflow</h2>
@@ -485,6 +516,38 @@ pip <span class="token function">install</span> <span class="token assign-left v
 <p>The <code class="inline-code">replay_fraction</code> slice is deliberate: fine-tuning purely on new tiles is the fastest route to catastrophic forgetting, covered in the gotchas below. Mixing in a random sample of previously seen tiles anchors the model to its existing competencies.</p>
 <h3 id="define-an-evaluation-gate" tabindex="-1"><a class="header-anchor" href="#define-an-evaluation-gate" aria-label="Permalink to section &quot;Define an evaluation gate&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Define an evaluation gate</h3>
 <p>The gate is the safety valve. It compares the candidate’s score on a frozen hold-out set against the deployed baseline and returns a single boolean. Encode the rule as data, not scattered <code class="inline-code">if</code> statements, so the same policy governs every run and can be logged.</p>
+<svg viewBox="0 0 720 260" role="img" aria-label="Candidate metrics against the promotion gate, where one regression blocks promotion despite an overall gain" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The gate is per-class, because the average hides the loss</title>
+  <desc>The candidate improves overall mean IoU from 0.68 to 0.71 and improves three classes. The water class falls from 0.74 to 0.66, an eight point regression well past the tolerated two points. The gate blocks promotion on that one class, because a mean that improves while a class collapses is exactly the trade the average is bad at showing.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="360" y="36" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">baseline → candidate, per class</text>
+  <line x1="20" y1="46" x2="700" y2="46" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="monospace">building</text>
+  <text x="250" y="76" font-size="11" fill="currentColor" font-family="monospace">0.71 → 0.75</text>
+  <rect x="400" y="62" width="120" height="18" rx="3" fill="currentColor" opacity="0.35"/>
+  <text x="460" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">+0.04</text>
+  <text x="560" y="76" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">passes</text>
+  <text x="20" y="112" font-size="11" fill="currentColor" font-family="monospace">road</text>
+  <text x="250" y="112" font-size="11" fill="currentColor" font-family="monospace">0.66 → 0.70</text>
+  <rect x="400" y="98" width="120" height="18" rx="3" fill="currentColor" opacity="0.35"/>
+  <text x="460" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">+0.04</text>
+  <text x="560" y="112" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">passes</text>
+  <text x="20" y="148" font-size="11" fill="currentColor" font-family="monospace">cropland</text>
+  <text x="250" y="148" font-size="11" fill="currentColor" font-family="monospace">0.61 → 0.73</text>
+  <rect x="400" y="134" width="120" height="18" rx="3" fill="currentColor" opacity="0.35"/>
+  <text x="460" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">+0.12</text>
+  <text x="560" y="148" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">passes</text>
+  <text x="20" y="184" font-size="11" fill="currentColor" font-family="monospace">water</text>
+  <text x="250" y="184" font-size="11" fill="currentColor" font-family="monospace">0.74 → 0.66</text>
+  <rect x="400" y="170" width="120" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+  <text x="460" y="184" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">−0.08</text>
+  <text x="560" y="184" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.9">blocks — tolerance is 0.02</text>
+  <line x1="20" y1="198" x2="700" y2="198" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <text x="20" y="224" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">mean IoU</text>
+  <text x="250" y="224" font-size="11" fill="currentColor" font-family="monospace">0.68 → 0.71</text>
+  <text x="400" y="224" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the number that would have promoted it</text>
+  <text x="360" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">gate on the worst class, not the mean — the incremental batch that taught it cropland is what cost it water</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -720,6 +783,43 @@ pip <span class="token function">install</span> <span class="token assign-left v
 <p>Newly validated tiles are not automatically trustworthy. A single annotator’s systematic error — a mislabeled class, a consistently loose bounding box — enters training as ground truth and the model dutifully learns it. Before assembling the increment, cross-check fresh labels against model predictions and flag tiles where a high-confidence prediction disagrees sharply with the new label for a second review. Calibrated <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> make that disagreement signal meaningful rather than noisy.</p>
 <h3 id="eval-set-contamination-via-spatial-autocorrelation" tabindex="-1"><a class="header-anchor" href="#eval-set-contamination-via-spatial-autocorrelation" aria-label="Permalink to section &quot;Eval-set contamination via spatial autocorrelation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Eval-set contamination via spatial autocorrelation</h3>
 <p>Adjacent tiles are not independent samples: they share roads, buildings, and terrain that spill across tile edges. A random train/hold-out split therefore places near-copies of hold-out content into training, and the evaluation score climbs for reasons that have nothing to do with real generalization. Split the hold-out by geographic block — an entire region or acquisition scene — and add a buffer so no training tile physically borders a hold-out tile. Freeze that block once and never label inside it.</p>
+<svg viewBox="0 0 700 280" role="img" aria-label="A spatially blocked evaluation split compared with a random one, showing why the random split reports a better number" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>A random split lets the model see the neighbours of its own test set</title>
+  <desc>With a random tile split, validation tiles sit directly beside training tiles, sharing roofs, shadows and field boundaries, so validation accuracy overstates real performance by a wide margin. Holding out contiguous blocks instead means the evaluation tiles have no training neighbour, and the number it reports is the one that survives deployment.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Random split -->
+  <text x="160" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">random tile split</text>
+  <rect x="40" y="48" width="240" height="160" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <g>
+    <rect x="40" y="48" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="80" y="48" width="40" height="40" fill="none"/>
+    <rect x="120" y="48" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="200" y="48" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="40" y="88" width="40" height="40" fill="none"/><rect x="80" y="88" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="160" y="88" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="240" y="88" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="40" y="128" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="120" y="128" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="200" y="128" width="40" height="40" fill="none"/><rect x="240" y="128" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="80" y="168" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="160" y="168" width="40" height="40" fill="none"/>
+    <rect x="200" y="168" width="40" height="40" fill="currentColor" opacity="0.4"/>
+  </g>
+  <g stroke="currentColor" stroke-width="0.8" opacity="0.4">
+    <line x1="80" y1="48" x2="80" y2="208"/><line x1="120" y1="48" x2="120" y2="208"/><line x1="160" y1="48" x2="160" y2="208"/><line x1="200" y1="48" x2="200" y2="208"/><line x1="240" y1="48" x2="240" y2="208"/>
+    <line x1="40" y1="88" x2="280" y2="88"/><line x1="40" y1="128" x2="280" y2="128"/><line x1="40" y1="168" x2="280" y2="168"/>
+  </g>
+  <text x="160" y="232" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">every held-out tile touches a training tile</text>
+  <text x="160" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the same roofs and field edges appear on both sides</text>
+  <text x="160" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">reported IoU 0.84</text>
+  <!-- Blocked split -->
+  <text x="500" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">spatially blocked split</text>
+  <rect x="380" y="48" width="240" height="160" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="380" y="48" width="160" height="160" fill="currentColor" opacity="0.4"/>
+  <g stroke="currentColor" stroke-width="0.8" opacity="0.4">
+    <line x1="420" y1="48" x2="420" y2="208"/><line x1="460" y1="48" x2="460" y2="208"/><line x1="500" y1="48" x2="500" y2="208"/><line x1="540" y1="48" x2="540" y2="208"/><line x1="580" y1="48" x2="580" y2="208"/>
+    <line x1="380" y1="88" x2="620" y2="88"/><line x1="380" y1="128" x2="620" y2="128"/><line x1="380" y1="168" x2="620" y2="168"/>
+  </g>
+  <line x1="540" y1="48" x2="540" y2="208" stroke="currentColor" stroke-width="2.5"/>
+  <text x="500" y="232" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">one boundary, no shared context</text>
+  <text x="500" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the evaluation area is genuinely unseen ground</text>
+  <text x="500" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">reported IoU 0.68 — and it holds up in production</text>
+</svg>
 <h3 id="silent-metric-regression" tabindex="-1"><a class="header-anchor" href="#silent-metric-regression" aria-label="Permalink to section &quot;Silent metric regression&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Silent metric regression</h3>
 <p>The most expensive failure is a candidate that clears the overall gate while collapsing on a class that barely registers in the aggregate. A one-point mean-average-precision gain can hide a rare-object recall dropping by half. Guarding the gate with a per-class floor catches most of these, but also track the full per-class table across loop iterations and alert on any class trending down for two consecutive promotions, even when each individual step stays above the floor.</p>
 <hr>
@@ -885,6 +985,11 @@ pip <span class="token function">install</span> <span class="token assign-left v
         <h2>Related in Active Learning &amp; Model Feedback Loops for Geospatial Annotation</h2>
         <div class="related__grid">
           
+            <a class="related__card" href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">
+              <div class="title">Cold-Start Strategies for New Annotation Projects</div>
+              <div class="desc">Active learning has a chicken-and-egg problem at the start of every project: the loop selects tiles the model is unsure about, and there is no model. The usual response is to label a random few thousand tiles and start the loop, which wastes most of that budget — a random sample of an aerial pool is mostly ground with </div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">
               <div class="title">Detecting Distribution Drift in Spatial Datasets</div>
               <div class="desc">A building-footprint segmenter trained on cloud-free summer imagery ships to production and scores well on the held-out test set. Six months later the same model starts missing rooftops — not because the weights changed, but because the incoming tiles did. Winter acquisitions carry snow cover, low sun angles, and long </div>
@@ -938,6 +1043,8 @@ pip <span class="token function">install</span> <span class="token assign-left v
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -954,6 +1061,8 @@ pip <span class="token function">install</span> <span class="token assign-left v
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -967,6 +1076,8 @@ pip <span class="token function">install</span> <span class="token assign-left v
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -994,7 +1105,11 @@ pip <span class="token function">install</span> <span class="token assign-left v
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

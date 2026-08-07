@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -276,6 +295,17 @@
           </li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/" class="">Orchestrating Annotation Pipelines with Airflow</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/backfilling-a-month-of-annotation-harvests/" class="">Backfilling a Month of Annotation Harvests</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
             
             <ul>
@@ -283,6 +313,17 @@
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
               
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/" class="">Label Studio vs QGIS for Geospatial Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/" class="">Serving Imagery Tiles to Annotation Tools</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/adding-an-xyz-tile-layer-to-label-studio-tasks/" class="">Adding an XYZ Tile Layer to Label Studio Tasks</a></li>
               
             </ul>
             
@@ -383,6 +424,7 @@
 <svg viewBox="0 0 880 200" role="img" aria-label="CI gate pipeline for annotation datasets from pull request through validation to merge or block" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:880px;display:block;margin:1.5rem auto;">
   <title>Annotation CI Gate Pipeline</title>
   <desc>A pull request that touches annotations flows through checkout, dependency install, and a validation stage running geometry, CRS, schema, and class-balance checks; a passing run merges while a failing run blocks the pull request.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ga" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -464,6 +506,50 @@
 <p>The gate operates on the files under <code class="inline-code">annotations/</code>. Every label file is expected to carry a declared <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> and a <code class="inline-code">class</code> property on each feature that matches your agreed <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">label taxonomy</a>. Those two contracts are what the checks below enforce.</p>
 <h2 id="structuring-the-four-check-validation-gate" tabindex="-1"><a class="header-anchor" href="#structuring-the-four-check-validation-gate" aria-label="Permalink to section &quot;Structuring the Four-Check Validation Gate&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Structuring the Four-Check Validation Gate</h2>
 <p>The gate is a single Python entrypoint that runs four independent checks and aggregates their findings. Each check returns a list of <code class="inline-code">Issue</code> records tagged with a severity; the entrypoint decides the exit code from the worst severity it sees. Keeping the checks independent means you can add a fifth later without touching the others, and you can unit-test each in isolation.</p>
+<svg viewBox="0 0 740 290" role="img" aria-label="Four validation checks running in order, each with the exit behaviour it produces and what it lets through" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Four checks, in the order that fails cheapest first</title>
+  <desc>A changed annotation file runs through schema enforcement, then geometry validity, then CRS assertions, then class balance. Schema and geometry failures are hard errors that exit non-zero. A CRS mismatch is a hard error too. Class-balance drift is a warning that annotates the pull request without blocking it, because the right response is a judgement call rather than a fix.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="ci-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="14" y="96" width="112" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="70" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">changed</text>
+  <text x="70" y="137" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">label files</text>
+  <line x1="126" y1="125" x2="148" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="150" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="213" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">1 · schema</text>
+  <text x="213" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">jsonschema</text>
+  <line x1="276" y1="125" x2="298" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="300" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="363" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">2 · geometry</text>
+  <text x="363" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">shapely is_valid</text>
+  <line x1="426" y1="125" x2="448" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="450" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="513" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">3 · CRS</text>
+  <text x="513" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">pyproj to_epsg()</text>
+  <line x1="576" y1="125" x2="598" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="600" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="663" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">4 · balance</text>
+  <text x="663" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">per-class counts</text>
+  <!-- Failure lanes -->
+  <line x1="213" y1="96" x2="213" y2="64" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <line x1="363" y1="96" x2="363" y2="64" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <line x1="513" y1="96" x2="513" y2="64" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="120" y="24" width="480" height="38" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="360" y="48" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">exit 1 — the merge is blocked, with the failing feature id in the log</text>
+  <line x1="663" y1="154" x2="663" y2="192" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="470" y="194" width="256" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="598" y="216" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">exit 0 with a warning comment</text>
+  <text x="598" y="234" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">drift is a judgement call, not a defect</text>
+  <!-- Ordering note -->
+  <text x="14" y="216" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">why this order</text>
+  <text x="14" y="236" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a malformed file cannot be parsed into geometries,</text>
+  <text x="14" y="252" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and an invalid geometry cannot be reprojected —</text>
+  <text x="14" y="268" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">so each check earns the right to run the next</text>
+</svg>
 <p>Start with the shared vocabulary — an <code class="inline-code">Issue</code> dataclass and a severity ranking:</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -807,6 +893,39 @@
 <p>Now a failing batch produces a per-feature list an annotator can act on directly — “feature 118: invalid: Self-intersection at or near point 6.14, 46.2” — instead of a mysterious build failure.</p>
 <h2 id="gate-parameters-severity-reference" tabindex="-1"><a class="header-anchor" href="#gate-parameters-severity-reference" aria-label="Permalink to section &quot;Gate Parameters &amp; Severity Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Gate Parameters &amp; Severity Reference</h2>
 <p>The table below summarizes each check, the library that implements it, the condition that trips it, and its default severity. Tune the severities and thresholds to your model’s sensitivities rather than accepting these blindly.</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="Severity matrix pairing each failure condition with whether it blocks the merge and who is expected to act" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>What blocks a merge, and what only annotates it</title>
+  <desc>Six failure conditions with their severity. Invalid geometry, a CRS mismatch and a schema violation are blocking errors fixed by the author. A self-intersection repaired automatically, class-balance drift beyond ten percent and a new class appearing are warnings that ask a reviewer to make a call rather than stopping the merge.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="330" y="36" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">blocks the merge</text>
+  <text x="560" y="36" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">who acts</text>
+  <line x1="20" y1="46" x2="700" y2="46" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="sans-serif">geometry fails is_valid</text>
+  <rect x="270" y="62" width="120" height="20" rx="4" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">yes — error</text>
+  <text x="560" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the author, before review</text>
+  <text x="20" y="112" font-size="11" fill="currentColor" font-family="sans-serif">CRS is not the declared EPSG</text>
+  <rect x="270" y="98" width="120" height="20" rx="4" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">yes — error</text>
+  <text x="560" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the author, before review</text>
+  <text x="20" y="148" font-size="11" fill="currentColor" font-family="sans-serif">property missing from the schema</text>
+  <rect x="270" y="134" width="120" height="20" rx="4" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">yes — error</text>
+  <text x="560" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the author, before review</text>
+  <line x1="20" y1="162" x2="700" y2="162" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+  <text x="20" y="190" font-size="11" fill="currentColor" font-family="sans-serif">self-intersection repaired by make_valid</text>
+  <rect x="270" y="176" width="120" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="330" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">no — warning</text>
+  <text x="560" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reviewer confirms the repair</text>
+  <text x="20" y="226" font-size="11" fill="currentColor" font-family="sans-serif">class share moved more than 10%</text>
+  <rect x="270" y="212" width="120" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="330" y="226" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">no — warning</text>
+  <text x="560" y="226" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reviewer decides if it is real</text>
+  <text x="20" y="262" font-size="11" fill="currentColor" font-family="sans-serif">a class appears that the taxonomy lacks</text>
+  <rect x="270" y="248" width="120" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="330" y="262" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">no — warning</text>
+  <text x="560" y="262" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">taxonomy owner rules on it</text>
+</svg>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -973,9 +1092,19 @@
               <div class="desc">Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don&#39;t exist in standard computer vision workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on p</div>
             </a>
           
+            <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">
+              <div class="title">Orchestrating Annotation Pipelines with Airflow</div>
+              <div class="desc">An annotation pipeline that works when a person runs four scripts in order stops working the first night nobody runs them. The steps are not hard — harvest yesterday&#39;s completed annotations, validate the geometry, export a training artifact, version it — but they need a schedule, credentials, retries that distinguish a</div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">
               <div class="title">QGIS Plugin Ecosystem for Annotation Teams</div>
               <div class="desc">When a polygon layer annotated in QGIS arrives at a model training job only to collapse IoU scores by 30 percentage points, the culprit is rarely the annotators. It is almost always a silent coordinate reference system mismatch between the QGIS project, the background imagery, and the export format — compounded by miss</div>
+            </a>
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">
+              <div class="title">Serving Imagery Tiles to Annotation Tools</div>
+              <div class="desc">An annotation platform wants an image. A geospatial archive holds forty thousand Cloud-Optimized GeoTIFFs in object storage, each one 40 000 pixels square, and copying chips out of them into the platform is the step that quietly turns a 2 TB archive into a 6 TB one and loses the georeferencing on the way. The alternati</div>
             </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">
@@ -1026,6 +1155,8 @@
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -1042,6 +1173,8 @@
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -1055,6 +1188,8 @@
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1082,7 +1217,11 @@
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

@@ -116,6 +116,7 @@ The loop is a cycle, not a pipeline with an end. Six stages move a tile from the
 <svg viewBox="0 0 760 430" role="img" aria-label="Six-stage cyclic active learning loop for geospatial annotation" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>The Geospatial Active Learning Loop</title>
   <desc>A cyclic diagram with six stages arranged in a ring: an unlabeled tile pool feeds model inference, which produces predictions scored for uncertainty, which feeds diversity-aware batch tile selection, which routes tiles to human annotation and validation, which supplies data to retrain and evaluate the model. A feedback arrow returns from retrain and evaluate back to the unlabeled tile pool, and a drift signal arrow points from evaluate back into the pool as well.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="al-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -216,6 +217,38 @@ Run this over the full pool on a schedule with the freshest promoted checkpoint.
 ### Stage 3 & 4 — Select a Diverse, High-Uncertainty Batch
 
 Turning the ranking into a batch requires a diversity constraint. A greedy facility-location-style selection works well and is easy to reason about: repeatedly pick the tile that maximizes a blend of its own uncertainty and its distance to the tiles already chosen. Distance can be computed in a learned feature space (embeddings from the model's penultimate layer) or, as a cheap spatial proxy, in projected map coordinates so that geographically bunched tiles repel each other.
+
+<svg viewBox="0 0 720 290" role="img" aria-label="A high-uncertainty batch drawn from one small area compared with the same budget spread across the pool" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Spatial autocorrelation collapses a batch onto one field</title>
+  <desc>Taking the top forty tiles by uncertainty selects forty neighbours of one confusing area, because adjacent tiles look alike and therefore score alike. The annotator labels the same field forty times and the model learns one thing. Clustering in feature space first and taking the most uncertain tile per cluster spends the same budget across the pool.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Naive -->
+  <text x="170" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">top-k by score alone</text>
+  <rect x="40" y="48" width="260" height="170" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <g fill="currentColor" opacity="0.5">
+    <rect x="150" y="94" width="12" height="12"/><rect x="166" y="94" width="12" height="12"/><rect x="182" y="94" width="12" height="12"/>
+    <rect x="150" y="110" width="12" height="12"/><rect x="166" y="110" width="12" height="12"/><rect x="182" y="110" width="12" height="12"/>
+    <rect x="150" y="126" width="12" height="12"/><rect x="166" y="126" width="12" height="12"/><rect x="182" y="126" width="12" height="12"/>
+    <rect x="134" y="110" width="12" height="12"/><rect x="198" y="110" width="12" height="12"/>
+    <rect x="166" y="78" width="12" height="12"/><rect x="166" y="142" width="12" height="12"/>
+  </g>
+  <text x="170" y="240" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">one confusing field, forty times</text>
+  <text x="170" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">neighbouring tiles look alike, so they score alike</text>
+  <text x="170" y="276" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">— the batch has one tile's worth of information in it</text>
+  <!-- Diverse -->
+  <text x="530" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">most uncertain per cluster</text>
+  <rect x="400" y="48" width="260" height="170" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <g fill="currentColor" opacity="0.5">
+    <rect x="424" y="66" width="12" height="12"/><rect x="486" y="80" width="12" height="12"/><rect x="560" y="62" width="12" height="12"/>
+    <rect x="628" y="88" width="12" height="12"/><rect x="440" y="118" width="12" height="12"/><rect x="512" y="128" width="12" height="12"/>
+    <rect x="586" y="112" width="12" height="12"/><rect x="632" y="150" width="12" height="12"/><rect x="418" y="176" width="12" height="12"/>
+    <rect x="482" y="188" width="12" height="12"/><rect x="548" y="172" width="12" height="12"/><rect x="606" y="192" width="12" height="12"/>
+    <rect x="464" y="146" width="12" height="12"/>
+  </g>
+  <text x="530" y="240" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">thirteen different confusions</text>
+  <text x="530" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">same annotation budget, spread across the pool</text>
+  <text x="530" y="276" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">— and a validation split that still means something</text>
+</svg>
 
 ```python
 from __future__ import annotations
@@ -396,6 +429,37 @@ Tiles from a drifted batch are prime candidates for the next round even if the c
 
 Active-learning tutorials written for photo classification quietly assume examples are independent and identically distributed. Geospatial tiles violate that assumption in ways that create failure modes with no analogue in ordinary datasets. The unifying cause is that spatial position is a hidden variable coupled to almost everything else — imagery content, class prevalence, sensor, and acquisition date all correlate with *where* a tile sits — so a selector that optimizes purely in feature space, blind to geography, will make systematic mistakes. Each failure below is a specific consequence of ignoring that coupling, and each has a concrete guard that a production loop must implement rather than assume away.
 
+<svg viewBox="0 0 720 270" role="img" aria-label="How the loop's cost per round shifts from annotation to compute as the pool is exhausted" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>What each round of the loop actually costs</title>
+  <desc>Across five rounds the scoring pass over the unlabeled pool stays roughly constant, annotation cost falls as the easy uncertainty is used up, and retraining cost grows with the training set. By round five the loop spends more on compute than on annotators, which is the point at which the stopping criterion should be a measured gain rather than a schedule.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="70" y1="200" x2="660" y2="200" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="128" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 1</text>
+  <text x="244" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 2</text>
+  <text x="360" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 3</text>
+  <text x="476" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 4</text>
+  <text x="592" y="220" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">round 5</text>
+  <!-- Stacked bars: annotate (filled), retrain (outline), score (thin) -->
+  <rect x="100" y="72" width="56" height="128" fill="currentColor" opacity="0.45"/>
+  <rect x="100" y="52" width="56" height="20" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="216" y="96" width="56" height="104" fill="currentColor" opacity="0.45"/>
+  <rect x="216" y="64" width="56" height="32" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="332" y="124" width="56" height="76" fill="currentColor" opacity="0.45"/>
+  <rect x="332" y="76" width="56" height="48" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="448" y="146" width="56" height="54" fill="currentColor" opacity="0.45"/>
+  <rect x="448" y="86" width="56" height="60" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="564" y="162" width="56" height="38" fill="currentColor" opacity="0.45"/>
+  <rect x="564" y="92" width="56" height="70" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <!-- Labels -->
+  <text x="40" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75" transform="rotate(-90 40 140)">cost per round</text>
+  <rect x="100" y="238" width="18" height="12" fill="currentColor" opacity="0.45"/>
+  <text x="126" y="248" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">annotation — falls as the easy uncertainty is used up</text>
+  <rect x="430" y="238" width="18" height="12" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="456" y="248" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">retraining — grows with the training set</text>
+  <text x="360" y="38" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">stop on measured gain per labelled tile, not on a round count — by round five the loop is buying compute, not information</text>
+</svg>
+
 **Spatial autocorrelation leaking into train/validation.** The most damaging and common error. If tiles are split randomly, adjacent tiles — which overlap and share content — land on both sides of the split, so the validation set is contaminated with near-copies of training tiles. Every metric, including the promotion gate, then reports optimistically, and the loop happily promotes checkpoints that do not actually generalize. Split by spatial block (grid cells, scenes, or administrative regions), never by tile, and keep the same blocks frozen across every round so scores stay comparable.
 
 **Near-duplicate neighbouring tiles inflating a batch.** Uncertainty ranking bunches up, because a genuinely hard scene produces many adjacent high-uncertainty tiles. Selecting the raw top-k then spends an entire round's budget re-labeling one quarry or one cloud bank from twenty angles. The diversity term in Stage 4 is the direct defence; without it, apparent throughput looks fine while real information gain collapses.
@@ -490,6 +554,7 @@ Start with one region and a few hundred seed tiles, run the loop for three or fo
 
 **Related**
 
+- [Cold-Start Strategies for New Annotation Projects](https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/) — what to label when there is no model yet, and the calibration check that says when the loop can take over
 - [Uncertainty Sampling for Geospatial Active Learning](https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/) — entropy, margin, and BALD scoring to rank unlabeled tiles by informativeness
 - [Closing the Loop with Automated Model Retraining](https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/) — DVC-triggered pipelines, checkpoint promotion gates, and evaluation guards
 - [Detecting Distribution Drift in Spatial Datasets](https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/) — spectral histograms, class-balance monitors, and PSI thresholds that trigger re-labeling

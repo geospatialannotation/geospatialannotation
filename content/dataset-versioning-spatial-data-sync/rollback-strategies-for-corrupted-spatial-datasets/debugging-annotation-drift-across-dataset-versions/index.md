@@ -109,6 +109,7 @@ Annotation drift in production ML pipelines falls into four diagnostic categorie
 <svg viewBox="0 0 740 360" role="img" aria-label="Four annotation drift categories arranged in a 2x2 grid" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;height:auto;display:block;margin:1.5rem auto;">
   <title>Annotation Drift Root Cause Taxonomy</title>
   <desc>Four quadrants showing Geometric Drift, Schema Drift, Statistical Drift, and Serialization Drift — each with its primary symptom and pipeline trigger.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <style>
       .dc-box { fill: none; stroke: currentColor; stroke-width: 1.5; }
@@ -211,6 +212,37 @@ If the data is stored in a geographic CRS like `EPSG:4326`, reproject both to a 
 
 Match features using a nearest-neighbour spatial join bounded by a project-specific tolerance. Features that exceed the threshold are flagged as geometrically drifted:
 
+<svg viewBox="50 40 650 255" role="img" aria-label="Hausdorff distance between two versions of one polygon, shown as the worst-case gap rather than an average" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:650px;display:block;margin:1.5rem auto;">
+  <title>Hausdorff reports the worst corner, not the average one</title>
+  <desc>Two versions of one building footprint agree along three walls and diverge at a single corner. Mean vertex displacement is small and hides the change; the Hausdorff distance reports the largest gap between the two boundaries, which is exactly the corner that moved. That is why it is the drift metric — an averaged one would call this batch clean.</desc>
+  <rect x="50" y="40" width="650" height="255" style="fill:var(--bg)"/>
+  <!-- Polygons -->
+  <polygon points="70,80 250,70 262,190 82,200" fill="none" stroke="currentColor" stroke-width="2"/>
+  <polygon points="70,80 250,70 340,150 82,200" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="120" y="140" font-size="11" fill="currentColor" font-family="sans-serif">v1</text>
+  <text x="270" y="112" font-size="11" fill="currentColor" font-family="sans-serif">v2</text>
+  <!-- The worst gap -->
+  <line x1="262" y1="190" x2="340" y2="150" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="262" cy="190" r="4" fill="currentColor"/>
+  <circle cx="340" cy="150" r="4" fill="currentColor"/>
+  <text x="296" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">4.2 m</text>
+  <text x="230" y="240" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the Hausdorff distance</text>
+  <!-- Numbers -->
+  <rect x="400" y="60" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="420" y="82" font-size="11" fill="currentColor" font-family="sans-serif">mean vertex displacement</text>
+  <text x="660" y="82" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">0.9 m</text>
+  <text x="420" y="100" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">three walls did not move at all</text>
+  <rect x="400" y="126" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="420" y="148" font-size="11" fill="currentColor" font-family="sans-serif">Hausdorff distance</text>
+  <text x="660" y="148" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">4.2 m</text>
+  <text x="420" y="166" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">one corner did all of it</text>
+  <rect x="400" y="192" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="420" y="214" font-size="11" fill="currentColor" font-family="sans-serif">threshold at 30 cm GSD</text>
+  <text x="660" y="214" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">0.6 m</text>
+  <text x="420" y="232" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">two pixels — this feature is flagged</text>
+  <text x="350" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">compute it in projected metres; in degrees the same corner reports a number that changes with latitude</text>
+</svg>
+
 ```python
 # Preserve v2 geometries before the join — sjoin_nearest keeps only the left GDF geometry
 v2_geoms: gpd.GeoSeries = v2.geometry.rename("geometry_v2")
@@ -292,6 +324,31 @@ print(f"Jensen-Shannon distance: {jsd:.4f}")
 ### Step 6 — Scope the Rollback Using Drift Fingerprints
 
 Cross-reference drift timestamps with CI/CD logs, annotation tool version bumps, and exporter configuration changes. Determine whether the drift is universal or confined to specific tiles or feature classes before committing to a rollback:
+
+<svg viewBox="0 0 720 280" role="img" aria-label="Four drift fingerprints and the rollback scope each one justifies" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The fingerprint tells you how much to roll back</title>
+  <desc>Drift concentrated in one annotator's features means quarantining that annotator's batch. Drift concentrated in one class means re-adjudicating that class against the guide. A constant offset across every feature means a coordinate reference system or transform change, so the whole version rolls back. Drift scattered with no pattern usually means a genuine change on the ground, and nothing should roll back at all.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="250" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">what the drift is concentrated in</text>
+  <text x="570" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">what to roll back</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="78" font-size="11" fill="currentColor" font-family="sans-serif">one annotator's features</text>
+  <rect x="440" y="62" width="260" height="24" rx="4" fill="currentColor" opacity="0.3"/>
+  <text x="570" y="79" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">that annotator's batch</text>
+  <text x="20" y="116" font-size="11" fill="currentColor" font-family="sans-serif">one class, across annotators</text>
+  <rect x="440" y="100" width="260" height="24" rx="4" fill="currentColor" opacity="0.3"/>
+  <text x="570" y="117" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">that class, re-adjudicated</text>
+  <text x="20" y="154" font-size="11" fill="currentColor" font-family="sans-serif">every feature, same direction and size</text>
+  <rect x="440" y="138" width="260" height="24" rx="4" fill="currentColor" opacity="0.55"/>
+  <text x="570" y="155" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">the whole version — this is a CRS change</text>
+  <text x="20" y="192" font-size="11" fill="currentColor" font-family="sans-serif">one tile block, one acquisition date</text>
+  <rect x="440" y="176" width="260" height="24" rx="4" fill="currentColor" opacity="0.3"/>
+  <text x="570" y="193" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">that block, re-processed</text>
+  <text x="20" y="230" font-size="11" fill="currentColor" font-family="sans-serif">scattered, no pattern at all</text>
+  <rect x="440" y="214" width="260" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="570" y="231" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">nothing — the ground changed</text>
+  <text x="360" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the last row is the one worth being sure about: rolling back real change is how a dataset stops tracking reality</text>
+</svg>
 
 ```python
 HAUSDORFF_THRESHOLD: float = 0.5   # metres for 0.3 m GSD imagery

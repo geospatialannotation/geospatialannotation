@@ -96,6 +96,7 @@ The root cause is how PROJ ranks operations. For a given datum pair there may be
 <svg viewBox="0 0 640 300" role="img" aria-label="Two transformation paths between NAD27 and WGS84: the grid-based NTv2 path yields centimetre accuracy while the fallback Helmert path yields metre-scale error" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Grid-based versus fallback datum transformation accuracy</title>
   <desc>A NAD27 source datum on the left connects to a WGS84 target datum on the right by two paths. The upper path passes through an NTv2 grid shift node and is labelled centimetre accuracy. The lower path passes through a Helmert or null fallback node and is labelled metre-scale error. The two paths arrive at target points offset from each other.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="dtghead" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.6"/>
@@ -163,6 +164,48 @@ If `unavailable_operations` is non-empty, the most accurate path cannot run yet 
 ### Step 2 — Enable the Network or Pre-Stage Grids
 
 The fastest fix is to let PROJ fetch grids on demand from its CDN. Enable it in code or by environment variable:
+
+<svg viewBox="192 -4 586 328" role="img" aria-label="Decision flow showing where PROJ looks for a transformation grid and what happens when it finds none" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:586px;display:block;margin:1.5rem auto;">
+  <title>Where PROJ looks for the grid, and the branch that fails silently</title>
+  <desc>A transformer request first checks the local PROJ_DATA directory; if the grid is there it is used. If not, and network access is enabled, the grid is fetched from the CDN and cached. If neither holds, PROJ falls back to a ballpark transformation that raises no exception and carries one to a hundred and twenty metres of error.</desc>
+  <rect x="192" y="-4" width="586" height="328" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="dg-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Request -->
+  <rect x="250" y="16" width="230" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="365" y="42" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">Transformer.from_crs(...)</text>
+  <line x1="365" y1="58" x2="365" y2="84" stroke="currentColor" stroke-width="1.5" marker-end="url(#dg-arr)"/>
+  <!-- Check 1 -->
+  <rect x="250" y="86" width="230" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="365" y="106" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">grid present in</text>
+  <text x="365" y="123" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">PROJ_DATA ?</text>
+  <line x1="480" y1="110" x2="576" y2="110" stroke="currentColor" stroke-width="1.5" marker-end="url(#dg-arr)"/>
+  <text x="528" y="102" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">yes</text>
+  <rect x="578" y="86" width="180" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="668" y="106" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">use the local grid</text>
+  <text x="668" y="123" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">centimetre accuracy</text>
+  <!-- Check 2 -->
+  <line x1="365" y1="134" x2="365" y2="160" stroke="currentColor" stroke-width="1.5" marker-end="url(#dg-arr)"/>
+  <text x="349" y="152" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">no</text>
+  <rect x="250" y="162" width="230" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="365" y="182" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">network enabled?</text>
+  <text x="365" y="199" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">PROJ_NETWORK=ON</text>
+  <line x1="480" y1="186" x2="576" y2="186" stroke="currentColor" stroke-width="1.5" marker-end="url(#dg-arr)"/>
+  <text x="528" y="178" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">yes</text>
+  <rect x="578" y="162" width="180" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="668" y="182" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">fetch from CDN</text>
+  <text x="668" y="199" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">cached for later runs</text>
+  <!-- Fallback -->
+  <line x1="365" y1="210" x2="365" y2="236" stroke="currentColor" stroke-width="1.5" marker-end="url(#dg-arr)"/>
+  <text x="349" y="228" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">no</text>
+  <rect x="212" y="238" width="306" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3"/>
+  <text x="365" y="260" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">ballpark transformation</text>
+  <text x="365" y="278" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">datum shift ignored — 1 to 120 m of error</text>
+  <text x="365" y="294" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">no exception, no warning on stderr</text>
+</svg>
 
 ```python
 import pyproj
@@ -255,6 +298,47 @@ print(f"grid vs fallback: {delta:.2f} m")
 ## Common Datum Pairs and Their Grids
 
 The error-without-grid column is the ground distance you inherit if PROJ falls back. First reproject into a metric CRS such as [`EPSG:32614`](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) (UTM 14N) before measuring any of these residuals as distances.
+
+<svg viewBox="-56 0 836 320" role="img" aria-label="Logarithmic scale of the horizontal error introduced when each datum transformation runs without its grid file" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:836px;display:block;margin:1.5rem auto;">
+  <title>How far the labels move when the grid is missing</title>
+  <desc>A logarithmic distance scale from ten centimetres to two hundred metres. NTF to RGF93 spans one to three metres and GDA94 to GDA2020 about 1.8 metres. NAD27 to NAD83 spans ten to a hundred metres in both the United States and Canada. OSGB36 to ETRS89 reaches a hundred and twenty metres, and the NAVD88 geoid separation twenty to forty metres. A ten centimetre drone pixel sits at the far left of the scale and a twenty metre building footprint near the middle right.</desc>
+  <rect x="-56" y="0" width="836" height="320" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="90" y1="266" x2="690" y2="266" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="90" y1="262" x2="90" y2="270" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="272" y1="262" x2="272" y2="270" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="454" y1="262" x2="454" y2="270" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="635" y1="262" x2="635" y2="270" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="90" y="284" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.1 m</text>
+  <text x="272" y="284" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 m</text>
+  <text x="454" y="284" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10 m</text>
+  <text x="635" y="284" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">100 m</text>
+  <text x="390" y="304" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">horizontal error with no grid applied (log scale)</text>
+  <!-- Rows -->
+  <text x="82" y="42" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">NTF → RGF93</text>
+  <rect x="272" y="32" width="87" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="367" y="43" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">1 – 3 m</text>
+  <text x="82" y="70" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">GDA94 → GDA2020</text>
+  <rect x="310" y="60" width="16" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="334" y="71" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">~1.8 m</text>
+  <text x="82" y="98" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">NAVD88 → ellipsoid</text>
+  <rect x="508" y="88" width="55" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="571" y="99" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">20 – 40 m</text>
+  <text x="82" y="126" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">NAD27 → NAD83 (US)</text>
+  <rect x="454" y="116" width="181" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="643" y="127" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">10 – 100 m</text>
+  <text x="82" y="154" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">NAD27 → NAD83 (CA)</text>
+  <rect x="454" y="144" width="181" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="643" y="155" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">up to 100 m</text>
+  <text x="82" y="182" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">OSGB36 → ETRS89</text>
+  <rect x="508" y="172" width="142" height="13" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="658" y="183" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">up to 120 m</text>
+  <!-- Reference marks -->
+  <line x1="90" y1="206" x2="90" y2="258" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="96" y="218" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">one drone pixel at 10 cm GSD</text>
+  <line x1="508" y1="206" x2="508" y2="258" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="502" y="218" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">a 20 m building footprint</text>
+</svg>
 
 | Source → target | Region | Grid file (kind) | Error without grid |
 |---|---|---|---|

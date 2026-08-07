@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -246,6 +265,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/" class="is-active">Triggering Retraining from New Annotations with DVC</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/" class="">Cold-Start Strategies for New Annotation Projects</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/bootstrapping-labels-with-a-zero-shot-model/" class="">Bootstrapping Labels with a Zero-Shot Model</a></li>
               
             </ul>
             
@@ -344,6 +374,48 @@
 <p>To retrain automatically when reviewers approve fresh labels, define a <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/">DVC</a> pipeline stage whose dependency is the validated-annotations directory. When new annotations land, the content hash of that directory changes; <code class="inline-code">dvc status</code> reports the stage as out of date; and <code class="inline-code">dvc repro</code> — run from a scheduled CI job or a local filesystem watcher — rebuilds the versioned dataset and launches the downstream training stage. Guard the whole thing with a manifest so you only fire above a minimum-new-annotations threshold, and a single corrected tile never burns a GPU-hour. This turns the human review step of an <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/">active learning loop</a> into a hands-off retraining event without a bespoke orchestration server.</p>
 <h2 id="why-hash-driven-triggers-beat-commit-hooks" tabindex="-1"><a class="header-anchor" href="#why-hash-driven-triggers-beat-commit-hooks" aria-label="Permalink to section &quot;Why Hash-Driven Triggers Beat Commit Hooks&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Hash-Driven Triggers Beat Commit Hooks</h2>
 <p>The naive approach — retrain on every push to the annotations repo — collapses the moment your team scales. Reviewers touch the annotations directory dozens of times a day: fixing a mislabeled building, adjusting a polygon vertex, adding a note in a sidecar file. Most of those edits are far too small to shift a geospatial detector’s weights, yet each one would enqueue an expensive run and pollute your checkpoint registry with near-identical models you then have to evaluate and prune.</p>
+<svg viewBox="0 0 720 260" role="img" aria-label="A commit hook firing on commits that change nothing, against a content hash firing only on real change" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Six commits, one real change</title>
+  <desc>Across six commits touching the annotation directory, five are re-exports, formatting changes or reverted edits that leave the content identical, and one genuinely adds features. A commit hook starts a training run on all six. A content-hash trigger starts one, because five of the six leave the canonical hash unchanged.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Commits -->
+  <text x="20" y="42" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">commits touching annotations/</text>
+  <g font-family="monospace" font-size="10" fill="currentColor">
+    <text x="60" y="76" text-anchor="middle">c1</text>
+    <text x="170" y="76" text-anchor="middle">c2</text>
+    <text x="280" y="76" text-anchor="middle">c3</text>
+    <text x="390" y="76" text-anchor="middle">c4</text>
+    <text x="500" y="76" text-anchor="middle">c5</text>
+    <text x="610" y="76" text-anchor="middle">c6</text>
+  </g>
+  <g font-family="sans-serif" font-size="9" fill="currentColor" opacity="0.7">
+    <text x="60" y="94" text-anchor="middle">re-export</text>
+    <text x="170" y="94" text-anchor="middle">reformat</text>
+    <text x="280" y="94" text-anchor="middle">+ 412 features</text>
+    <text x="390" y="94" text-anchor="middle">edit + revert</text>
+    <text x="500" y="94" text-anchor="middle">re-export</text>
+    <text x="610" y="94" text-anchor="middle">touch mtime</text>
+  </g>
+  <!-- Hook row -->
+  <text x="20" y="136" font-size="11" fill="currentColor" font-family="sans-serif">commit hook fires</text>
+  <g fill="currentColor" opacity="0.5">
+    <rect x="46" y="146" width="28" height="28" rx="4"/><rect x="156" y="146" width="28" height="28" rx="4"/>
+    <rect x="266" y="146" width="28" height="28" rx="4"/><rect x="376" y="146" width="28" height="28" rx="4"/>
+    <rect x="486" y="146" width="28" height="28" rx="4"/><rect x="596" y="146" width="28" height="28" rx="4"/>
+  </g>
+  <text x="660" y="165" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">6 runs</text>
+  <!-- Hash row -->
+  <text x="20" y="212" font-size="11" fill="currentColor" font-family="sans-serif">content hash differs</text>
+  <g>
+    <rect x="46" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="156" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="266" y="222" width="28" height="28" rx="4" fill="currentColor" opacity="0.55"/>
+    <rect x="376" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="486" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+    <rect x="596" y="222" width="28" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.45"/>
+  </g>
+  <text x="660" y="241" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">1 run</text>
+</svg>
 <p>Content hashing solves this at the level DVC already operates on. DVC records a hash of every tracked dependency in <code class="inline-code">dvc.lock</code>; a stage is “changed” only when the recomputed hash of its inputs differs from the recorded one. By pointing the dataset-build stage at the validated-annotations directory, you get a precise, reproducible signal — the same one that survives across machines and CI runners — instead of the noisy “someone committed something” signal a Git hook gives you. Layering a minimum-new-features threshold on top means the pipeline distinguishes a meaningful batch of new labels from a one-line touch, and only the former reaches the training stage.</p>
 <h2 id="the-pipeline-annotations-dataset-build-train" tabindex="-1"><a class="header-anchor" href="#the-pipeline-annotations-dataset-build-train" aria-label="Permalink to section &quot;The Pipeline: Annotations, Dataset Build, Train&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> The Pipeline: Annotations, Dataset Build, Train</h2>
 <p>Install the toolchain first, pinning versions so the hash algorithm and CLI flags stay stable across every runner:</p>
@@ -410,6 +482,7 @@
 <svg viewBox="0 0 720 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow from a dependency-hash change through dvc repro to the train stage" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Hash-change to retraining flow</title>
   <desc>Newly validated annotations change the content hash of the annotations directory. dvc status detects the mismatch against dvc.lock. A manifest threshold gate checks the count of new features. When the count exceeds the minimum, dvc repro rebuilds the dataset stage and runs the train stage, producing a new checkpoint.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -442,12 +515,12 @@
   <line x1="85" y1="88" x2="85" y2="126" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
   <line x1="160" y1="157" x2="208" y2="157" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
   <line x1="360" y1="157" x2="468" y2="157" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
-  <line x1="580" y1="140" x2="620" y2="90" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
-  <text x="612" y="118" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">yes</text>
+  <path d="M580 157 L620 157 L620 92" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
+  <text x="630" y="120" font-size="10" fill="currentColor" opacity="0.6" font-family="sans-serif">yes</text>
   <line x1="635" y1="88" x2="635" y2="198" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ah)"/>
   <!-- no path -->
   <line x1="525" y1="194" x2="525" y2="222" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" opacity="0.4"/>
-  <text x="525" y="238" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.5" font-family="sans-serif">no — skip, wait for more</text>
+  <text x="515" y="238" text-anchor="end" font-size="10" fill="currentColor" opacity="0.5" font-family="sans-serif">no — skip, wait for more</text>
 </svg>
 <h2 id="the-manifest-driven-trigger" tabindex="-1"><a class="header-anchor" href="#the-manifest-driven-trigger" aria-label="Permalink to section &quot;The Manifest-Driven Trigger&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> The Manifest-Driven Trigger</h2>
 <p>The trigger is the gate between “something changed” and “spend a GPU-hour.” It reads <code class="inline-code">dvc status</code> in JSON, confirms the <code class="inline-code">build_dataset</code> stage is out of date, then counts how many new features the validated directory holds compared to the last committed manifest. Only when that count clears the threshold does it return <code class="inline-code">True</code>.</p>
@@ -579,6 +652,34 @@
 <p>Exit code <code class="inline-code">78</code> is a neutral “nothing to do” that many CI systems treat as a non-failure skip; the <code class="inline-code">Retrain</code> step runs <code class="inline-code">dvc repro train</code>, which walks the dependency graph, rebuilds <code class="inline-code">build_dataset</code> because its annotations hash changed, then executes <code class="inline-code">train</code>. <code class="inline-code">dvc push</code> uploads both the new dataset version and the checkpoint so they are reproducible from the committed <code class="inline-code">dvc.lock</code>. This mirrors the snapshot mechanics in <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/using-dvc-pipelines-for-automated-dataset-snapshots/">using DVC pipelines for automated snapshots</a>, reused here as a retraining trigger rather than an archival one.</p>
 <h2 id="threshold-reference" tabindex="-1"><a class="header-anchor" href="#threshold-reference" aria-label="Permalink to section &quot;Threshold Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Threshold Reference</h2>
 <p>Tune these guards to your model’s data appetite and the cost of a run. Start conservative — a threshold too low is worse than too high, because a flood of marginal checkpoints is expensive to evaluate.</p>
+<svg viewBox="0 0 700 250" role="img" aria-label="Two thresholds the trigger has to clear before it spends a GPU hour" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Two thresholds, and why one is not enough</title>
+  <desc>The trigger requires both a minimum count of new features and a minimum share of the existing set. On a 2000-feature dataset, 150 new features clears the count but is 7.5 percent, under the 10 percent floor, so it waits. On a 40 000-feature dataset the same 10 percent would be 4000 features and might never arrive, which is why a maximum age also forces a run.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="200" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">absolute floor</text>
+  <text x="120" y="92" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≥ 100 new features</text>
+  <text x="120" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">stops trivial runs</text>
+  <rect x="250" y="46" width="200" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="350" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">relative floor</text>
+  <text x="350" y="92" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≥ 10% of the set</text>
+  <text x="350" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">scales with the dataset</text>
+  <rect x="480" y="46" width="200" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="580" y="70" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">maximum age</text>
+  <text x="580" y="92" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">or 14 days</text>
+  <text x="580" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the escape hatch</text>
+  <!-- Worked cases -->
+  <text x="20" y="164" font-size="11" fill="currentColor" font-family="sans-serif">2 000 features, 150 new</text>
+  <text x="300" y="164" font-size="11" fill="currentColor" font-family="monospace">count ✓ · share 7.5% ✗</text>
+  <text x="560" y="164" font-size="11" fill="currentColor" font-family="sans-serif">waits</text>
+  <text x="20" y="192" font-size="11" fill="currentColor" font-family="sans-serif">2 000 features, 260 new</text>
+  <text x="300" y="192" font-size="11" fill="currentColor" font-family="monospace">count ✓ · share 13% ✓</text>
+  <text x="560" y="192" font-size="11" fill="currentColor" font-family="sans-serif">runs</text>
+  <text x="20" y="220" font-size="11" fill="currentColor" font-family="sans-serif">40 000 features, 900 new, 21 days old</text>
+  <text x="300" y="220" font-size="11" fill="currentColor" font-family="monospace">share 2.3% ✗ · age ✓</text>
+  <text x="560" y="220" font-size="11" fill="currentColor" font-family="sans-serif">runs on age</text>
+  <text x="350" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">without the age clause a large dataset simply stops retraining, and nobody notices for a quarter</text>
+</svg>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -691,6 +792,8 @@ Fix: point both entry points at the DVC-tracked path and run <code class="inline
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -707,6 +810,8 @@ Fix: point both entry points at the DVC-tracked path and run <code class="inline
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -720,6 +825,8 @@ Fix: point both entry points at the DVC-tracked path and run <code class="inline
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -747,7 +854,11 @@ Fix: point both entry points at the DVC-tracked path and run <code class="inline
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

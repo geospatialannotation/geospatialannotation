@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -232,11 +251,26 @@
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/" class="">Overview</a></li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/" class="">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/computing-boundary-iou-for-footprint-quality/" class="">Computing Boundary IoU for Footprint Quality</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/measuring-inter-annotator-agreement-with-cohens-kappa/" class="">Measuring Inter-Annotator Agreement with Cohen&#39;s Kappa</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="is-active">Confidence Scoring for Geospatial Labels</a>
             
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/" class="">Weighting Training Loss by Annotation Confidence</a></li>
               
             </ul>
             
@@ -416,6 +450,7 @@ scikit-learn==1.4.2
 <svg viewBox="0 0 760 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Confidence scoring pipeline: five stages from ingest through routing" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
   <title>Confidence Scoring Pipeline</title>
   <desc>Five-stage pipeline diagram. Stage 1: Ingest and Normalize (CRS and validity). Stage 2: Extract Signals (IoU, geometry, model probability). Stage 3: Calibrate and Aggregate (weighted geometric mean). Stage 4: Score and Threshold (per-class gates). Stage 5 forks into Training Shard for scores at or above 0.85, and QA Queue for scores below 0.60.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -508,6 +543,7 @@ scikit-learn==1.4.2
 <svg viewBox="0 0 680 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Three orthogonal confidence signals feeding into composite score" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
   <title>Three Orthogonal Confidence Signals</title>
   <desc>Three signal sources feed a composite score. Signal 1: Inter-annotator IoU — detects labeler disagreement on boundary placement. Signal 2: Geometric consistency — detects topology errors and scale anomalies. Signal 3: Model-assisted probability — detects out-of-distribution or low-certainty predictions. All three flow via weighted geometric mean into the composite confidence score.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -627,6 +663,49 @@ scikit-learn==1.4.2
 <p>The <code class="inline-code">epsilon</code> guard prevents <code class="inline-code">RuntimeWarning</code> when a normalized signal exactly reaches zero, which can occur when min-max scaling produces a degenerate lower bound.</p>
 <h3 id="step-4-apply-qa-routing-thresholds-by-confidence-tier" tabindex="-1"><a class="header-anchor" href="#step-4-apply-qa-routing-thresholds-by-confidence-tier" aria-label="Permalink to section &quot;Step 4 — Apply QA Routing Thresholds by Confidence Tier&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Apply QA Routing Thresholds by Confidence Tier</h3>
 <p>Once composite scores are computed, route labels into three tiers. Thresholds below are starting points and should be swept per-class (see the configuration table in the next section).</p>
+<svg viewBox="0 0 740 300" role="img" aria-label="A batch's composite scores as a distribution, cut by two thresholds into a training tier, a weighted tier and a review tier" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Two cut points turn one score distribution into three queues</title>
+  <desc>A histogram of composite confidence scores across a batch. Everything at or above 0.85 goes straight to the training shard at full loss weight. Scores between 0.60 and 0.84 are admitted with a reduced loss weight. Scores below 0.60 are held back for manual review. The two thresholds are the only knobs; moving them trades annotator hours against label noise.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Histogram bars -->
+  <rect x="72" y="196" width="26" height="34" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="102" y="180" width="26" height="50" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="132" y="158" width="26" height="72" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="162" y="140" width="26" height="90" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <rect x="192" y="150" width="26" height="80" fill="currentColor" opacity="0.28"/>
+  <rect x="222" y="132" width="26" height="98" fill="currentColor" opacity="0.28"/>
+  <rect x="252" y="112" width="26" height="118" fill="currentColor" opacity="0.28"/>
+  <rect x="282" y="98" width="26" height="132" fill="currentColor" opacity="0.28"/>
+  <rect x="312" y="86" width="26" height="144" fill="currentColor" opacity="0.28"/>
+  <rect x="342" y="74" width="26" height="156" fill="currentColor" opacity="0.55"/>
+  <rect x="372" y="62" width="26" height="168" fill="currentColor" opacity="0.55"/>
+  <rect x="402" y="70" width="26" height="160" fill="currentColor" opacity="0.55"/>
+  <rect x="432" y="92" width="26" height="138" fill="currentColor" opacity="0.55"/>
+  <!-- Axis -->
+  <line x1="66" y1="230" x2="470" y2="230" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="72" y="248" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.40</text>
+  <text x="190" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.60</text>
+  <text x="340" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.85</text>
+  <text x="464" y="248" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1.00</text>
+  <text x="268" y="272" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">composite confidence score</text>
+  <!-- Cut lines -->
+  <line x1="190" y1="40" x2="190" y2="230" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="340" y1="40" x2="340" y2="230" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <!-- Tier callouts -->
+  <text x="128" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">review</text>
+  <text x="265" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">weighted</text>
+  <text x="405" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">train</text>
+  <!-- Destinations -->
+  <rect x="510" y="52" width="212" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="616" y="74" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">training shard, full weight</text>
+  <text x="616" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">score ≥ 0.85</text>
+  <rect x="510" y="120" width="212" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="616" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">admitted, loss weight scaled</text>
+  <text x="616" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.60 ≤ score &lt; 0.85</text>
+  <rect x="510" y="188" width="212" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="616" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">held for manual review</text>
+  <text x="616" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">score &lt; 0.60</text>
+</svg>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -886,6 +965,11 @@ scikit-learn==1.4.2
               <div class="desc">Modern deep detectors are systematically over-confident: a raw softmax probability of 0.95 does not mean the prediction is correct 95% of the time — empirically it may be right only 70% of the time. When those inflated numbers become the confidence score that ranks your active-learning queue, they mis-rank it: the mode</div>
             </a>
           
+            <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/">
+              <div class="title">Weighting Training Loss by Annotation Confidence</div>
+              <div class="desc">A per-annotation confidence score is only worth computing if something consumes it. Routing low-confidence labels to review is one consumer; the other is the training loss, where a confidence of 0.55 becomes a smaller gradient than a confidence of 0.95. The implementation is a few lines, and all of the difficulty is in</div>
+            </a>
+          
         </div>
       </section>
       
@@ -894,6 +978,11 @@ scikit-learn==1.4.2
       <section class="related" aria-label="Related pages">
         <h2>Related in Geospatial Annotation Fundamentals &amp; Architecture</h2>
         <div class="related__grid">
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">
+              <div class="title">Annotation Quality Metrics &amp; Inter-Annotator Agreement</div>
+              <div class="desc">A geospatial annotation project can report 96% agreement between its annotators and still be shipping unusable labels. The number is real; it is measured on a class distribution where nine in ten features are buildings, so two annotators who default to building on everything ambiguous agree almost perfectly while contr</div>
+            </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">
               <div class="title">Coordinate Reference Systems in Annotation Pipelines</div>
@@ -958,6 +1047,8 @@ scikit-learn==1.4.2
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -974,6 +1065,8 @@ scikit-learn==1.4.2
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -987,6 +1080,8 @@ scikit-learn==1.4.2
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1014,7 +1109,11 @@ scikit-learn==1.4.2
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

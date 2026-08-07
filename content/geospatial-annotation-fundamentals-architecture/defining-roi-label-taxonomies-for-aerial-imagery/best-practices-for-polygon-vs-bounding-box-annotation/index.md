@@ -83,6 +83,7 @@ Use bounding boxes for rapid, coarse localization when instance separation and t
 <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision flow: choose bounding box or polygon annotation based on object type and pipeline requirements" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Polygon vs Bounding Box annotation decision flow</title>
   <desc>Flowchart showing how object compactness, model architecture, and downstream analytics requirements drive the choice between bounding box and polygon annotation, with a hybrid path for active-learning refinement.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
@@ -135,6 +136,40 @@ Use bounding boxes for rapid, coarse localization when instance separation and t
 ## Why geometry choice breaks geospatial pipelines
 
 Annotation geometry determines not just labeling speed but model behaviour, CRS-correctness of area calculations, and the validity of downstream geospatial analytics. Using bounding boxes where polygons are needed floods segmentation heads with background noise and prevents accurate footprint extraction. Conversely, forcing polygon annotation on every class stalls throughput, raises QA failure rates from self-intersecting rings, and inflates GPU memory during mask rasterization — effects that compound across [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) when geometries are stored in geographic degrees (`EPSG:4326`) rather than a local metric CRS, causing IoU metrics to distort at mid-latitudes.
+
+<svg viewBox="0 0 700 330" role="img" aria-label="A rotated building footprint with its axis-aligned bounding box, showing how much background the box admits compared with the polygon" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>What an axis-aligned box costs on a rotated footprint</title>
+  <desc>A thirty by twelve metre building rotated thirty degrees has a footprint of 360 square metres. Its axis-aligned bounding box measures 32.0 by 25.4 metres, or 812 square metres, so 56 percent of the box is background. The polygon tracks the footprint exactly; the box teaches the segmentation head to expect roof texture across an area more than twice the building.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Imagery frame -->
+  <rect x="30" y="30" width="330" height="250" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="42" y="50" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">tile at 30 cm GSD</text>
+  <!-- Bounding box (drawn first, so the polygon reads on top) -->
+  <rect x="99" y="86" width="192" height="152" fill="currentColor" opacity="0.14"/>
+  <rect x="99" y="86" width="192" height="152" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <!-- Rotated footprint -->
+  <polygon points="99,176 255,86 291,148 135,238" fill="currentColor" opacity="0.3"/>
+  <polygon points="99,176 255,86 291,148 135,238" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="195" y="166" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">footprint</text>
+  <!-- Box dimension labels, outside the box -->
+  <text x="195" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">32.0 m</text>
+  <text x="308" y="166" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">25.4 m</text>
+  <!-- Numbers panel -->
+  <text x="400" y="56" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">the same object, two geometries</text>
+  <rect x="400" y="72" width="270" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="414" y="94" font-size="11" fill="currentColor" font-family="sans-serif">polygon, 4 vertices</text>
+  <text x="656" y="94" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">360 m²</text>
+  <text x="414" y="118" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">30 m × 12 m, rotated 30°</text>
+  <rect x="400" y="146" width="270" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="414" y="168" font-size="11" fill="currentColor" font-family="sans-serif">axis-aligned box, 4 floats</text>
+  <text x="656" y="168" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">812 m²</text>
+  <text x="414" y="192" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">32.0 m × 25.4 m envelope</text>
+  <rect x="400" y="220" width="270" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="535" y="244" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">56% of the box is background</text>
+  <text x="535" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and it grows with rotation and elongation</text>
+  <!-- Note -->
+  <text x="195" y="302" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">a box aligned to the raster, on an object aligned to the street grid</text>
+</svg>
 
 ## Step-by-step implementation
 
@@ -302,6 +337,37 @@ Always reproject geometries to a [local metric CRS](https://www.geospatialannota
 | Max vertices per polygon | n/a | 500 | Above this, rasterisation stalls COCO dataloader |
 | Min object area (boxes) | 32 × 32 px | n/a | Below this threshold, annotation noise exceeds signal |
 | Recommended CRS for QA | `EPSG:32633` / local UTM | `EPSG:32633` / local UTM | Never compute IoU in `EPSG:4326` |
+
+
+<svg viewBox="0 0 740 260" role="img" aria-label="The same building contour at three simplification tolerances, with vertex counts and the consequences of each" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Vertex budget: what Douglas-Peucker tolerance buys and costs</title>
+  <desc>Three versions of one building contour. Raw auto-traced output carries 512 vertices and stalls the dataloader. Simplified at 0.10 metres it keeps 78 vertices and every real corner. Simplified at 0.60 metres it drops to 21 vertices and the corners round off, losing the wall lines the footprint exists to record.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Raw -->
+  <text x="120" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">raw auto-trace</text>
+  <text x="120" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">no tolerance</text>
+  <path d="M40 80 L58 74 L60 82 L78 76 L80 84 L98 78 L100 86 L118 80 L136 76 L154 82 L172 78 L190 84 L194 104 L188 122 L192 140 L186 158 L190 176 L168 180 L150 174 L132 180 L114 174 L96 180 L78 174 L60 180 L44 176 L48 158 L42 140 L46 122 L40 104 Z" fill="currentColor" opacity="0.16"/>
+  <path d="M40 80 L58 74 L60 82 L78 76 L80 84 L98 78 L100 86 L118 80 L136 76 L154 82 L172 78 L190 84 L194 104 L188 122 L192 140 L186 158 L190 176 L168 180 L150 174 L132 180 L114 174 L96 180 L78 174 L60 180 L44 176 L48 158 L42 140 L46 122 L40 104 Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="208" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">512 vertices</text>
+  <text x="120" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">rasterisation stalls the</text>
+  <text x="120" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">COCO dataloader</text>
+  <!-- Good -->
+  <text x="370" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">tolerance 0.10 m</text>
+  <text x="370" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">≈ 1 vertex per 5–10 px at 30 cm GSD</text>
+  <path d="M290 78 L444 78 L444 104 L440 140 L444 178 L290 178 L294 140 L290 104 Z" fill="currentColor" opacity="0.16"/>
+  <path d="M290 78 L444 78 L444 104 L440 140 L444 178 L290 178 L294 140 L290 104 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="370" y="208" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">78 vertices</text>
+  <text x="370" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">corners intact, walls straight —</text>
+  <text x="370" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the target for QA</text>
+  <!-- Over-simplified -->
+  <text x="620" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">tolerance 0.60 m</text>
+  <text x="620" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">past the useful range</text>
+  <path d="M545 84 L690 78 L694 172 L548 176 Z" fill="currentColor" opacity="0.16"/>
+  <path d="M545 84 L690 78 L694 172 L548 176 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="620" y="208" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">21 vertices</text>
+  <text x="620" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">corners rounded off — the wall</text>
+  <text x="620" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">lines the footprint exists for</text>
+</svg>
 
 ## Common errors and fixes
 

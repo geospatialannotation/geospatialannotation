@@ -92,6 +92,40 @@ A COCO annotation file that parses as JSON and even passes a shape schema can st
 
 JSON Schema is a language for describing the *form* of a document — which keys exist, what types they hold, which are required. That catches a `bbox` stored as a string or a missing `categories` array, and it should run first because it is cheap and it fails fast. But COCO's correctness lives in the relationships *between* records, and those relationships are invisible to a schema.
 
+<svg viewBox="0 0 720 290" role="img" aria-label="A COCO file that satisfies its JSON schema while still carrying three defects a schema cannot express" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Three defects that pass every schema check</title>
+  <desc>A schema can require that image_id is an integer, that bbox has four numbers and that segmentation is an array. It cannot say that the image_id must exist in the images array, that the box must lie inside the image it references, or that the segmentation must contain at least three points. Each of those needs the document read as a graph, not as a shape.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Schema layer -->
+  <rect x="20" y="40" width="200" height="210" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="66" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">what the schema sees</text>
+  <text x="36" y="96" font-size="10" fill="currentColor" font-family="monospace">"image_id": 17</text>
+  <text x="36" y="118" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">integer ✓</text>
+  <text x="36" y="150" font-size="10" fill="currentColor" font-family="monospace">"bbox": [8, 12, 40, 30]</text>
+  <text x="36" y="172" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">four numbers ✓</text>
+  <text x="36" y="204" font-size="10" fill="currentColor" font-family="monospace">"segmentation": [[]]</text>
+  <text x="36" y="226" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">array of arrays ✓</text>
+  <!-- Gap -->
+  <line x1="222" y1="145" x2="278" y2="145" stroke="currentColor" stroke-width="1.5" marker-end="url(#sch-arr)"/>
+  <defs>
+    <marker id="sch-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="250" y="136" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">but</text>
+  <!-- Reality layer -->
+  <rect x="280" y="40" width="420" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="300" y="64" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">dangling reference</text>
+  <text x="300" y="84" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">image 17 was dropped from the split — nothing points at it</text>
+  <rect x="280" y="112" width="420" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="300" y="136" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">box outside its image</text>
+  <text x="300" y="156" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">x + w is 48 on a 40-pixel-wide chip; the loss reads garbage pixels</text>
+  <rect x="280" y="184" width="420" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="300" y="208" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">empty segmentation</text>
+  <text x="300" y="228" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a polygon with no points trains the mask head on nothing</text>
+  <text x="360" y="274" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the schema validates one object at a time; these three need the whole document, which is why the gate has two layers</text>
+</svg>
+
 Consider an export where an annotation carries `"category_id": 7` but the `categories` array only defines ids 1 through 5. The document is perfectly well-shaped; every field has the right type. Yet `pycocotools` will raise a `KeyError` the instant it builds its category index, and a training loop that ignores the exception will learn against a phantom class. The same blind spot hides duplicate `image_id` values, a `bbox` whose corner falls twenty pixels outside a 512-pixel tile, and an empty `segmentation: []` on a polygon annotation that a mask-based loss will silently skip. These are exactly the failures that a validation gate exists to stop, and none of them are shape errors.
 
 This matters more for geospatial data than for consumer photo datasets. Aerial and satellite exports are tiled, stitched, and reprojected by pipelines that touch pixel coordinates directly, so an off-by-one in image dimensions or a `bbox` clipped at a tile seam is common. When the geotransform and CRS are carried alongside the pixels — as covered in [embedding geotransform metadata in COCO exports](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/) — a bounds error is not just a bad label, it reprojects to the wrong place on Earth. The gate below treats that geometry as a first-class check rather than an afterthought.
@@ -99,6 +133,7 @@ This matters more for geospatial data than for consumer photo datasets. Aerial a
 <svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The COCO object graph showing images, annotations, and categories with the referential-integrity, bounds, and segmentation checks applied to each edge" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>COCO object graph with CI validation checks</title>
   <desc>Three record types are shown: images on the left, annotations in the centre, categories on the right. An annotation references an image by image_id and a category by category_id. Three checks are annotated: referential integrity on both id edges, bbox bounds against image width and height, and non-empty segmentation on the annotation itself.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -230,6 +265,32 @@ def check_shape(document: dict[str, Any]) -> list[str]:
 ### Step 3 — Check Referential Integrity
 
 Build the id sets once, then walk the annotations. This is the pass that catches the dangling `category_id`, the missing image, and duplicate ids that a shape schema cannot see:
+
+<svg viewBox="0 0 700 270" role="img" aria-label="The COCO document read as a graph, with the two reference edges a referential-integrity pass has to walk" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>COCO is a graph with two edges worth walking</title>
+  <desc>Annotations reference images by image_id and categories by category_id. The integrity pass builds the two id sets once and checks every annotation against them, reporting the annotation ids that point nowhere. Walking it per annotation instead turns a linear check into a quadratic one, which is what makes large exports feel like the validator has hung.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="gr-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="250" y="40" width="200" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="350" y="64" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">annotations[ ]</text>
+  <text x="350" y="84" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">id · image_id · category_id · bbox</text>
+  <text x="350" y="98" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">segmentation · area · iscrowd</text>
+  <path d="M250 76 L180 76 L180 156" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#gr-arr)"/>
+  <text x="188" y="122" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">image_id</text>
+  <path d="M450 76 L520 76 L520 156" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#gr-arr)"/>
+  <text x="528" y="122" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">category_id</text>
+  <rect x="80" y="158" width="200" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="180" y="182" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">images[ ]</text>
+  <text x="180" y="202" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">id · file_name · width · height</text>
+  <rect x="420" y="158" width="200" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="520" y="182" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">categories[ ]</text>
+  <text x="520" y="202" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">id · name · supercategory</text>
+  <text x="350" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">build both id sets once, then check every annotation against them — one pass, not one scan per annotation</text>
+</svg>
 
 ```python
 def check_references(document: dict[str, Any]) -> list[str]:

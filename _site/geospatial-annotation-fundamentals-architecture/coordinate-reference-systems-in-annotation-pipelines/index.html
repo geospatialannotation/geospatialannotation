@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -232,11 +251,26 @@
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/" class="">Overview</a></li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/" class="">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/computing-boundary-iou-for-footprint-quality/" class="">Computing Boundary IoU for Footprint Quality</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/measuring-inter-annotator-agreement-with-cohens-kappa/" class="">Measuring Inter-Annotator Agreement with Cohen&#39;s Kappa</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="">Confidence Scoring for Geospatial Labels</a>
             
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/" class="">Weighting Training Loss by Annotation Confidence</a></li>
               
             </ul>
             
@@ -374,9 +408,10 @@
 <p>A single unhandled projection mismatch can collapse IoU scores across an entire annotation batch. When ground-truth polygons in <code class="inline-code">EPSG:4326</code> are compared against model predictions reprojected to a local UTM zone, the resulting coordinate offset can exceed the object’s own footprint — rendering evaluation metrics meaningless and forcing costly re-annotation cycles.</p>
 <p>This guide covers the complete CRS normalization workflow for production <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">geospatial annotation pipelines</a>: how to detect, validate, transform, and export spatial labels with auditable provenance, and how to gate every batch in CI so projection errors never reach the training queue.</p>
 <hr>
-<svg viewBox="0 0 860 220" role="img" aria-label="Five-stage CRS normalization pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 30 880 130" role="img" aria-label="Five-stage CRS normalization pipeline diagram" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:880px;display:block;margin:1.5rem auto;">
   <title>CRS Normalization Pipeline</title>
   <desc>Five-stage pipeline showing Ingest, Validate Bounds, Reproject, Export, and CI Gate steps connected by arrows, each with a brief description</desc>
+  <rect x="-12" y="30" width="880" height="130" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -435,10 +470,10 @@
 <p>When <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/defining-roi-label-taxonomies-for-aerial-imagery/">defining ROI label taxonomies for aerial imagery</a>, document the expected CRS for each label class in the taxonomy schema — this prevents downstream ambiguity when annotation batches arrive from different tools or annotators.</p>
 <p><strong>Baseline checklist before starting:</strong></p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9575028"> All source assets contain valid <code class="inline-code">spatial_ref</code> or <code class="inline-code">crs</code><label class="task-list-item-label" for="task-item-9575028"> All source assets contain valid `spatial_ref` or `crs` metadata</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7421723"> Target CRS for model training is agreed upon (typically a local UTM zone such as <code class="inline-code">EPSG:32632</code><label class="task-list-item-label" for="task-item-7421723"> Target CRS for model training is agreed upon (typically a local UTM zone such as `EPSG:32632`)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6967885"> PROJ network access is enabled (<code class="inline-code">PROJ_NETWORK=ON</code><label class="task-list-item-label" for="task-item-6967885"> PROJ network access is enabled (`PROJ_NETWORK=ON`) or required grid files are bundled offline</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3897597"> Canonical axis order policy is documented (<code class="inline-code">lon, lat</code> for geographic; <code class="inline-code">x, y</code><label class="task-list-item-label" for="task-item-3897597"> Canonical axis order policy is documented (`lon, lat` for geographic; `x, y` for projected)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3690432"> All source assets contain valid <code class="inline-code">spatial_ref</code> or <code class="inline-code">crs</code><label class="task-list-item-label" for="task-item-3690432"> All source assets contain valid `spatial_ref` or `crs` metadata</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5632699"> Target CRS for model training is agreed upon (typically a local UTM zone such as <code class="inline-code">EPSG:32632</code><label class="task-list-item-label" for="task-item-5632699"> Target CRS for model training is agreed upon (typically a local UTM zone such as `EPSG:32632`)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9928848"> PROJ network access is enabled (<code class="inline-code">PROJ_NETWORK=ON</code><label class="task-list-item-label" for="task-item-9928848"> PROJ network access is enabled (`PROJ_NETWORK=ON`) or required grid files are bundled offline</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8549980"> Canonical axis order policy is documented (<code class="inline-code">lon, lat</code> for geographic; <code class="inline-code">x, y</code><label class="task-list-item-label" for="task-item-8549980"> Canonical axis order policy is documented (`lon, lat` for geographic; `x, y` for projected)</label></li>
 </ul>
 <hr>
 <h2 id="axis-order-inversion-the-most-common-crs-bug" tabindex="-1"><a class="header-anchor" href="#axis-order-inversion-the-most-common-crs-bug" aria-label="Permalink to section &quot;Axis-Order Inversion: The Most Common CRS Bug&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Axis-Order Inversion: The Most Common CRS Bug</h2>
@@ -446,6 +481,7 @@
 <svg viewBox="0 0 700 260" role="img" aria-label="Axis-order comparison diagram: EPSG:4326 latitude-first vs longitude-first convention" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
   <title>EPSG:4326 Axis Order: Authority vs. Convention</title>
   <desc>Side-by-side comparison showing the authority-defined latitude-first order of EPSG:4326 on the left, and the longitude-first convention used by GeoJSON and web tools on the right, with an arrow indicating the always_xy=True fix in the middle</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Left box: Authority order -->
   <rect x="10" y="30" width="270" height="200" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
   <text x="145" y="58" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Authority (EPSG:4326)</text>
@@ -592,6 +628,48 @@ x<span class="token punctuation">,</span> y <span class="token operator">=</span
 </div>
 <h3 id="step-3-standardize-to-target-projection" tabindex="-1"><a class="header-anchor" href="#step-3-standardize-to-target-projection" aria-label="Permalink to section &quot;Step 3 — Standardize to Target Projection&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Standardize to Target Projection</h3>
 <p>Transform validated geometries to the pipeline’s canonical CRS. For <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/vector-vs-raster-annotation-workflows/">vector vs raster annotation workflows</a>, coordinate transformations must be applied to both vector labels and their corresponding raster footprints to maintain pixel-to-geometry alignment across tiles.</p>
+<svg viewBox="0 0 760 300" role="img" aria-label="Choosing the UTM zone from longitude: six-degree strips numbered around the globe, with a dataset straddling a zone boundary" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Picking the target projection from the data's own longitude</title>
+  <desc>UTM divides the world into six-degree strips numbered from one at 180 degrees west. A dataset centred at nine degrees east falls in zone 32, giving EPSG 32632 in the northern hemisphere. A second dataset straddles the boundary between zones 32 and 33, where the rule is to project the whole batch into one zone chosen from the centroid rather than splitting it, accepting a small scale error at the far edge.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Strip band -->
+  <rect x="40" y="60" width="680" height="72" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
+  <line x1="153" y1="60" x2="153" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="266" y1="60" x2="266" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="380" y1="60" x2="380" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="493" y1="60" x2="493" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="606" y1="60" x2="606" y2="132" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <text x="96" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 30</text>
+  <text x="210" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 31</text>
+  <text x="323" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.9" font-weight="600">zone 32</text>
+  <text x="436" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 33</text>
+  <text x="550" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 34</text>
+  <text x="663" y="52" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.65">zone 35</text>
+  <text x="96" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">6°W–0°</text>
+  <text x="210" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">0°–6°E</text>
+  <text x="323" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">6°E–12°E</text>
+  <text x="436" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">12°E–18°E</text>
+  <text x="550" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">18°E–24°E</text>
+  <text x="663" y="152" text-anchor="middle" font-size="9" fill="currentColor" font-family="monospace" opacity="0.55">24°E–30°E</text>
+  <!-- Dataset A, comfortably inside -->
+  <rect x="288" y="82" width="60" height="28" rx="3" fill="currentColor" opacity="0.25"/>
+  <rect x="288" y="82" width="60" height="28" rx="3" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="318" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">batch A</text>
+  <!-- Dataset B, straddling -->
+  <rect x="350" y="82" width="76" height="28" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="388" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">batch B</text>
+  <!-- Outcomes -->
+  <rect x="40" y="186" width="330" height="86" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="205" y="208" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">batch A — centroid at 9°E</text>
+  <text x="205" y="228" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">EPSG:32632</text>
+  <text x="205" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">zone number = floor((lon + 180) / 6) + 1</text>
+  <text x="205" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">326xx north of the equator, 327xx south</text>
+  <rect x="390" y="186" width="330" height="86" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="555" y="208" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">batch B — straddles 12°E</text>
+  <text x="555" y="228" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">project the whole batch into one zone</text>
+  <text x="555" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">chosen from the centroid, never split per feature —</text>
+  <text x="555" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">two zones in one dataset make areas incomparable</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -1043,6 +1121,11 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
         <h2>Related in Geospatial Annotation Fundamentals &amp; Architecture</h2>
         <div class="related__grid">
           
+            <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">
+              <div class="title">Annotation Quality Metrics &amp; Inter-Annotator Agreement</div>
+              <div class="desc">A geospatial annotation project can report 96% agreement between its annotators and still be shipping unusable labels. The number is real; it is measured on a class distribution where nine in ten features are buildings, so two annotators who default to building on everything ambiguous agree almost perfectly while contr</div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">
               <div class="title">Confidence Scoring for Geospatial Labels</div>
               <div class="desc">When a pre-labeling model trained on Sentinel-2 imagery is applied to a new SAR dataset, its raw softmax outputs appear confident — but those probabilities are miscalibrated for the new sensor modality. If your pipeline treats every model output above 0.5 as a valid training label, the resulting dataset is silently con</div>
@@ -1106,6 +1189,8 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -1122,6 +1207,8 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -1135,6 +1222,8 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1162,7 +1251,11 @@ validated <span class="token operator">=</span> ddf<span class="token punctuatio
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

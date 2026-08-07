@@ -128,9 +128,10 @@ pip install "geopandas==0.14.4" "shapely==2.0.4" "pydantic==2.7.1" \
 
 The diagram below shows how a domain ontology flows through hierarchy design, schema enforcement, and CI validation into a training-ready dataset.
 
-<svg viewBox="0 0 760 310" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROI taxonomy pipeline: domain ontology flows through hierarchy design, Pydantic schema validation, and CI gates into a training-ready GeoJSON dataset" style="width:100%;max-width:760px;display:block;font-family:inherit">
+<svg viewBox="-10 67 779 224" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ROI taxonomy pipeline: domain ontology flows through hierarchy design, Pydantic schema validation, and CI gates into a training-ready GeoJSON dataset" style="width:100%;max-width:779px;display:block;font-family:inherit">
   <title>ROI Label Taxonomy Pipeline</title>
   <desc>Domain ontology maps to a class hierarchy, which is encoded in a versioned taxonomy JSON. Pydantic validators and shapely geometry checks run on every annotation commit via CI, producing a validated GeoJSON training dataset.</desc>
+  <rect x="-10" y="67" width="779" height="224" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
       <path d="M0,0 L7,3.5 L0,7 Z" fill="currentColor"/>
@@ -210,6 +211,7 @@ A flat taxonomy rarely scales across complex aerial scenes. Implement a parent-c
 <svg viewBox="0 0 680 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Two-domain label hierarchy: land_use and land_cover root classes each branch into parent and leaf subclasses" style="width:100%;max-width:680px;display:block;font-family:inherit">
   <title>ROI Label Taxonomy Hierarchy</title>
   <desc>Two root domains: land_use (residential → single_family, multi_unit; commercial; industrial → manufacturing, logistics_hub) and land_cover (vegetation_canopy → deciduous, coniferous; impervious_surface; water → standing, flowing).</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="htree" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
       <path d="M0,0 L6,3 L0,6 Z" fill="currentColor" opacity="0.5"/>
@@ -628,6 +630,48 @@ Run with: `pytest test_taxonomy_validation.py -v`
 ## Statistical Quality Gates
 
 Beyond structural validation, implement statistical gates to monitor annotation consistency across batches. These transform taxonomy management from a static documentation exercise into a dynamic feedback loop:
+
+<svg viewBox="0 0 740 300" role="img" aria-label="Class frequency across a labelled batch on a log scale, with the minimum-instance gate marked and the classes that fall below it" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>The long tail a taxonomy grows, and the gate that catches it</title>
+  <desc>Instance counts per class on a logarithmic axis. Building, road and cropland carry thousands of instances. Water body and solar farm carry hundreds. Substation, silo and helipad fall below the hundred-instance floor, which is where the statistical gate fires: those classes are either merged into a parent, targeted for collection, or excluded from the evaluation split rather than being quietly trained on.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="200" y1="240" x2="660" y2="240" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="200" y1="236" x2="200" y2="244" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="353" y1="236" x2="353" y2="244" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="507" y1="236" x2="507" y2="244" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="660" y1="236" x2="660" y2="244" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <text x="200" y="258" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10</text>
+  <text x="353" y="258" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">100</text>
+  <text x="507" y="258" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 000</text>
+  <text x="660" y="258" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10 000</text>
+  <text x="430" y="280" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">labelled instances per class (log scale)</text>
+  <!-- Gate line -->
+  <line x1="353" y1="24" x2="353" y2="236" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="359" y="36" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">minimum-instance gate: 100</text>
+  <!-- Bars -->
+  <text x="192" y="60" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">building</text>
+  <rect x="200" y="50" width="443" height="13" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="192" y="84" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">road</text>
+  <rect x="200" y="74" width="405" height="13" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="192" y="108" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">cropland</text>
+  <rect x="200" y="98" width="378" height="13" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="192" y="132" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">water_body</text>
+  <rect x="200" y="122" width="245" height="13" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="192" y="156" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">solar_farm</text>
+  <rect x="200" y="146" width="176" height="13" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="192" y="180" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">substation</text>
+  <rect x="200" y="170" width="128" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="192" y="204" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">grain_silo</text>
+  <rect x="200" y="194" width="92" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="192" y="228" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">helipad</text>
+  <rect x="200" y="218" width="46" height="13" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <!-- Tail bracket -->
+  <path d="M676 170 L688 170 L688 231 L676 231" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="694" y="192" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">merge,</text>
+  <text x="694" y="206" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">collect</text>
+  <text x="694" y="220" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">or drop</text>
+</svg>
 
 **Inter-Annotator Agreement (IAA).** Calculate Cohen's Kappa for overlapping ROI assignments using `sklearn.metrics.cohen_kappa_score`. Values below 0.75 indicate ambiguous class definitions requiring ontology refinement. Trigger an alert and open an ontology review when IAA drops below this threshold across any two annotators.
 

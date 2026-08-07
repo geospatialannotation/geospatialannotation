@@ -96,6 +96,7 @@ The affine geotransform is the missing bridge. It is a compact six-number mappin
 <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow from a COCO image record and geotransform sidecar through a pixel bounding box to real-world coordinates" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>From COCO pixel box to world coordinates via the geotransform sidecar</title>
   <desc>A COCO image record and a geotransform sidecar supply the affine and CRS. A pixel bounding box is passed through the affine transform, producing map coordinates, which are reprojected to a target CRS to give real-world longitude and latitude.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -217,6 +218,33 @@ An enriched image record now looks like this — the two custom keys sit alongsi
 
 Custom COCO keys are fragile: many loaders discard unknown fields when they re-serialise a file, so the georeference can vanish after one pass through an augmentation or training tool. Emit a sidecar keyed by image `id` as an independent, durable copy. Content-addressed sidecars like this are the same artifacts that [DVC versioning](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) tracks alongside the imagery, so the georeference travels with every dataset snapshot:
 
+<svg viewBox="0 0 720 260" role="img" aria-label="The sidecar manifest that pairs each COCO image record with the transform and CRS of its tile" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Two files that only mean something together</title>
+  <desc>The COCO file holds image records and pixel-space annotations. The sidecar holds, for each file_name, the six affine coefficients and the EPSG code of the tile it came from. Joining on file_name is what lets a detection be placed on the ground; shipping either file alone leaves the other unusable for anything spatial.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="300" height="150" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="170" y="70" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">annotations.json</text>
+  <text x="36" y="96" font-size="10" fill="currentColor" font-family="monospace">"images": [{"id": 7,</text>
+  <text x="36" y="114" font-size="10" fill="currentColor" font-family="monospace">   "file_name": "t_0142.tif",</text>
+  <text x="36" y="132" font-size="10" fill="currentColor" font-family="monospace">   "width": 512, "height": 512}]</text>
+  <text x="36" y="158" font-size="10" fill="currentColor" font-family="monospace">"annotations": [{"image_id": 7,</text>
+  <text x="36" y="176" font-size="10" fill="currentColor" font-family="monospace">   "bbox": [142.0, 87.5, 96.0, 71.0]}]</text>
+  <rect x="400" y="46" width="300" height="150" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="550" y="70" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">annotations.geo.json</text>
+  <text x="416" y="96" font-size="10" fill="currentColor" font-family="monospace">"t_0142.tif": {</text>
+  <text x="416" y="114" font-size="10" fill="currentColor" font-family="monospace">   "transform": [0.3, 0.0, 512340.2,</text>
+  <text x="416" y="132" font-size="10" fill="currentColor" font-family="monospace">                 0.0, -0.3, 5401882.7],</text>
+  <text x="416" y="150" font-size="10" fill="currentColor" font-family="monospace">   "crs": "EPSG:25832",</text>
+  <text x="416" y="168" font-size="10" fill="currentColor" font-family="monospace">   "scene": "20260214_alpha.tif"}</text>
+  <!-- Join -->
+  <path d="M320 121 L360 121" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <path d="M360 121 L396 121" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="110" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">join on</text>
+  <text x="360" y="142" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">file_name</text>
+  <text x="360" y="226" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">version the pair together — a COCO file whose sidecar was left behind is not a geospatial dataset,</text>
+  <text x="360" y="246" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">and nothing in it says so</text>
+</svg>
+
 ```python
 def write_sidecar(coco: dict, sidecar_path: Path) -> None:
     """Write a georeference manifest keyed by COCO image id."""
@@ -234,6 +262,42 @@ def write_sidecar(coco: dict, sidecar_path: Path) -> None:
 ### Step 4 — Reproject a Pixel Bounding Box to World Coordinates
 
 At inference the model returns a pixel box `[x, y, w, h]`. Rebuild the tile's affine from the stored six floats, apply it to the box corners to get map coordinates in the tile CRS, then reproject to your target CRS with `pyproj`. Passing `always_xy=True` forces `(x, y)` / `(lon, lat)` ordering and sidesteps the most common axis-order trap:
+
+<svg viewBox="0 0 700 260" role="img" aria-label="A pixel box turned into ground coordinates by taking two corners through the transform" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Two corners are enough, and the row flip is where it goes wrong</title>
+  <desc>A COCO bbox of x 142, y 87.5, width 96, height 71 gives an upper-left pixel corner of 142, 87.5 and a lower-right of 238, 158.5. Passing both through the tile transform gives easting 512382.8 with northing 5401856.5 for the first, and easting 512411.6 with northing 5401835.2 for the second. Because the row step is negative, the pixel with the smaller row number has the larger northing, so the minimum and maximum swap between pixel and world space.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Pixel -->
+  <rect x="30" y="56" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="130" y="46" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">pixel space</text>
+  <rect x="76" y="88" width="110" height="76" fill="currentColor" opacity="0.18" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="76" cy="88" r="4" fill="currentColor"/>
+  <text x="82" y="82" font-size="9" fill="currentColor" font-family="monospace">(142, 87.5)</text>
+  <circle cx="186" cy="164" r="4" fill="currentColor"/>
+  <text x="226" y="182" text-anchor="end" font-size="9" fill="currentColor" font-family="monospace">(238, 158.5)</text>
+  <text x="130" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">row grows downward</text>
+  <!-- Transform -->
+  <line x1="234" y1="126" x2="266" y2="126" stroke="currentColor" stroke-width="1.5" marker-end="url(#eg-arr)"/>
+  <defs>
+    <marker id="eg-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="268" y="98" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="343" y="122" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">transform * (col, row)</text>
+  <text x="343" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">both corners, not the width</text>
+  <line x1="422" y1="126" x2="454" y2="126" stroke="currentColor" stroke-width="1.5" marker-end="url(#eg-arr)"/>
+  <!-- World -->
+  <rect x="456" y="56" width="210" height="140" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="561" y="46" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">world space, EPSG:25832</text>
+  <rect x="500" y="88" width="120" height="76" fill="currentColor" opacity="0.18" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="500" cy="88" r="4" fill="currentColor"/>
+  <text x="506" y="82" font-size="9" fill="currentColor" font-family="monospace">512382.8, 5401856.5</text>
+  <circle cx="620" cy="164" r="4" fill="currentColor"/>
+  <text x="614" y="180" text-anchor="end" font-size="9" fill="currentColor" font-family="monospace">512411.6, 5401835.2</text>
+  <text x="561" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">northing grows upward</text>
+  <text x="350" y="246" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">so y_min in pixels becomes y_max on the ground — build the world bbox from the transformed corners, never by copying min and max across</text>
+</svg>
 
 ```python
 from rasterio.transform import Affine

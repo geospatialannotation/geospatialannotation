@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -241,11 +260,26 @@
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/" class="">Overview</a></li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/" class="">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/computing-boundary-iou-for-footprint-quality/" class="">Computing Boundary IoU for Footprint Quality</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/measuring-inter-annotator-agreement-with-cohens-kappa/" class="">Measuring Inter-Annotator Agreement with Cohen&#39;s Kappa</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="">Confidence Scoring for Geospatial Labels</a>
             
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/" class="">Weighting Training Loss by Annotation Confidence</a></li>
               
             </ul>
             
@@ -375,6 +409,7 @@
 <svg viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Geometric illustration of IoU: two overlapping polygons with intersection area shaded, labelled with the IoU formula" style="width:100%;max-width:520px;display:block;margin:1.5rem auto;">
   <title>IoU geometric definition for geospatial polygons</title>
   <desc>Two overlapping quadrilaterals representing a ground-truth annotation and a model prediction. The overlapping region is shaded and labelled Intersection. The combined area is labelled Union. The IoU formula IoU = Intersection divided by Union appears below.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Ground-truth polygon -->
   <polygon points="60,60 240,50 260,190 50,200" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="2" stroke-opacity="0.7"/>
   <!-- Prediction polygon -->
@@ -594,9 +629,10 @@
 </code></pre>
 </div>
 <h2 id="threshold-and-crs-reference" tabindex="-1"><a class="header-anchor" href="#threshold-and-crs-reference" aria-label="Permalink to section &quot;Threshold and CRS Reference&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Threshold and CRS Reference</h2>
-<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline diagram showing the five stages of projection-aware IoU calculation" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 48 722 113" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline diagram showing the five stages of projection-aware IoU calculation" style="width:100%;max-width:722px;display:block;margin:1.5rem auto;">
   <title>Projection-aware IoU calculation pipeline</title>
   <desc>Five sequential stages: WGS84 input coordinates are reprojected via pyproj to a UTM CRS, validated with make_valid, used to compute intersection and union in square metres, then compared against a GSD-calibrated IoU threshold.</desc>
+  <rect x="-12" y="48" width="722" height="113" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
@@ -680,6 +716,46 @@
 <li><code class="inline-code">EPSG:3857</code> — Web Mercator, metric fallback for multi-zone datasets (distortion acceptable for tile-level area ratios under ~50 km wide)</li>
 </ul>
 <p>Ensure the CRS and GSD metadata needed for threshold selection travels with every dataset export — <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">preserving metadata across dataset versions</a> covers the mechanics of attaching that context to each versioned snapshot.</p>
+<svg viewBox="0 0 720 290" role="img" aria-label="Recommended IoU cutoff ranges by mission type, plotted on a shared axis from 0.3 to 0.8" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Where each mission type's IoU cutoff belongs</title>
+  <desc>A shared axis from 0.30 to 0.80. Infrastructure mapping of objects under a hundred square metres sits at 0.65 to 0.75. Vehicle and asset detection between one and fifty square metres sits at 0.50 to 0.60. Agricultural and land cover work above ten thousand square metres sits at 0.35 to 0.50. Multi-scale detection spans 0.40 to 0.60 and is applied per size bin rather than as one number. The single default of 0.50 is marked, showing it is only correct for one of the four.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="230" y1="238" x2="670" y2="238" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="230" y1="234" x2="230" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="318" y1="234" x2="318" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="406" y1="234" x2="406" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="494" y1="234" x2="494" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="582" y1="234" x2="582" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="670" y1="234" x2="670" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="230" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.30</text>
+  <text x="318" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.40</text>
+  <text x="406" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.50</text>
+  <text x="494" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.60</text>
+  <text x="582" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.70</text>
+  <text x="670" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.80</text>
+  <text x="450" y="278" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">IoU cutoff, computed on projected metres</text>
+  <!-- The inherited default -->
+  <line x1="406" y1="26" x2="406" y2="230" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+  <text x="400" y="24" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">the inherited 0.50 default</text>
+  <!-- Rows -->
+  <text x="222" y="52" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">infrastructure mapping</text>
+  <text x="222" y="66" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">&lt; 100 m² · regulatory risk</text>
+  <rect x="538" y="46" width="88" height="14" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="634" y="58" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.65–0.75</text>
+  <text x="222" y="104" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">vehicle / asset detection</text>
+  <text x="222" y="118" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">1 – 50 m² · balanced</text>
+  <rect x="406" y="98" width="88" height="14" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="502" y="110" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.50–0.60</text>
+  <text x="222" y="156" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">agricultural / land cover</text>
+  <text x="222" y="170" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">&gt; 10 000 m² · fuzzy edges</text>
+  <rect x="274" y="150" width="132" height="14" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="414" y="162" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.35–0.50</text>
+  <text x="222" y="208" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">multi-scale detection</text>
+  <text x="222" y="222" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">mixed · per size bin</text>
+  <rect x="318" y="202" width="176" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="502" y="214" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.40–0.60</text>
+</svg>
 <h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common Errors and Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors and Fixes</h2>
 <p><strong><code class="inline-code">TopologicalError: The operation &#39;GEOSIntersection_r&#39; produced a null geometry</code></strong>
 Root cause: self-intersecting polygon (bowtie ring) passed to <code class="inline-code">.intersection()</code>.
@@ -768,6 +844,8 @@ Fix: upgrade to <code class="inline-code">shapely==2.0.6</code> and re-create al
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -784,6 +862,8 @@ Fix: upgrade to <code class="inline-code">shapely==2.0.6</code> and re-create al
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -797,6 +877,8 @@ Fix: upgrade to <code class="inline-code">shapely==2.0.6</code> and re-create al
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -824,7 +906,11 @@ Fix: upgrade to <code class="inline-code">shapely==2.0.6</code> and re-create al
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

@@ -90,6 +90,44 @@ Choose **COCO** when the immediate consumer is an off-the-shelf detector or segm
 
 The format you export to encodes an assumption about what the annotations are *for*. COCO was designed for natural-image object detection, where a photograph has no georeference and a box is defined purely in image pixels. That assumption is baked into its schema: `bbox` is `[x, y, width, height]` in pixels, `segmentation` is a polygon or RLE mask in pixels, and there is no field anywhere for a CRS, a datum, or an affine geotransform. Export straight to COCO and you have silently thrown away the one property that made your labels geospatial — the ability to know *where on Earth* each object sits.
 
+<svg viewBox="0 0 720 260" role="img" aria-label="One source of truth deriving many training exports, contrasted with several exports each edited independently" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Derive the exports; never edit two of them</title>
+  <desc>On the left a single GeoParquet store derives COCO, YOLO and GeoJSON artifacts, each regenerated from the store and never edited. On the right the same three files are each corrected by hand, so within weeks no two agree and there is no way to tell which one is right.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="sot-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Left -->
+  <text x="170" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">one store, three derivations</text>
+  <rect x="20" y="106" width="120" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="80" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">GeoParquet</text>
+  <text x="80" y="145" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">source of truth</text>
+  <path d="M140 120 L180 120 L180 68 L216 68" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#sot-arr)"/>
+  <path d="M140 132 L198 132 L216 132" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#sot-arr)"/>
+  <path d="M140 144 L180 144 L180 196 L216 196" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#sot-arr)"/>
+  <rect x="218" y="50" width="104" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="270" y="73" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">COCO</text>
+  <rect x="218" y="114" width="104" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="270" y="137" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">YOLO</text>
+  <rect x="218" y="178" width="104" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="270" y="201" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">GeoJSON</text>
+  <text x="170" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">regenerated, never hand-edited</text>
+  <!-- Right -->
+  <text x="540" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">three files, three truths</text>
+  <rect x="400" y="50" width="120" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="460" y="73" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">COCO</text>
+  <rect x="400" y="114" width="120" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="460" y="137" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">YOLO</text>
+  <rect x="400" y="178" width="120" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="460" y="201" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">GeoJSON</text>
+  <text x="600" y="72" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">class fixed here</text>
+  <text x="600" y="136" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">box nudged here</text>
+  <text x="600" y="200" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">polygon redrawn here</text>
+  <text x="540" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">after a month, nothing reconciles them</text>
+</svg>
+
 That loss is invisible until the second use case arrives. A model retrains on a new acquisition, someone needs to join detections against a parcel boundary layer, or an auditor asks which annotations fall inside a flood zone. If COCO is your only record, every one of those questions requires reconstructing the geotransform you discarded, and if the imagery was re-tiled in between, the pixel coordinates no longer map to anything. GeoParquet inverts the failure mode: it stores geometries in a real [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/), so the labels remain meaningful independent of any particular image grid, and the pixel-space COCO file becomes a cheap, reproducible projection of them rather than the primary record.
 
 ## Dimension-by-Dimension Comparison
@@ -111,6 +149,7 @@ Two rows deserve emphasis. **Schema enforcement**: GeoParquet carries a typed Ar
 <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing GeoParquet as the georeferenced source of truth that both feeds spatial analytics and derives a pixel-space COCO training file" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>GeoParquet source of truth deriving a COCO training artifact</title>
   <desc>A GeoParquet store on the left, holding CRS-aware geometries, branches into two paths. The upper path keeps the data georeferenced for spatial joins and analytics. The lower path passes through a projection step that applies the inverse geotransform to produce a pixel-space COCO file for detector and segmenter training.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -203,6 +242,39 @@ class ImageGrid:
 ### Step 3 — Project GeoParquet Geometries Into Pixel Space
 
 Read the GeoParquet store, reproject each feature into the image CRS, and apply `world_to_pixel` to every vertex. Emit a COCO `bbox` and a flattened `segmentation` ring per annotation:
+
+<svg viewBox="0 0 700 300" role="img" aria-label="A world-coordinate polygon projected into the pixel space of one tile using the inverse geotransform" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>The inverse geotransform is the whole conversion</title>
+  <desc>A polygon stored in projected metres is converted to COCO pixel coordinates by applying the inverse of the tile's geotransform: subtract the tile origin, divide by the pixel size, and flip the row direction because y decreases as rows increase. The COCO file records the result but not the transform, so the derivation is one-way unless the geotransform is stored alongside it.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- World -->
+  <rect x="20" y="60" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="50" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">GeoParquet — metres</text>
+  <polygon points="60,100 160,92 172,160 72,168" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.8"/>
+  <text x="120" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">(512340.2, 5401882.7)</text>
+  <text x="120" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">EPSG:25832, in the file</text>
+  <!-- Formula -->
+  <line x1="220" y1="130" x2="250" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+  <defs>
+    <marker id="cg-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="252" y="86" width="196" height="88" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="350" y="110" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">col = (x − c) / a</text>
+  <text x="350" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">row = (y − f) / e</text>
+  <text x="350" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">e is negative — rows run south</text>
+  <line x1="448" y1="130" x2="478" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+  <!-- Pixel -->
+  <rect x="480" y="60" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="580" y="50" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">COCO — pixels</text>
+  <polygon points="520,100 620,92 632,160 532,168" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.8"/>
+  <text x="580" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">[142.0, 87.5, 96.0, 71.0]</text>
+  <text x="580" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">no CRS anywhere in the file</text>
+  <!-- One-way note -->
+  <rect x="140" y="256" width="420" height="34" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="350" y="277" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">keep the geotransform beside the COCO file, or the trip back is guesswork</text>
+</svg>
 
 ```python
 def geometry_to_coco(

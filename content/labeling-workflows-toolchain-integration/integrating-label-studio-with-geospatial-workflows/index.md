@@ -122,9 +122,10 @@ For foundational context on building labeling infrastructure, see the [Labeling 
 
 ---
 
-<svg viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio geospatial pipeline: GeoTIFF to Tile Server to Label Studio UI to Webhook Validator to GeoJSON Export" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 10 784 173" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio geospatial pipeline: GeoTIFF to Tile Server to Label Studio UI to Webhook Validator to GeoJSON Export" style="width:100%;max-width:784px;display:block;margin:1.5rem auto;">
   <title>Label Studio Geospatial Annotation Pipeline</title>
   <desc>Five-stage pipeline showing GeoTIFF source converted to tile pyramid, served to Label Studio, annotations validated via webhook middleware, then exported as GeoJSON with reconstructed geographic coordinates.</desc>
+  <rect x="-12" y="10" width="784" height="173" style="fill:var(--bg)"/>
   <defs>
     <marker id="ls-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -439,6 +440,7 @@ The y-axis inversion is the most commonly missed detail: Label Studio measures `
 <svg viewBox="0 0 680 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coordinate reconstruction diagram: Label Studio pixel space versus geographic space, showing y-axis inversion" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
   <title>Label Studio Coordinate Reconstruction — Y-Axis Inversion</title>
   <desc>Two side-by-side coordinate systems. Left: Label Studio image space with y=0 at top-left, increasing downward. Right: Geographic space with y=min at bottom-left, increasing upward. Arrows show the mapping formula applied to convert between them.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ls-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -578,6 +580,40 @@ Adhere to the RFC 7946 GeoJSON specification (coordinates in `EPSG:4326`, right-
 ### Step 6: Automate the Pipeline with Webhooks
 
 Webhooks eliminate the manual export bottleneck and enforce a "validate-before-persist" contract. Register a webhook in Label Studio that fires on `ANNOTATION_CREATED` and `ANNOTATION_UPDATED` events; your handler validates geometry and writes approved annotations directly to storage.
+
+<svg viewBox="-4 40 728 237" role="img" aria-label="A Label Studio webhook firing on task completion and the handler steps it triggers, with the queue that absorbs bursts" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:728px;display:block;margin:1.5rem auto;">
+  <title>What happens between a submit click and a versioned dataset</title>
+  <desc>Submitting an annotation fires an ANNOTATION_CREATED webhook. The receiver acknowledges within its timeout and enqueues the payload rather than working inline. A worker then reconstructs geographic coordinates, validates topology, appends to the GeoParquet store and stages a DVC commit. Acknowledging first is what keeps a slow validation from making Label Studio retry the same event.</desc>
+  <rect x="-4" y="40" width="728" height="237" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="wh-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="16" y="60" width="132" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="82" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">annotator submits</text>
+  <text x="82" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">task 4471</text>
+  <line x1="148" y1="88" x2="176" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="178" y="60" width="152" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="254" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">ANNOTATION_CREATED</text>
+  <text x="254" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">webhook POST</text>
+  <line x1="330" y1="88" x2="358" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="360" y="60" width="152" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="436" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">ack, then enqueue</text>
+  <text x="436" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">200 within the timeout</text>
+  <line x1="512" y1="88" x2="540" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="542" y="60" width="162" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="623" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">queue</text>
+  <text x="623" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">absorbs the submit burst</text>
+  <!-- Worker chain -->
+  <line x1="623" y1="116" x2="623" y2="146" stroke="currentColor" stroke-width="1.5" marker-end="url(#wh-arr)"/>
+  <rect x="16" y="148" width="688" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="170" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">worker, off the request path</text>
+  <text x="360" y="192" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reconstruct world coordinates → validate topology → append to GeoParquet → stage a DVC commit</text>
+  <!-- Note -->
+  <text x="360" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">validating inline instead means a slow topology check trips the webhook timeout,</text>
+  <text x="360" y="254" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">Label Studio retries the delivery, and the same annotation is processed twice</text>
+</svg>
 
 ```python
 from flask import Flask, request, jsonify

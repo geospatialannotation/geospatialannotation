@@ -125,6 +125,7 @@ The five stages below form a deterministic chain. The key constraint is that spa
 <svg viewBox="0 0 780 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Foundation model pre-labeling pipeline: five stages from raster ingest to annotation export" style="width:100%;max-width:780px;height:auto;display:block;margin:1.5rem auto;">
   <title>Foundation Model Pre-Labeling Pipeline</title>
   <desc>Five-stage data flow: Raster Ingest, Tile and Window Read, Foundation Model Inference, Vectorize and Georeference, then two parallel outputs: Filter and Merge followed by Export and Validate. Arrows between stages carry the spatial metadata (affine transform, CRS, confidence scores) that must be preserved at each step.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-pm" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -219,6 +220,39 @@ If `epsg` returns `None`, the CRS is non-standard (common with older aerial surv
 ### Step 2 — Tiling with Windowed Reads
 
 Large orthomosaics routinely exceed GPU memory. Split into fixed-size tiles with 10–15% overlap to prevent edge truncation. The overlap region is deduplicated after merging.
+
+<svg viewBox="46 39 660 253" role="img" aria-label="Memory required to read a whole scene compared with a windowed read of one tile, on a logarithmic scale" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:660px;display:block;margin:1.5rem auto;">
+  <title>Why the read is windowed and not whole-scene</title>
+  <desc>A 40 000 by 40 000 pixel four-band scene at 16 bits per sample needs about 12.8 gigabytes resident to read in one call. A single 512 by 512 window of the same scene needs about 2 megabytes, and the tile loop holds only one window plus the model batch at a time. The logarithmic axis spans one megabyte to one hundred gigabytes.</desc>
+  <rect x="46" y="39" width="660" height="253" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="220" y1="196" x2="670" y2="196" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="220" y1="192" x2="220" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="310" y1="192" x2="310" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="400" y1="192" x2="400" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="490" y1="192" x2="490" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="580" y1="192" x2="580" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="670" y1="192" x2="670" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <text x="220" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 MB</text>
+  <text x="310" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10 MB</text>
+  <text x="400" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">100 MB</text>
+  <text x="490" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 GB</text>
+  <text x="580" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10 GB</text>
+  <text x="670" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">100 GB</text>
+  <text x="445" y="236" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">resident memory for one read (log scale)</text>
+  <!-- Rows -->
+  <text x="210" y="70" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">whole scene in one call</text>
+  <text x="210" y="86" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">40 000 × 40 000 px, 4 bands, uint16</text>
+  <rect x="220" y="60" width="370" height="18" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="602" y="74" font-size="11" fill="currentColor" font-family="monospace">≈ 12.8 GB</text>
+  <text x="210" y="132" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">one windowed read</text>
+  <text x="210" y="148" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">512 × 512 px, 4 bands, uint16</text>
+  <rect x="220" y="122" width="27" height="18" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="255" y="136" font-size="11" fill="currentColor" font-family="monospace">≈ 2 MB</text>
+  <!-- Note -->
+  <rect x="220" y="248" width="450" height="24" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  <text x="445" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the tile loop holds one window and the model batch — never the scene</text>
+</svg>
 
 ```python
 from typing import Generator
@@ -368,6 +402,45 @@ Apply `make_valid` from Shapely immediately after construction. Contour extracti
 ### Step 5 — Confidence Filtering and Tile-Boundary Deduplication
 
 Two-stage filtering removes noise before the merge step. Calibrate thresholds on a 200-tile validation split of manually labeled imagery. Assign per-annotation [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as attributes so annotation platforms can prioritize low-confidence candidates for human review.
+
+<svg viewBox="0 0 720 300" role="img" aria-label="An object crossing a tile seam is detected twice, once per tile, and the two partial masks are merged in world coordinates" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The same warehouse, detected twice, once per tile</title>
+  <desc>Two overlapping tiles share a 64 pixel seam. A warehouse straddling the seam is detected as a truncated mask in each tile, so the raw output holds two low-confidence partial polygons where there is one building. After georeferencing, polygons from different tiles whose intersection over union exceeds 0.5 are merged and the union is kept, restoring one full footprint.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Tiles -->
+  <rect x="40" y="50" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="140" y="42" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">tile 07</text>
+  <rect x="204" y="50" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="304" y="42" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">tile 08</text>
+  <rect x="204" y="50" width="36" height="140" fill="currentColor" opacity="0.12"/>
+  <text x="222" y="206" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">64 px overlap</text>
+  <!-- Partial detections -->
+  <polygon points="150,90 240,86 240,150 152,154" fill="currentColor" opacity="0.28"/>
+  <polygon points="150,90 240,86 240,150 152,154" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="196" y="124" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif">conf 0.61</text>
+  <polygon points="204,88 296,84 298,148 204,152" fill="currentColor" opacity="0.28"/>
+  <polygon points="204,88 296,84 298,148 204,152" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="252" y="124" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif">conf 0.58</text>
+  <text x="222" y="230" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">two truncated masks, both under threshold</text>
+  <!-- Arrow -->
+  <line x1="406" y1="120" x2="464" y2="120" stroke="currentColor" stroke-width="1.5" marker-end="url(#seam-arr)"/>
+  <defs>
+    <marker id="seam-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="440" y="110" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">merge</text>
+  <!-- Merged -->
+  <rect x="470" y="50" width="220" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="580" y="42" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">world coordinates</text>
+  <polygon points="500,88 660,84 662,150 502,154" fill="currentColor" opacity="0.28"/>
+  <polygon points="500,88 660,84 662,150 502,154" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="581" y="124" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">one footprint</text>
+  <text x="580" y="230" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">union kept where cross-tile IoU &gt; 0.5</text>
+  <!-- Footnote -->
+  <text x="360" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">deduplicate after georeferencing, never in pixel space — the two tiles have different pixel origins</text>
+  <text x="360" y="284" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and filter on confidence after the merge, or the seam quietly deletes every object that crosses it</text>
+</svg>
 
 ```python
 from shapely.ops import unary_union

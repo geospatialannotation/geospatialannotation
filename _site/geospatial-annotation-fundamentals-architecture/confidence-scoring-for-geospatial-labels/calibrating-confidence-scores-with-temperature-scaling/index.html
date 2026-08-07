@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -241,11 +260,26 @@
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/" class="">Overview</a></li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/" class="">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/computing-boundary-iou-for-footprint-quality/" class="">Computing Boundary IoU for Footprint Quality</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/measuring-inter-annotator-agreement-with-cohens-kappa/" class="">Measuring Inter-Annotator Agreement with Cohen&#39;s Kappa</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="is-active">Confidence Scoring for Geospatial Labels</a>
             
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="is-active">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/" class="">Weighting Training Loss by Annotation Confidence</a></li>
               
             </ul>
             
@@ -377,6 +411,7 @@
 <svg viewBox="0 0 480 360" role="img" aria-label="Reliability diagram plotting confidence against accuracy, with a before curve bowing below the diagonal and an after curve sitting on it" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:480px;display:block;margin:1.5rem auto;">
   <title>Reliability diagram before and after temperature scaling</title>
   <desc>Confidence on the horizontal axis versus empirical accuracy on the vertical axis. A thin diagonal marks perfect calibration. The dashed before curve sits well below the diagonal, showing over-confidence. The solid after curve sits on the diagonal, showing calibrated confidence after temperature scaling.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Axes -->
   <line x1="60" y1="300" x2="420" y2="300" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
   <line x1="60" y1="300" x2="60" y2="40" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
@@ -392,7 +427,7 @@
   <text x="240" y="340" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.8" font-family="sans-serif">Confidence</text>
   <text x="20" y="170" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.8" font-family="sans-serif" transform="rotate(-90 20 170)">Accuracy</text>
   <!-- Perfect calibration diagonal -->
-  <line x1="60" y1="300" x2="420" y2="40" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3" opacity="0.5"/>
+  <path d="M60 300 L420 40" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3" opacity="0.5"/>
   <text x="360" y="80" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5" font-family="sans-serif">perfect</text>
   <!-- Before curve (over-confident, dashed) -->
   <polyline points="240,209 276,191 312,170 348,149 384,128 420,108" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="6 3" opacity="0.75"/>
@@ -419,6 +454,62 @@
   <pre class="code-block__pre" tabindex="0"><code class="code-block__code language-bash">pip <span class="token function">install</span> <span class="token assign-left variable">torch</span><span class="token operator">==</span><span class="token number">2.3</span>.1 <span class="token assign-left variable">numpy</span><span class="token operator">==</span><span class="token number">1.26</span>.4
 </code></pre>
 </div>
+<p>Before the code, it is worth seeing exactly what the single fitted scalar does to one
+detection. Dividing every logit by <code class="inline-code">T</code> compresses the gaps between them, so the softmax
+spreads mass onto the runner-up classes — but because the division is monotone, the
+ordering, and therefore the predicted label, cannot change.</p>
+<svg viewBox="0 0 760 300" role="img" aria-label="One detection's logits divided by the fitted temperature, showing the softmax flattening while the arg-max class stays the same" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>What dividing the logits by T actually does to one detection</title>
+  <desc>A single detection with logits 4.2, 1.1 and 0.6 produces softmax probabilities 0.93, 0.04 and 0.03. Dividing each logit by the fitted temperature of 2.11 gives 1.99, 0.52 and 0.28, whose softmax is 0.71, 0.16 and 0.13. The building class stays highest in both, so the prediction is unchanged while the reported confidence falls from 0.93 to 0.71.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Raw logits column -->
+  <text x="96" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Raw logits z</text>
+  <rect x="26" y="52" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="96" y="74" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">building  4.2</text>
+  <rect x="26" y="96" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="96" y="118" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">road      1.1</text>
+  <rect x="26" y="140" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="96" y="162" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">water     0.6</text>
+  <!-- Divide by T -->
+  <line x1="176" y1="113" x2="216" y2="113" stroke="currentColor" stroke-width="1.5" marker-end="url(#ts-arr)"/>
+  <defs>
+    <marker id="ts-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="196" y="104" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">÷ T</text>
+  <!-- Scaled logits column -->
+  <text x="296" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">z / T   (T = 2.11)</text>
+  <rect x="226" y="52" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="296" y="74" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">building  1.99</text>
+  <rect x="226" y="96" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="296" y="118" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">road      0.52</text>
+  <rect x="226" y="140" width="140" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.65"/>
+  <text x="296" y="162" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" opacity="0.8">water     0.28</text>
+  <!-- Softmax arrow -->
+  <line x1="376" y1="113" x2="426" y2="113" stroke="currentColor" stroke-width="1.5" marker-end="url(#ts-arr)"/>
+  <text x="401" y="104" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">softmax</text>
+  <!-- Probability bars, before -->
+  <text x="556" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Reported confidence</text>
+  <text x="446" y="60" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">before</text>
+  <rect x="446" y="66" width="252" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+  <rect x="446" y="66" width="235" height="16" rx="3" fill="currentColor" opacity="0.55"/>
+  <text x="708" y="79" font-size="11" fill="currentColor" font-family="monospace">0.93</text>
+  <!-- Probability bars, after -->
+  <text x="446" y="104" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">after</text>
+  <rect x="446" y="110" width="252" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+  <rect x="446" y="110" width="179" height="16" rx="3" fill="currentColor" opacity="0.55"/>
+  <text x="708" y="123" font-size="11" fill="currentColor" font-family="monospace">0.71</text>
+  <!-- Runner-up mass -->
+  <text x="446" y="152" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">road + water, after</text>
+  <rect x="446" y="158" width="252" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.35"/>
+  <rect x="446" y="158" width="73" height="16" rx="3" fill="currentColor" opacity="0.3"/>
+  <text x="708" y="171" font-size="11" fill="currentColor" font-family="monospace">0.29</text>
+  <!-- Invariant callout -->
+  <rect x="26" y="212" width="672" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="362" y="236" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif">building stays the arg-max in both columns — the label does not move</text>
+  <text x="362" y="256" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">a monotone division cannot reorder logits, so precision, recall and mAP are untouched</text>
+</svg>
 <h3 id="step-1-collect-validation-logits-and-labels" tabindex="-1"><a class="header-anchor" href="#step-1-collect-validation-logits-and-labels" aria-label="Permalink to section &quot;Step 1 — Collect Validation Logits and Labels&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Collect Validation Logits and Labels</h3>
 <p>Run the frozen detector over a held-out validation split and cache the pre-softmax logits, not probabilities — temperature acts on logits. Here we synthesise an over-confident set so the routine is runnable end-to-end; in production you replace <code class="inline-code">make_overconfident_logits</code> with your cached tensors.</p>
 <div class="code-block">
@@ -645,6 +736,41 @@ probs_cal<span class="token punctuation">:</span> Tensor <span class="token oper
 </tbody>
 </table>
 </div><p>The arg-max accuracy is byte-for-byte identical before and after — only the confidence magnitudes moved. That is the whole point: you gain trustworthy uncertainty for the queue without touching detection quality. ECE is the headline number to watch because it is the metric the reliability diagram visualises, but NLL and Brier matter as guards: it is possible to lower ECE while leaving the per-example ranking of confidences noisier, and tracking all three catches that. Re-fit the temperature on a fresh validation slice whenever the model is retrained or the sensor mix changes, and store <code class="inline-code">T</code> in the dataset version manifest so the exact calibration used for any queue can be reproduced later. Feeding these calibrated scores into the <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/">active learning loop</a> makes each retraining round select genuinely informative tiles instead of loud but wrong ones.</p>
+<svg viewBox="131 21 541 289" role="img" aria-label="Grouped bar chart comparing expected calibration error, negative log-likelihood and Brier score before and after temperature scaling" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:541px;display:block;margin:1.5rem auto;">
+  <title>All three calibration metrics fall, on one shared scale</title>
+  <desc>Horizontal bars on a shared zero-to-1.1 scale. Expected calibration error falls from 0.182 to 0.021. Negative log-likelihood falls from 1.046 to 0.731. Brier score falls from 0.402 to 0.318. The filled bar in each pair is the raw model and the outlined bar is the temperature-scaled model.</desc>
+  <rect x="131" y="21" width="541" height="289" style="fill:var(--bg)"/>
+  <!-- ECE -->
+  <text x="180" y="52" text-anchor="end" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">ECE</text>
+  <text x="180" y="72" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">raw</text>
+  <rect x="190" y="60" width="50" height="15" rx="2" fill="currentColor" opacity="0.55"/>
+  <text x="248" y="72" font-size="11" fill="currentColor" font-family="monospace">0.182</text>
+  <text x="180" y="94" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">scaled</text>
+  <rect x="190" y="82" width="6" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="248" y="94" font-size="11" fill="currentColor" font-family="monospace">0.021</text>
+  <!-- NLL -->
+  <text x="180" y="132" text-anchor="end" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">NLL</text>
+  <text x="180" y="152" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">raw</text>
+  <rect x="190" y="140" width="285" height="15" rx="2" fill="currentColor" opacity="0.55"/>
+  <text x="483" y="152" font-size="11" fill="currentColor" font-family="monospace">1.046</text>
+  <text x="180" y="174" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">scaled</text>
+  <rect x="190" y="162" width="199" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="397" y="174" font-size="11" fill="currentColor" font-family="monospace">0.731</text>
+  <!-- Brier -->
+  <text x="180" y="212" text-anchor="end" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Brier</text>
+  <text x="180" y="232" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">raw</text>
+  <rect x="190" y="220" width="110" height="15" rx="2" fill="currentColor" opacity="0.55"/>
+  <text x="308" y="232" font-size="11" fill="currentColor" font-family="monospace">0.402</text>
+  <text x="180" y="254" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">scaled</text>
+  <rect x="190" y="242" width="87" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="285" y="254" font-size="11" fill="currentColor" font-family="monospace">0.318</text>
+  <!-- Scale -->
+  <line x1="190" y1="272" x2="490" y2="272" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  <text x="190" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">0</text>
+  <text x="326" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">0.5</text>
+  <text x="463" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">1.0</text>
+  <text x="620" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">lower is better</text>
+</svg>
 <h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common Errors and Fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common Errors and Fixes</h2>
 <p><strong><code class="inline-code">T</code> collapses toward 0 or explodes to a huge value</strong>
 Root cause: optimising <code class="inline-code">T</code> directly lets LBFGS step into non-positive territory, and the cross-entropy gradient then diverges.
@@ -673,6 +799,18 @@ Fix: clamp probabilities with <code class="inline-code">clamp_min(1e-12)</code> 
 
       
 
+      
+      <section class="related" aria-label="Related pages">
+        <h2>Related in Confidence Scoring for Geospatial Labels</h2>
+        <div class="related__grid">
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/">
+              <div class="title">Weighting Training Loss by Annotation Confidence</div>
+              <div class="desc">A per-annotation confidence score is only worth computing if something consumes it. Routing low-confidence labels to review is one consumer; the other is the training loss, where a confidence of 0.55 becomes a smaller gradient than a confidence of 0.95. The implementation is a few lines, and all of the difficulty is in</div>
+            </a>
+          
+        </div>
+      </section>
       
     </article>
 
@@ -714,6 +852,8 @@ Fix: clamp probabilities with <code class="inline-code">clamp_min(1e-12)</code> 
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -730,6 +870,8 @@ Fix: clamp probabilities with <code class="inline-code">clamp_min(1e-12)</code> 
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -743,6 +885,8 @@ Fix: clamp probabilities with <code class="inline-code">clamp_min(1e-12)</code> 
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -770,7 +914,11 @@ Fix: clamp probabilities with <code class="inline-code">clamp_min(1e-12)</code> 
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

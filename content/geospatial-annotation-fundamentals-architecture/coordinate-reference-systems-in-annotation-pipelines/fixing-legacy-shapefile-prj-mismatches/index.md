@@ -92,6 +92,46 @@ A legacy Shapefile whose `.prj` sidecar declares one [coordinate reference syste
 
 The `.prj` file is nothing more than a text sidecar holding a WKT string. Nothing enforces that it matches the numbers in the `.shp` geometry records. Legacy datasets accumulate mismatches for mundane reasons: someone copied a `.prj` from a neighbouring dataset, an export tool wrote a default WKT regardless of the true projection, or a datum was changed in metadata but never applied to the coordinates. The result is a file that claims `EPSG:4326` degrees while storing UTM eastings and northings, or claims a projected metric CRS while holding decimal degrees.
 
+<svg viewBox="0 0 760 290" role="img" aria-label="The files that make up a Shapefile, showing that only the .prj carries the coordinate reference system and that nothing cross-checks it against the coordinates in the .shp" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>Only one file in the set knows the CRS, and nothing verifies it</title>
+  <desc>A Shapefile is a set of sidecar files. The .shp holds raw coordinate pairs, the .dbf attributes, the .shx an index, and the .prj a single WKT string naming the coordinate reference system. Readers trust the .prj without ever testing it against the coordinates in the .shp, so a wrong or stale .prj is accepted silently.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- File set -->
+  <rect x="20" y="30" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="95" y="52" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">parcels.shp</text>
+  <text x="95" y="69" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">raw coordinate pairs</text>
+  <rect x="20" y="92" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="95" y="114" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">parcels.dbf</text>
+  <text x="95" y="131" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">attribute table</text>
+  <rect x="20" y="154" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="95" y="176" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">parcels.shx</text>
+  <text x="95" y="193" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">record index</text>
+  <rect x="20" y="216" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="95" y="238" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">parcels.prj</text>
+  <text x="95" y="255" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">one WKT string</text>
+  <!-- Coordinates panel -->
+  <rect x="250" y="30" width="230" height="82" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="365" y="52" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">what the geometry says</text>
+  <text x="365" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">(512340.2, 5401882.7)</text>
+  <text x="365" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">six-figure eastings — metres</text>
+  <!-- Declaration panel -->
+  <rect x="250" y="186" width="230" height="82" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="365" y="208" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">what the .prj declares</text>
+  <text x="365" y="228" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">GEOGCS["WGS 84"]</text>
+  <text x="365" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">degrees, range −180 to 180</text>
+  <!-- Contradiction marker -->
+  <line x1="365" y1="112" x2="365" y2="184" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="374" y="152" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">contradiction</text>
+  <!-- Reader -->
+  <rect x="540" y="92" width="200" height="112" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="640" y="118" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">every reader</text>
+  <text x="640" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">believes the .prj,</text>
+  <text x="640" y="157" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">never checks the .shp</text>
+  <text x="640" y="180" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">no exception is raised at any</text>
+  <text x="640" y="194" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">point in the pipeline</text>
+  <line x1="480" y1="148" x2="536" y2="148" stroke="currentColor" stroke-width="1.5"/>
+</svg>
+
 Because the file is internally consistent as *bytes*, it passes format validation. The corruption only surfaces geographically: a building footprint annotated at longitude 12.5°, latitude 41.9° gets read as if those degrees were metres, or a 500,000 m easting gets read as 500,000 degrees. When your annotation loader reprojects to the training CRS, the transform amplifies the error, and the label lands hundreds or thousands of kilometres from the imagery it belongs to. Every IoU comparison, every raster clip, every tile join against that feature is then wrong — and nothing raised an exception. This is exactly the failure that a disciplined CRS contract at ingestion is meant to stop.
 
 The critical distinction is between *relabelling* and *transforming*. `set_crs` changes only the metadata attached to the geometries — it asserts "these numbers were always in CRS X" and moves nothing. `to_crs` performs the coordinate math to convert numbers from their currently-labelled CRS into a new one. If the current label is a lie, `to_crs` faithfully transforms garbage. You repair the lie with `set_crs` first, and only then is `to_crs` safe to run.
@@ -101,6 +141,7 @@ The critical distinction is between *relabelling* and *transforming*. `set_crs` 
 <svg viewBox="0 0 640 420" role="img" aria-label="Decision tree for repairing a Shapefile whose .prj may disagree with its coordinate values" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Override versus reproject decision tree for mismatched Shapefile .prj files</title>
   <desc>A flowchart. Start by reading the declared CRS and the raw coordinate extent. Ask whether the coordinates fall inside the declared CRS bounds. If yes, the .prj is correct, so reproject with to_crs to the canonical CRS. If no, the .prj is wrong, so override with set_crs to the true CRS, then reproject with to_crs to the canonical CRS. Both paths end by re-saving the file.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="dt-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -174,6 +215,36 @@ def inspect_shapefile(path: str) -> tuple[CRS | None, tuple[float, float, float,
 ### Step 2 — Test the Extent Against the Declared CRS Area of Use
 
 `pyproj` exposes each CRS's valid geographic bounds through `area_of_use`. For a projected CRS those bounds are in longitude/latitude, so transform the raw extent into geographic space *using the declared CRS* and check containment. A projected file whose coordinates are secretly degrees will fail this test dramatically, and a geographic file whose coordinates are secretly metres will produce out-of-range longitudes.
+
+<svg viewBox="0 0 700 320" role="img" aria-label="Containment test comparing a declared CRS area of use against the actual extent of the file's coordinates" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Testing the extent against the declared CRS area of use</title>
+  <desc>Two panels. On the left the declared CRS area of use contains the file extent, so the declaration is plausible and only a reprojection is needed. On the right the file extent falls entirely outside the declared area of use, which is the signature of a mislabelled .prj that must be overridden before reprojecting.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Panel A -->
+  <text x="170" y="28" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">extent inside the area of use</text>
+  <rect x="40" y="44" width="260" height="180" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
+  <text x="52" y="64" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">declared CRS area of use</text>
+  <rect x="104" y="104" width="120" height="76" rx="4" fill="currentColor" opacity="0.18"/>
+  <rect x="104" y="104" width="120" height="76" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="164" y="138" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">file extent</text>
+  <text x="164" y="156" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">fully contained</text>
+  <text x="170" y="248" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the .prj is plausible</text>
+  <text x="170" y="266" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">to_crs() only</text>
+  <text x="170" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">widen the margin near a CRS edge</text>
+  <!-- Panel B -->
+  <text x="530" y="28" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">extent outside the area of use</text>
+  <rect x="400" y="44" width="260" height="180" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
+  <text x="412" y="64" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">declared CRS area of use</text>
+  <rect x="424" y="80" width="96" height="60" rx="4" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2" opacity="0.5"/>
+  <text x="472" y="115" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.55">where it should sit</text>
+  <rect x="556" y="152" width="120" height="76" rx="4" fill="currentColor" opacity="0.18"/>
+  <rect x="556" y="152" width="120" height="76" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="616" y="186" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">file extent</text>
+  <text x="616" y="204" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">no overlap</text>
+  <text x="530" y="248" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the .prj is wrong</text>
+  <text x="530" y="266" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">set_crs(allow_override=True)</text>
+  <text x="530" y="288" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">then, and only then, to_crs()</text>
+</svg>
 
 ```python
 from pyproj import CRS, Transformer

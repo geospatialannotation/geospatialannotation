@@ -91,11 +91,45 @@ A geometry validation gate is a GitHub Actions job that runs on any pull request
 
 Broken annotation geometry rarely announces itself. A bowtie polygon still renders, a zero-area sliver still serializes to valid JSON, and a layer written in a metric projection but tagged as WGS84 loads without complaint. The corruption only surfaces downstream: `shapely` returns an empty intersection during evaluation, a rasterizer emits an all-background mask, or reprojected coordinates land in the ocean. By then the feature has merged, propagated into a versioned snapshot, and possibly trained a checkpoint.
 
+<svg viewBox="0 0 740 270" role="img" aria-label="Timeline comparing when a bad geometry is caught at the pull request against when it is caught at training time" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>The same defect, caught at two very different prices</title>
+  <desc>On the upper timeline the gate rejects a self-intersecting polygon ninety seconds after the pull request opens, while the author still has the file open. On the lower timeline the same polygon merges, ships in a dataset version, survives a four hour training run and surfaces as an unexplained metric drop days later, after which the version has to be traced, rolled back and retrained.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Upper timeline -->
+  <text x="20" y="40" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">caught by the gate</text>
+  <line x1="20" y1="76" x2="700" y2="76" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <circle cx="60" cy="76" r="5" fill="currentColor" opacity="0.6"/>
+  <text x="60" y="64" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">PR opens</text>
+  <circle cx="150" cy="76" r="5" fill="currentColor" opacity="0.6"/>
+  <text x="150" y="98" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">gate runs</text>
+  <circle cx="240" cy="76" r="6" fill="currentColor"/>
+  <text x="240" y="64" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" font-weight="600">rejected</text>
+  <text x="240" y="98" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">t + 90 s</text>
+  <text x="420" y="80" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.8">the author still has the file open; the fix is one commit</text>
+  <!-- Lower timeline -->
+  <text x="20" y="150" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">caught at training time</text>
+  <line x1="20" y1="186" x2="700" y2="186" stroke="currentColor" stroke-width="1.5" opacity="0.5" stroke-dasharray="6 3"/>
+  <circle cx="60" cy="186" r="5" fill="currentColor" opacity="0.6"/>
+  <text x="60" y="174" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">merged</text>
+  <circle cx="200" cy="186" r="5" fill="currentColor" opacity="0.6"/>
+  <text x="200" y="208" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">shipped in v2.4.0</text>
+  <circle cx="360" cy="186" r="5" fill="currentColor" opacity="0.6"/>
+  <text x="360" y="174" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">4 h training run</text>
+  <circle cx="520" cy="186" r="6" fill="currentColor"/>
+  <text x="520" y="208" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" font-weight="600">metric drop noticed</text>
+  <circle cx="660" cy="186" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <text x="660" y="174" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">bisect, roll back,</text>
+  <text x="660" y="162" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">retrain</text>
+  <!-- Note -->
+  <text x="360" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the defect is identical on both lines — only the number of decisions built on top of it differs</text>
+</svg>
+
 Moving the check to the pull request inverts that cost. The invalid feature is still an isolated diff attributed to one annotator, the fix is a single edit, and no dataset rollback or retraining is required. This is the same shift-left logic behind [validating annotation export formats](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/) at the schema level — geometry validation is the topological half of the same contract. Where schema checks confirm the JSON is shaped correctly, the geometry gate confirms the shapes themselves are usable.
 
-<svg viewBox="0 0 760 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram: a pull request passes through a GeoJSON path filter, then a geometry validator, which writes a step summary and either passes or blocks the merge" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="-10 20 776 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flow diagram: a pull request passes through a GeoJSON path filter, then a geometry validator, which writes a step summary and either passes or blocks the merge" style="width:100%;max-width:776px;display:block;margin:1.5rem auto;">
   <title>Geometry validation gate flow in GitHub Actions</title>
   <desc>A pull request enters a path filter matching GeoJSON files. Matching pull requests run the validator, which writes a Markdown step summary and returns an exit code. Exit code zero passes the check; exit code one blocks the merge.</desc>
+  <rect x="-10" y="20" width="776" height="160" style="fill:var(--bg)"/>
   <defs>
     <marker id="ga-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -299,6 +333,30 @@ Two details matter for correctness. `fetch-depth: 0` gives the checkout enough h
 ## Checks, Failure Conditions, and Making the Gate Required
 
 The validator enforces four rules. Each maps to a concrete failure mode that corrupts training if it slips through:
+
+<svg viewBox="0 0 720 260" role="img" aria-label="Branch protection turning an advisory job into a merge requirement, with the settings that make it stick" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>A green check nobody has to read is not a gate</title>
+  <desc>The job runs on every pull request either way. Without branch protection, a red check is advisory and the merge button stays available. With the job named as a required status check, plus a requirement that the branch be up to date, the merge button is disabled until the check passes, and path filters stop the gate from being skipped when only labels change.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Left: advisory -->
+  <rect x="20" y="40" width="320" height="180" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="180" y="66" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">job only</text>
+  <text x="180" y="92" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the check runs and turns red</text>
+  <text x="180" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the merge button stays enabled</text>
+  <text x="180" y="144" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">under deadline it gets merged anyway,</text>
+  <text x="180" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and after the third time nobody looks</text>
+  <text x="180" y="192" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.8">advisory</text>
+  <!-- Right: required -->
+  <rect x="380" y="40" width="320" height="180" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="540" y="66" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">job + branch protection</text>
+  <text x="540" y="92" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">named as a required status check</text>
+  <text x="540" y="114" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">branch must be up to date first</text>
+  <text x="540" y="144" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">path filters keep it from being skipped</text>
+  <text x="540" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">on the pull requests that touch labels</text>
+  <text x="540" y="192" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.8">enforced</text>
+  <!-- Footnote -->
+  <text x="360" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">a skipped job reports neutral, not failed — so a path filter that misses a directory silently disarms the gate</text>
+</svg>
 
 | Check | Failure condition | Rule name | Consequence if unblocked |
 |---|---|---|---|

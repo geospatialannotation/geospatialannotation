@@ -79,6 +79,7 @@ This guide builds a production-ready workflow for extracting, serializing, and v
 <svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Metadata preservation pipeline: raw spatial data flows through extraction, normalization, sidecar generation, hash manifest, and version commit stages" style="width:100%;max-width:820px;display:block;margin:2rem auto;">
   <title>Metadata Preservation Pipeline</title>
   <desc>Five-stage pipeline showing how spatial metadata flows from raw files through extraction and normalization into YAML sidecars, SHA-256 manifests, and finally a versioned dataset commit. Each stage is connected by arrows. Below the stages, a dashed line marks where spatial context is preserved across every step.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-meta" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
@@ -169,6 +170,45 @@ project/
 ## Why Spatial Metadata Drifts Between Versions
 
 Spatial formats — GeoTIFF, Cloud-Optimized GeoTIFF (COG), GeoJSON, GeoPackage — embed critical context in binary headers, XML blocks, or auxiliary `.prj` / `.aux.xml` files. Standard image processing libraries treat spatial arrays as generic pixel matrices and discard these containers. Even GDAL-based tools can silently drop metadata when drivers encounter unsupported tags or when files are rewritten without explicit preservation flags.
+
+<svg viewBox="0 0 720 280" role="img" aria-label="Where spatial metadata leaks out of a dataset as it passes through four common operations" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Four ordinary operations, each dropping something</title>
+  <desc>Clipping to an area of interest keeps the CRS but invalidates the recorded extent. Converting to COCO drops the CRS entirely. A pandas round-trip through CSV turns typed columns into strings and loses the geometry column's CRS. Re-tiling changes the geotransform of every chip. None of the four raises an error, and all four are routine.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="pm-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="14" y="96" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="74" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">v1 dataset</text>
+  <text x="74" y="138" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">CRS · extent · transform</text>
+  <line x1="134" y1="124" x2="160" y2="124" stroke="currentColor" stroke-width="1.4" marker-end="url(#pm-arr)"/>
+  <rect x="162" y="96" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="222" y="126" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">clip to AOI</text>
+  <text x="222" y="176" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.8">extent is now stale</text>
+  <line x1="282" y1="124" x2="308" y2="124" stroke="currentColor" stroke-width="1.4" marker-end="url(#pm-arr)"/>
+  <rect x="310" y="96" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="370" y="126" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">export COCO</text>
+  <text x="370" y="176" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.8">CRS gone entirely</text>
+  <line x1="430" y1="124" x2="456" y2="124" stroke="currentColor" stroke-width="1.4" marker-end="url(#pm-arr)"/>
+  <rect x="458" y="96" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="518" y="126" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">CSV round-trip</text>
+  <text x="518" y="176" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.8">dtypes become strings</text>
+  <line x1="578" y1="124" x2="604" y2="124" stroke="currentColor" stroke-width="1.4" marker-end="url(#pm-arr)"/>
+  <rect x="606" y="96" width="100" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="656" y="126" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">re-tile</text>
+  <text x="656" y="176" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.8">every transform moves</text>
+  <!-- Loss ticks -->
+  <line x1="222" y1="152" x2="222" y2="164" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  <line x1="370" y1="152" x2="370" y2="164" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  <line x1="518" y1="152" x2="518" y2="164" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  <line x1="656" y1="152" x2="656" y2="164" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+  <text x="360" y="52" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">no step here raises an error, and all four are routine</text>
+  <text x="360" y="72" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">which is why the sidecar is regenerated at each step rather than carried along and trusted</text>
+  <text x="360" y="238" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">by v2 the dataset still trains — it just can no longer say where anything is</text>
+  <text x="360" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and the failure surfaces the first time someone tries to compare it to another source</text>
+</svg>
 
 The downstream impact is concrete:
 
@@ -287,6 +327,35 @@ def crop_raster_with_metadata(
 ### Step 3: Serialize Deterministic Sidecar Files
 
 Write a structured YAML file alongside each dataset version. Avoid embedding provenance metadata inside binary formats where GDAL truncation or driver limitations may occur. Sidecar files guarantee human readability, machine parseability, and driver-agnostic portability — they also diff cleanly in Git, exposing any metadata mutation across versions.
+
+<svg viewBox="0 0 700 280" role="img" aria-label="Two serializations of the same metadata, one stable under diff and one not" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Deterministic serialization is what makes the diff mean something</title>
+  <desc>The same metadata written twice. On the left, unsorted keys, default float repr and a generated timestamp make every write differ, so the hash changes and the diff is unreadable. On the right, sorted keys, fixed float precision and no timestamp mean two writes of unchanged metadata are byte-identical, so a hash change always means a real change.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Bad -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">as it comes out of the library</text>
+  <rect x="20" y="50" width="300" height="150" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="36" y="76" font-size="10" fill="currentColor" font-family="monospace">{"transform": [0.30000000000000004,</text>
+  <text x="36" y="94" font-size="10" fill="currentColor" font-family="monospace">   0.0, 512340.2000000001, ...],</text>
+  <text x="36" y="112" font-size="10" fill="currentColor" font-family="monospace"> "crs": "EPSG:25832",</text>
+  <text x="36" y="130" font-size="10" fill="currentColor" font-family="monospace"> "written_at": "2026-04-02T11:04:07Z",</text>
+  <text x="36" y="148" font-size="10" fill="currentColor" font-family="monospace"> "band_count": 4}</text>
+  <text x="36" y="176" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">key order varies · float repr varies</text>
+  <text x="36" y="192" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">timestamp guarantees a new hash</text>
+  <text x="170" y="228" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">every write is a change</text>
+  <text x="170" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">so no write is informative</text>
+  <!-- Good -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">canonicalised before writing</text>
+  <rect x="380" y="50" width="300" height="150" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="396" y="76" font-size="10" fill="currentColor" font-family="monospace">{"band_count": 4,</text>
+  <text x="396" y="94" font-size="10" fill="currentColor" font-family="monospace"> "crs": "EPSG:25832",</text>
+  <text x="396" y="112" font-size="10" fill="currentColor" font-family="monospace"> "transform": [0.300000, 0.000000,</text>
+  <text x="396" y="130" font-size="10" fill="currentColor" font-family="monospace">   512340.200000, ...]}</text>
+  <text x="396" y="164" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">sort_keys · fixed precision · no clock</text>
+  <text x="396" y="182" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">newline at the end, UTF-8, no BOM</text>
+  <text x="530" y="228" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">two writes of unchanged metadata are byte-identical</text>
+  <text x="530" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">so a hash change is always a real change</text>
+</svg>
 
 ```python
 def write_metadata_sidecar(

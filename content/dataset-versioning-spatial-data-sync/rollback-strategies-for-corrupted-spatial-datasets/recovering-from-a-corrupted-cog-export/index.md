@@ -99,6 +99,28 @@ The cost of a wrong diagnosis runs in both directions. Treat a data-loss failure
 
 Install the toolchain with pinned versions so diagnosis is reproducible across machines:
 
+<svg viewBox="0 0 720 250" role="img" aria-label="What gdalinfo and the COG validator each report for a file that opens but is no longer cloud-optimized" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The two tools disagree, and that disagreement is the diagnosis</title>
+  <desc>For a re-saved scene, gdalinfo reports size, bands, CRS and transform without complaint, because the file is a perfectly valid GeoTIFF. The COG validator reports that the image is striped rather than tiled and that the overviews are missing. A file can be readable and still be unusable for range requests, which is the state a naive re-save leaves it in.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="330" height="150" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="185" y="70" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">gdalinfo scene.tif</text>
+  <text x="38" y="98" font-size="10" fill="currentColor" font-family="monospace">Size is 40000, 40000</text>
+  <text x="38" y="118" font-size="10" fill="currentColor" font-family="monospace">Coordinate System is EPSG:25832</text>
+  <text x="38" y="138" font-size="10" fill="currentColor" font-family="monospace">Pixel Size = (0.300, -0.300)</text>
+  <text x="38" y="158" font-size="10" fill="currentColor" font-family="monospace">Band 1..4  Type=UInt16</text>
+  <text x="185" y="184" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">no complaint — it is a valid GeoTIFF</text>
+  <rect x="370" y="46" width="330" height="150" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="535" y="70" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">rio cogeo validate scene.tif</text>
+  <text x="388" y="98" font-size="10" fill="currentColor" font-family="monospace">The file is greater than 512xH or W,</text>
+  <text x="388" y="116" font-size="10" fill="currentColor" font-family="monospace">it is recommended to include overviews</text>
+  <text x="388" y="140" font-size="10" fill="currentColor" font-family="monospace">The file is not tiled</text>
+  <text x="388" y="164" font-size="10" fill="currentColor" font-family="monospace">→ scene.tif is NOT a valid COG</text>
+  <text x="535" y="184" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the structure was lost on the last re-save</text>
+  <text x="360" y="226" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">any tool that opens, edits and writes a GeoTIFF without COG options produces exactly this file —</text>
+  <text x="360" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">readable everywhere, and slow from object storage forever</text>
+</svg>
+
 ```bash
 pip install rasterio==1.3.10 rio-cogeo==5.3.0 numpy==1.26.4
 ```
@@ -123,9 +145,51 @@ A response of `is_valid: False` with a message such as `The file is not tiled` o
 
 The diagnosis funnels into a single branch. If the primary band reads cleanly and only the structure is wrong — no overviews, a bad geotransform, or an out-of-order layout — rebuild the COG in place and keep the exact original pixels. If the base band throws read errors or the primary IFD is truncated, the imagery is lost and no rewrite can recreate it; restore the last valid copy from version control instead.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="Deciding between repairing a corrupted export in place and rolling back to the last valid version" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Repair or roll back — the question is whether the pixels survived</title>
+  <desc>If the pixel data still decodes and only the structure is wrong, rebuilding the COG from the same pixels is safe and keeps the version lineage. If pixels fail to decode, or the source scene is gone, rolling back to the last verified version is the only honest option. Rebuilding from partially readable pixels produces a file that validates and lies.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="cc-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="250" y="30" width="220" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="58" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">do all bands decode cleanly?</text>
+  <line x1="360" y1="76" x2="360" y2="98" stroke="currentColor" stroke-width="1.5" marker-end="url(#cc-arr)"/>
+  <rect x="250" y="100" width="220" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">does the checksum match?</text>
+  <!-- yes branch -->
+  <line x1="470" y1="123" x2="530" y2="123" stroke="currentColor" stroke-width="1.5" marker-end="url(#cc-arr)"/>
+  <text x="500" y="115" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">yes</text>
+  <rect x="532" y="98" width="176" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="620" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">rebuild the COG</text>
+  <text x="620" y="138" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">structure was wrong, not the data</text>
+  <!-- no branch -->
+  <line x1="360" y1="146" x2="360" y2="170" stroke="currentColor" stroke-width="1.5" marker-end="url(#cc-arr)"/>
+  <text x="352" y="164" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">no</text>
+  <rect x="250" y="172" width="220" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="200" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">is the source scene still available?</text>
+  <line x1="470" y1="195" x2="530" y2="195" stroke="currentColor" stroke-width="1.5" marker-end="url(#cc-arr)"/>
+  <text x="500" y="187" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">yes</text>
+  <rect x="532" y="170" width="176" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="620" y="192" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">re-export from source</text>
+  <text x="620" y="210" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">then re-verify the hash</text>
+  <line x1="360" y1="218" x2="360" y2="240" stroke="currentColor" stroke-width="1.5" marker-end="url(#cc-arr)"/>
+  <text x="352" y="234" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">no</text>
+  <rect x="184" y="242" width="352" height="32" rx="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="360" y="263" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">roll back to the last verified version</text>
+  <!-- Warning -->
+  <text x="120" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">never rebuild from</text>
+  <text x="120" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">partially readable pixels —</text>
+  <text x="120" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the result validates cleanly</text>
+  <text x="120" y="108" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and is still wrong</text>
+</svg>
+
 <svg viewBox="0 0 640 360" role="img" aria-label="Decision flow for recovering a corrupted COG export: validate, then either rebuild in place or roll back to the last good version" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>COG recovery decision flow</title>
   <desc>A flowchart. Start at a suspect COG export. Run gdalinfo and rio cogeo validate. Ask whether the primary band reads. If yes, the damage is structural and repairable, so detect and fix the geotransform and rewrite the COG through cog_translate, then re-validate. If no, the primary data is lost, so roll back to the last valid DVC-tracked version with dvc checkout or dvc get, then re-validate. Both branches converge on a re-validate and re-hash step.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="flowarrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>

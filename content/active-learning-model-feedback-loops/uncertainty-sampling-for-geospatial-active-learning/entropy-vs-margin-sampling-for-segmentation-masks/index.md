@@ -94,9 +94,49 @@ Aerial and satellite tiles are dominated by confident background — vegetation,
 
 Both measures start from the same input: a per-pixel probability vector over `C` classes, produced by a softmax over the segmentation head's logits. They disagree on what "uncertain" means. Entropy is maximised when probability is spread evenly across *all* classes; margin looks only at the gap between the top two. The SVG below shows the same two softmax vectors scored both ways — a three-way-confused pixel that entropy flags strongly but margin rates as only moderately uncertain.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="Two pixels with the same margin but different entropy, showing what each score is measuring" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Same margin, different entropy — and the difference matters</title>
+  <desc>Pixel A is split evenly across three classes at 0.34, 0.33 and 0.33; pixel B is split between two at 0.50 and 0.49 with 0.01 left over. Both have a margin of 0.01, so margin sampling cannot separate them. Entropy is 1.099 for A and 0.742 for B, because A is uncertain among three classes and B between two. Margin asks how close the decision is; entropy asks how many ways it could go.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Pixel A -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">pixel A — three-way</text>
+  <text x="60" y="72" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">forest</text>
+  <rect x="70" y="60" width="204" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="282" y="73" font-size="10" fill="currentColor" font-family="monospace">0.34</text>
+  <text x="60" y="100" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">crop</text>
+  <rect x="70" y="88" width="198" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="276" y="101" font-size="10" fill="currentColor" font-family="monospace">0.33</text>
+  <text x="60" y="128" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">grass</text>
+  <rect x="70" y="116" width="198" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="276" y="129" font-size="10" fill="currentColor" font-family="monospace">0.33</text>
+  <text x="170" y="164" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">entropy 1.099 · margin 0.01</text>
+  <!-- Pixel B -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">pixel B — two-way</text>
+  <text x="420" y="72" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">forest</text>
+  <rect x="430" y="60" width="200" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="638" y="73" font-size="10" fill="currentColor" font-family="monospace">0.50</text>
+  <text x="420" y="100" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">crop</text>
+  <rect x="430" y="88" width="196" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="634" y="101" font-size="10" fill="currentColor" font-family="monospace">0.49</text>
+  <text x="420" y="128" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">grass</text>
+  <rect x="430" y="116" width="4" height="16" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="442" y="129" font-size="10" fill="currentColor" font-family="monospace">0.01</text>
+  <text x="530" y="164" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">entropy 0.742 · margin 0.01</text>
+  <!-- Verdict -->
+  <rect x="60" y="188" width="280" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="200" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">margin: how close is the call?</text>
+  <text x="200" y="230" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">identical here — it cannot separate them</text>
+  <text x="200" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">good when a decision boundary is the target</text>
+  <rect x="380" y="188" width="280" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="520" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">entropy: how many ways could it go?</text>
+  <text x="520" y="230" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks A above B — three live options</text>
+  <text x="520" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">good when the taxonomy itself is the problem</text>
+</svg>
+
 <svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparison of entropy and margin scores on two example per-pixel softmax vectors" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Entropy versus margin on two example softmax vectors</title>
   <desc>Two grouped bar charts of class probabilities. Pixel A has three near-equal classes and one small class, giving high entropy but only moderate margin uncertainty. Pixel B has one dominant class and one runner-up, giving lower entropy but a small top-two gap. Score readouts appear beneath each chart.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Pixel A -->
   <text x="150" y="24" text-anchor="middle" font-size="13" fill="currentColor" opacity="0.9" font-family="sans-serif" font-weight="bold">Pixel A — 3-way confusion</text>
   <line x1="40" y1="170" x2="260" y2="170" stroke="currentColor" stroke-width="1" opacity="0.4"/>
@@ -273,6 +313,29 @@ if __name__ == "__main__":
 ## Parameters and Score Ranges
 
 The two measures live on different numeric scales even after normalisation, so pick thresholds per measure and per target type rather than reusing one global cutoff. Because these scores drive annotation priority the same way [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) drive review triage, keep them calibrated: over-confident softmax output compresses both measures toward zero and flattens the ranking.
+
+<svg viewBox="0 0 700 260" role="img" aria-label="Score ranges for entropy and margin across class counts, and why raw scores cannot be compared between them" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>The two scores live on different scales, and one moves with the class count</title>
+  <desc>Margin always runs from zero to one whatever the taxonomy. Entropy runs from zero to the natural log of the class count — about 1.10 for three classes, 1.61 for five and 2.30 for ten — so the same raw entropy means different things in different projects. Normalise entropy by log of the class count before any threshold is written down.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="20" y="42" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">margin</text>
+  <rect x="140" y="30" width="330" height="18" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="482" y="44" font-size="11" fill="currentColor" font-family="monospace">0 … 1</text>
+  <text x="140" y="68" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">same range for 3 classes or 30 — thresholds port between projects</text>
+  <text x="20" y="112" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">entropy</text>
+  <text x="140" y="112" font-size="11" fill="currentColor" font-family="sans-serif">3 classes</text>
+  <rect x="240" y="100" width="110" height="16" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="360" y="113" font-size="11" fill="currentColor" font-family="monospace">0 … 1.10</text>
+  <text x="140" y="142" font-size="11" fill="currentColor" font-family="sans-serif">5 classes</text>
+  <rect x="240" y="130" width="161" height="16" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="411" y="143" font-size="11" fill="currentColor" font-family="monospace">0 … 1.61</text>
+  <text x="140" y="172" font-size="11" fill="currentColor" font-family="sans-serif">10 classes</text>
+  <rect x="240" y="160" width="230" height="16" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="480" y="173" font-size="11" fill="currentColor" font-family="monospace">0 … 2.30</text>
+  <rect x="140" y="198" width="440" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="360" y="220" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">entropy / log(n_classes)  →  0 … 1</text>
+  <text x="360" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">normalise before writing a threshold down, or it silently means something else next project</text>
+</svg>
 
 | Parameter | Entropy | Margin / least-confidence | Notes |
 |---|---|---|---|

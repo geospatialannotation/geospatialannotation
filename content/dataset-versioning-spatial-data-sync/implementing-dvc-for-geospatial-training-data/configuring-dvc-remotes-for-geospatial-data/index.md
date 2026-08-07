@@ -91,11 +91,39 @@ To version terabytes of satellite and drone imagery without stalling your team, 
 
 DVC's defaults are built for a repository of code and small artifacts, where a naive copy-and-hash checkout costs nothing. Geospatial training data breaks those assumptions. A single mosaic can exceed 20 GB, an annotated tile set can run to hundreds of thousands of COGs, and a working copy of the dataset may not fit twice on one disk. Left untuned, `dvc push` opens too few connections and crawls across a link that could saturate, while `dvc checkout` copies every raster into the workspace and computes a fresh content hash on each one — turning a five-minute pull into an hour.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="Throughput against the number of parallel jobs for large rasters, showing the plateau and then the decline" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>More parallel jobs stops helping, then starts hurting</title>
+  <desc>Throughput climbs steeply from one to about eight parallel jobs, flattens between eight and sixteen as the link saturates, and falls beyond about twenty-four as connection setup, retries and memory pressure from large multipart buffers take over. The useful setting is the knee, not the maximum the tool accepts.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axes -->
+  <line x1="80" y1="220" x2="640" y2="220" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="80" y1="220" x2="80" y2="40" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="80" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1</text>
+  <text x="220" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">8</text>
+  <text x="360" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">16</text>
+  <text x="500" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">24</text>
+  <text x="640" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">32</text>
+  <text x="360" y="262" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" opacity="0.75">jobs</text>
+  <text x="46" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75" transform="rotate(-90 46 130)">throughput</text>
+  <!-- Curve -->
+  <path d="M80 208 L115 168 L150 136 L185 112 L220 96 L255 90 L290 86 L325 84 L360 84 L395 88 L430 96 L465 108 L500 124 L535 144 L570 166 L605 188 L640 206" fill="none" stroke="currentColor" stroke-width="2.5"/>
+  <!-- Knee -->
+  <line x1="220" y1="60" x2="220" y2="216" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="228" y="58" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the knee — where extra jobs stop paying</text>
+  <line x1="500" y1="60" x2="500" y2="216" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="508" y="58" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">retries and buffers win</text>
+  <!-- Zones -->
+  <text x="150" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">link filling</text>
+  <text x="360" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">link saturated</text>
+  <text x="570" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">contention</text>
+</svg>
+
 The fix is to align three layers with the shape of the data. Parallelism (`jobs`) matches transfer concurrency to the many-large-files profile. A shared cache with reflinks eliminates redundant copies and re-hashing so identical imagery costs disk space once. And credential handling through profiles keeps long-lived keys out of the config that every collaborator clones. Get these right once and the same remote serves an [annotation team](https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/) across sites; get them wrong and every pull is a bottleneck.
 
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram of a local DVC cache exchanging chunked Cloud-Optimized GeoTIFFs in parallel with an S3, GCS, or Azure remote" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Chunked parallel transfer between a local DVC cache and a cloud remote</title>
   <desc>On the left, a local shared cache holds content-addressed COG blobs. In the centre, four parallel transfer lanes carry file chunks. On the right, an object-store remote labelled S3, GCS, or Azure receives the chunks. The jobs setting controls how many lanes run at once.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrowRight" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -182,6 +210,42 @@ dvc remote modify --local azstore connection_string "$AZURE_STORAGE_CONNECTION_S
 ### Step 4 — Configure a Shared Cache for Rasters
 
 The cache is where the real geospatial savings live. Point `cache.dir` at fast local storage on the same filesystem as your workspace, and set `cache.type` so checkouts link rather than copy. `reflink` gives copy-on-write with no re-hashing on filesystems that support it (XFS, Btrfs, APFS); `symlink` is the portable fallback:
+
+<svg viewBox="0 0 700 280" role="img" aria-label="A shared cache directory letting several workspaces reference one copy of each tracked file by hard link" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>One cache, three workspaces, no third copy</title>
+  <desc>Three checkouts on the same machine — a training workspace, an evaluation workspace and a notebook sandbox — all point at one shared cache directory. Each workspace file is a hard link to the cached object, so a 400 gigabyte dataset checked out three ways still occupies 400 gigabytes. Without the shared cache each workspace keeps its own copy.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="cache-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="20" y="46" width="170" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="66" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">~/work/train</text>
+  <text x="105" y="83" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">checked out at v2.4.0</text>
+  <rect x="20" y="112" width="170" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">~/work/eval</text>
+  <text x="105" y="149" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">checked out at v2.3.1</text>
+  <rect x="20" y="178" width="170" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="105" y="198" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">~/work/sandbox</text>
+  <text x="105" y="215" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">checked out at v2.4.0</text>
+  <line x1="190" y1="69" x2="286" y2="120" stroke="currentColor" stroke-width="1.3" marker-end="url(#cache-arr)" opacity="0.6"/>
+  <line x1="190" y1="135" x2="286" y2="135" stroke="currentColor" stroke-width="1.3" marker-end="url(#cache-arr)" opacity="0.6"/>
+  <line x1="190" y1="201" x2="286" y2="150" stroke="currentColor" stroke-width="1.3" marker-end="url(#cache-arr)" opacity="0.6"/>
+  <rect x="288" y="106" width="180" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="378" y="130" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">/srv/dvc-cache</text>
+  <text x="378" y="148" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">one object per content hash</text>
+  <text x="238" y="96" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">hard links</text>
+  <!-- Totals -->
+  <rect x="500" y="60" width="180" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="590" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">shared cache</text>
+  <text x="590" y="100" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≈ 400 GB</text>
+  <rect x="500" y="130" width="180" height="50" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="590" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">a cache per workspace</text>
+  <text x="590" y="170" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">≈ 1.2 TB</text>
+  <text x="350" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">hard links need the cache and the workspace on one filesystem — across a mount boundary DVC silently falls back to copying,</text>
+  <text x="350" y="260" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and the disk usage goes back to the dashed number</text>
+</svg>
 
 ```bash
 dvc cache dir /data/dvc-cache

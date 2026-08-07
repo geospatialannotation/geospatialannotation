@@ -91,6 +91,7 @@ A production spatial versioning architecture has four interconnected layers. Eac
 <svg viewBox="0 0 800 380" role="img" aria-label="Dataset versioning pipeline architecture showing four layers and six data flow stages" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:800px;display:block;margin:1.5rem auto;">
   <title>Dataset Versioning Pipeline Architecture</title>
   <desc>Four-layer architecture: Object Storage feeds into Content-Addressable Version Control, then Atomic Manifest Engine, then Compute Data Loader. Below, six sequential data flow stages run left to right: Ingest raster, Validate CRS, Tile and hash, Overlay labels, Write manifest, Promote version. A dashed feedback arrow returns from Promote version back to Ingest raster.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="7" refX="7" refY="3.5" orient="auto">
       <path d="M0,0 L0,7 L8,3.5 z" fill="currentColor" opacity="0.6"/>
@@ -230,6 +231,42 @@ def ingest_to_cog(
 
 GeoTIFFs contain volatile metadata blocks that GDAL utilities can rewrite without altering pixel values. Hashing raw file bytes therefore produces false version drift. The correct approach hashes only the semantic content:
 
+<svg viewBox="0 0 740 290" role="img" aria-label="A tile's identity built from decoded pixels plus canonical spatial metadata, so a re-export with a new timestamp keeps the same hash" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>What goes into a tile's identity, and what must stay out</title>
+  <desc>The deterministic tile hash covers decoded pixel buffers, the affine transform rounded to a fixed precision, the EPSG code and the band order. It deliberately excludes the file timestamp, the compression settings, the GDAL version string and any embedded processing history, because those change on every re-export without changing what the tile depicts.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- In -->
+  <rect x="20" y="46" width="250" height="200" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="145" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">hashed — the tile's identity</text>
+  <text x="40" y="104" font-size="11" fill="currentColor" font-family="monospace">decoded pixel buffers</text>
+  <text x="40" y="124" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">band by band, after decompression</text>
+  <text x="40" y="154" font-size="11" fill="currentColor" font-family="monospace">affine transform</text>
+  <text x="40" y="174" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">rounded to a fixed precision first</text>
+  <text x="40" y="204" font-size="11" fill="currentColor" font-family="monospace">EPSG code · band order</text>
+  <text x="40" y="224" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">canonicalised, never the raw WKT</text>
+  <!-- Out -->
+  <rect x="470" y="46" width="250" height="200" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="595" y="72" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">excluded — noise</text>
+  <text x="490" y="104" font-size="11" fill="currentColor" font-family="monospace">file mtime</text>
+  <text x="490" y="130" font-size="11" fill="currentColor" font-family="monospace">compression level, block size</text>
+  <text x="490" y="156" font-size="11" fill="currentColor" font-family="monospace">GDAL version string</text>
+  <text x="490" y="182" font-size="11" fill="currentColor" font-family="monospace">TIFFTAG_SOFTWARE, history</text>
+  <text x="490" y="212" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">each of these changes on a re-export</text>
+  <text x="490" y="226" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">without changing a single pixel</text>
+  <!-- Middle -->
+  <rect x="292" y="118" width="156" height="56" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="370" y="142" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">SHA-256</text>
+  <text x="370" y="160" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">7e02a3f8…</text>
+  <line x1="270" y1="146" x2="288" y2="146" stroke="currentColor" stroke-width="1.5" marker-end="url(#dvh-arr)"/>
+  <defs>
+    <marker id="dvh-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <line x1="466" y1="146" x2="452" y2="146" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2" opacity="0.5"/>
+  <text x="370" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the test: re-export the same scene twice with different settings — the digest must not move</text>
+</svg>
+
 ```python
 import hashlib
 import numpy as np
@@ -347,6 +384,33 @@ def promote_version(
 
 Standard DevOps pipelines do not surface these failure patterns — they are unique to geospatial data engineering.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="Four spatial failure modes of a versioning pipeline and the layer each one is caught in" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Which layer is supposed to catch which failure</title>
+  <desc>Non-deterministic re-exports are caught by content hashing. A CRS change between versions is caught by manifest validation. A partial upload leaving orphaned objects is caught by the sync layer's manifest comparison. A tile present in the manifest but missing from storage is caught at load time, which is the latest and most expensive place to find out.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="330" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">caught by</text>
+  <text x="600" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">cost when missed</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="78" font-size="11" fill="currentColor" font-family="sans-serif">re-export changes the bytes,</text>
+  <text x="20" y="94" font-size="11" fill="currentColor" font-family="sans-serif">not the pixels</text>
+  <rect x="230" y="64" width="200" height="24" rx="4" fill="currentColor" opacity="0.35"/>
+  <text x="330" y="81" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">content hashing</text>
+  <text x="600" y="81" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a full re-push of an unchanged set</text>
+  <text x="20" y="132" font-size="11" fill="currentColor" font-family="sans-serif">CRS differs from the last version</text>
+  <rect x="230" y="118" width="200" height="24" rx="4" fill="currentColor" opacity="0.35"/>
+  <text x="330" y="135" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">manifest validation</text>
+  <text x="600" y="135" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">labels and imagery drift apart</text>
+  <text x="20" y="186" font-size="11" fill="currentColor" font-family="sans-serif">partial upload, orphaned objects</text>
+  <rect x="230" y="172" width="200" height="24" rx="4" fill="currentColor" opacity="0.35"/>
+  <text x="330" y="189" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">sync layer comparison</text>
+  <text x="600" y="189" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">storage bill, and a confusing diff</text>
+  <text x="20" y="240" font-size="11" fill="currentColor" font-family="sans-serif">in the manifest, absent from storage</text>
+  <rect x="230" y="226" width="200" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="330" y="243" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">the data loader, mid-epoch</text>
+  <text x="600" y="243" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a crashed run and a wasted GPU night</text>
+  <text x="360" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">every row above the dashed one is cheap; the value of the manifest is moving the last row up into the third</text>
+</svg>
+
 **CRS drift across annotation layers.** Annotations created in `EPSG:4326` (geographic, degrees) silently misalign with imagery stored in `EPSG:3857` (Web Mercator) or a local UTM zone. At mid-latitudes, a 1-metre pixel in UTM corresponds to roughly 0.00001 degrees, but the mapping is non-linear. Without enforcing a single canonical CRS at ingestion, pixel-to-polygon offsets compound silently until validation IoU metrics collapse. Always enforce reprojection at the boundary of the ingestion stage, not during training.
 
 **Tiling scheme mismatch between model versions.** Changing from 256×256 to 512×512 tiles, or shifting the tile grid origin by one pixel, invalidates all existing manifests even though the underlying imagery is identical. Record the tile grid parameters (size, overlap percentage, origin offset, and CRS) as first-class fields in the manifest rather than as implicit pipeline defaults.
@@ -454,6 +518,56 @@ Versioning infrastructure only delivers value when paired with strict operationa
 
 ---
 
+## What a Version Actually Has to Promise
+
+A dataset version is not a backup. A backup promises that the bytes can be restored; a version promises
+something stronger and more useful — that a stated result can be reproduced from it. Four properties carry
+that promise, and each one fails differently when it is missing.
+
+**Identity.** Two people asking for `v2.4.0` must receive the same data. That is a stronger claim than it
+looks, because "the same data" has to survive a re-export through a different GDAL build, a re-compression,
+and a filesystem that reorders directory listings. Content hashing over decoded pixels and canonicalised
+metadata is what makes the claim testable rather than aspirational, and a version system without it
+degrades into a naming convention.
+
+**Completeness.** A version must name every artifact a training run consumes: imagery, labels, the split
+manifest, the taxonomy, the geotransform sidecars. The common failure is the artifact nobody thought of as
+data — a normalisation statistic fitted on the training set, a class-weight table, a list of tiles excluded
+for cloud. Each of those changes results, and each is easy to leave outside the version, where it drifts
+silently.
+
+**Provenance.** For any feature in the dataset, it should be possible to say which scene it came from, when
+that scene was acquired, who annotated it and under which taxonomy version. None of that can be recovered
+from the pixels afterwards, which is why it is recorded at ingest rather than reconstructed later.
+
+**Reversibility.** Every published version must be restorable without a human deciding what to restore.
+That means the restore path is a command rather than a runbook, and that it is exercised occasionally
+rather than trusted. A rollback procedure that has never been run is a hypothesis.
+
+The four are ordered by how loudly they fail. A broken identity claim shows up as a re-push of unchanged
+data — annoying, visible, cheap. A broken provenance claim shows up eighteen months later, when someone
+asks why one region's labels are systematically different and the only honest answer is that nobody knows.
+
+## Where Versioning Meets the Rest of the Pipeline
+
+Versioning is often introduced as a storage concern and then discovered to be a coordination one. Three
+boundaries do most of the work.
+
+The **annotation platform boundary** is where labels stop being a database row and become a file. Everything
+upstream of it is mutable by design — annotators edit, reviewers correct, states change — and everything
+downstream must be immutable, or the version means nothing. The harvest step that crosses that boundary is
+therefore the single most important idempotence requirement in the pipeline.
+
+The **training boundary** is where a version is consumed. A loader that globs a directory has quietly
+opted out of versioning: it will pick up whatever is there at run time, which is exactly the failure the
+version was supposed to prevent. Loaders should read a manifest and fail loudly when an entry is missing,
+rather than training on whatever subset happens to be present.
+
+The **publication boundary** is where a version becomes visible to other teams. This is the point at which
+a version number acquires meaning outside the project, and the point after which it can no longer be
+changed. Publishing early and often is good; publishing something that will later need to be edited is not,
+which is why the pointer flip comes last in every sequence in this section.
+
 ## Production-Readiness Implementation Checklist
 
 The following gates define a production-ready spatial versioning system. Incomplete gates should block model training runs.
@@ -475,6 +589,7 @@ The following gates define a production-ready spatial versioning system. Incompl
 
 ## Related
 
+- [Reproducible Train/Validation Splits for Spatial Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/) — spatially blocked, buffered splits recorded in a manifest, and the tests that catch leakage after the fact
 - [Implementing DVC for Geospatial Training Data](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/) — migrate from ad-hoc sync scripts to DVC pipelines with S3/GCS remotes
 - [Tracking Annotation Changes with SHA Hashing](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/tracking-annotation-changes-with-sha-hashing/) — normalize and hash complex label geometries for deterministic drift detection
 - [Rollback Strategies for Corrupted Spatial Datasets](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/) — recover from corrupted COG exports, registry pointer failures, and partial sync states

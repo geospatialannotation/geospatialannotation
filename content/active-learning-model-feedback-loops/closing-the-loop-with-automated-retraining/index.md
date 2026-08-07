@@ -95,6 +95,7 @@ Closing that gap is the whole point of an [active learning loop](https://www.geo
 <svg viewBox="0 0 900 320" role="img" aria-label="Retraining promotion pipeline: new annotations flow into a dataset version, a candidate is trained, an evaluation gate decides between promote and reject with rollback" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:900px;display:block;margin:1.5rem auto;">
   <title>Retraining Promotion Pipeline</title>
   <desc>A left-to-right pipeline. New annotations feed a build-dataset-version step, which feeds a train-candidate step, which feeds an evaluation gate drawn as a diamond. A passing gate promotes the candidate to production; a failing gate rejects it and a dashed feedback arrow restores the last known-good checkpoint.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="rp-arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.65"/>
@@ -124,10 +125,10 @@ Closing that gap is the whole point of an [active learning loop](https://www.geo
   <line x1="150" y1="156" x2="183" y2="156" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
   <line x1="335" y1="156" x2="368" y2="156" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
   <line x1="510" y1="156" x2="513" y2="156" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
-  <line x1="643" y1="130" x2="738" y2="82" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
-  <text x="678" y="100" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">pass</text>
-  <line x1="643" y1="182" x2="738" y2="230" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
-  <text x="678" y="220" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">fail</text>
+  <path d="M600 105 L600 73 L736 73" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
+  <text x="668" y="66" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">pass</text>
+  <path d="M600 207 L600 239 L736 239" fill="none" stroke="currentColor" stroke-width="1.5" marker-end="url(#rp-arr)" opacity="0.65"/>
+  <text x="668" y="232" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor" font-family="sans-serif" opacity="0.8">fail</text>
   <path d="M815,272 L815,300 L440,300 L440,194" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 4" marker-end="url(#rp-arr)" opacity="0.55"/>
   <text x="600" y="315" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">restore last known-good checkpoint</text>
 </svg>
@@ -227,6 +228,39 @@ The `replay_fraction` slice is deliberate: fine-tuning purely on new tiles is th
 ### Define an evaluation gate
 
 The gate is the safety valve. It compares the candidate's score on a frozen hold-out set against the deployed baseline and returns a single boolean. Encode the rule as data, not scattered `if` statements, so the same policy governs every run and can be logged.
+
+<svg viewBox="0 0 720 260" role="img" aria-label="Candidate metrics against the promotion gate, where one regression blocks promotion despite an overall gain" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The gate is per-class, because the average hides the loss</title>
+  <desc>The candidate improves overall mean IoU from 0.68 to 0.71 and improves three classes. The water class falls from 0.74 to 0.66, an eight point regression well past the tolerated two points. The gate blocks promotion on that one class, because a mean that improves while a class collapses is exactly the trade the average is bad at showing.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="360" y="36" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">baseline → candidate, per class</text>
+  <line x1="20" y1="46" x2="700" y2="46" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="monospace">building</text>
+  <text x="250" y="76" font-size="11" fill="currentColor" font-family="monospace">0.71 → 0.75</text>
+  <rect x="400" y="62" width="120" height="18" rx="3" fill="currentColor" opacity="0.35"/>
+  <text x="460" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">+0.04</text>
+  <text x="560" y="76" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">passes</text>
+  <text x="20" y="112" font-size="11" fill="currentColor" font-family="monospace">road</text>
+  <text x="250" y="112" font-size="11" fill="currentColor" font-family="monospace">0.66 → 0.70</text>
+  <rect x="400" y="98" width="120" height="18" rx="3" fill="currentColor" opacity="0.35"/>
+  <text x="460" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">+0.04</text>
+  <text x="560" y="112" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">passes</text>
+  <text x="20" y="148" font-size="11" fill="currentColor" font-family="monospace">cropland</text>
+  <text x="250" y="148" font-size="11" fill="currentColor" font-family="monospace">0.61 → 0.73</text>
+  <rect x="400" y="134" width="120" height="18" rx="3" fill="currentColor" opacity="0.35"/>
+  <text x="460" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">+0.12</text>
+  <text x="560" y="148" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">passes</text>
+  <text x="20" y="184" font-size="11" fill="currentColor" font-family="monospace">water</text>
+  <text x="250" y="184" font-size="11" fill="currentColor" font-family="monospace">0.74 → 0.66</text>
+  <rect x="400" y="170" width="120" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+  <text x="460" y="184" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">−0.08</text>
+  <text x="560" y="184" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.9">blocks — tolerance is 0.02</text>
+  <line x1="20" y1="198" x2="700" y2="198" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+  <text x="20" y="224" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">mean IoU</text>
+  <text x="250" y="224" font-size="11" fill="currentColor" font-family="monospace">0.68 → 0.71</text>
+  <text x="400" y="224" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the number that would have promoted it</text>
+  <text x="360" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">gate on the worst class, not the mean — the incremental batch that taught it cropland is what cost it water</text>
+</svg>
 
 ```python
 from __future__ import annotations
@@ -396,6 +430,44 @@ Newly validated tiles are not automatically trustworthy. A single annotator's sy
 ### Eval-set contamination via spatial autocorrelation
 
 Adjacent tiles are not independent samples: they share roads, buildings, and terrain that spill across tile edges. A random train/hold-out split therefore places near-copies of hold-out content into training, and the evaluation score climbs for reasons that have nothing to do with real generalization. Split the hold-out by geographic block — an entire region or acquisition scene — and add a buffer so no training tile physically borders a hold-out tile. Freeze that block once and never label inside it.
+
+<svg viewBox="0 0 700 280" role="img" aria-label="A spatially blocked evaluation split compared with a random one, showing why the random split reports a better number" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>A random split lets the model see the neighbours of its own test set</title>
+  <desc>With a random tile split, validation tiles sit directly beside training tiles, sharing roofs, shadows and field boundaries, so validation accuracy overstates real performance by a wide margin. Holding out contiguous blocks instead means the evaluation tiles have no training neighbour, and the number it reports is the one that survives deployment.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Random split -->
+  <text x="160" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">random tile split</text>
+  <rect x="40" y="48" width="240" height="160" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <g>
+    <rect x="40" y="48" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="80" y="48" width="40" height="40" fill="none"/>
+    <rect x="120" y="48" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="200" y="48" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="40" y="88" width="40" height="40" fill="none"/><rect x="80" y="88" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="160" y="88" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="240" y="88" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="40" y="128" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="120" y="128" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="200" y="128" width="40" height="40" fill="none"/><rect x="240" y="128" width="40" height="40" fill="currentColor" opacity="0.4"/>
+    <rect x="80" y="168" width="40" height="40" fill="currentColor" opacity="0.4"/><rect x="160" y="168" width="40" height="40" fill="none"/>
+    <rect x="200" y="168" width="40" height="40" fill="currentColor" opacity="0.4"/>
+  </g>
+  <g stroke="currentColor" stroke-width="0.8" opacity="0.4">
+    <line x1="80" y1="48" x2="80" y2="208"/><line x1="120" y1="48" x2="120" y2="208"/><line x1="160" y1="48" x2="160" y2="208"/><line x1="200" y1="48" x2="200" y2="208"/><line x1="240" y1="48" x2="240" y2="208"/>
+    <line x1="40" y1="88" x2="280" y2="88"/><line x1="40" y1="128" x2="280" y2="128"/><line x1="40" y1="168" x2="280" y2="168"/>
+  </g>
+  <text x="160" y="232" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">every held-out tile touches a training tile</text>
+  <text x="160" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the same roofs and field edges appear on both sides</text>
+  <text x="160" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">reported IoU 0.84</text>
+  <!-- Blocked split -->
+  <text x="500" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">spatially blocked split</text>
+  <rect x="380" y="48" width="240" height="160" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="380" y="48" width="160" height="160" fill="currentColor" opacity="0.4"/>
+  <g stroke="currentColor" stroke-width="0.8" opacity="0.4">
+    <line x1="420" y1="48" x2="420" y2="208"/><line x1="460" y1="48" x2="460" y2="208"/><line x1="500" y1="48" x2="500" y2="208"/><line x1="540" y1="48" x2="540" y2="208"/><line x1="580" y1="48" x2="580" y2="208"/>
+    <line x1="380" y1="88" x2="620" y2="88"/><line x1="380" y1="128" x2="620" y2="128"/><line x1="380" y1="168" x2="620" y2="168"/>
+  </g>
+  <line x1="540" y1="48" x2="540" y2="208" stroke="currentColor" stroke-width="2.5"/>
+  <text x="500" y="232" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">one boundary, no shared context</text>
+  <text x="500" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the evaluation area is genuinely unseen ground</text>
+  <text x="500" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">reported IoU 0.68 — and it holds up in production</text>
+</svg>
 
 ### Silent metric regression
 

@@ -97,6 +97,7 @@ Uncertainty sampling replaces the random draw with a targeted one. Instead of as
 <svg viewBox="0 0 840 340" role="img" aria-label="Comparison of least-confidence, margin, and entropy uncertainty scoring computed on the same class-probability vector" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:840px;display:block;margin:1.5rem auto;">
   <title>Three Uncertainty Scores on One Probability Vector</title>
   <desc>Three panels each show the same softmax output of 0.50, 0.30 and 0.20 over classes A, B and C. The least-confidence panel reports 0.50, the margin panel reports 0.80, and the normalized-entropy panel reports 0.94, illustrating how each score reacts differently to the same distribution.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Panel 1: Least confidence -->
   <rect x="15" y="20" width="250" height="300" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.45"/>
   <text x="140" y="45" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Least confidence</text>
@@ -206,6 +207,33 @@ For a classifier or detector, `probs` is one vector per tile and any of the thre
 ### Step 2 — Aggregate pixel scores to a tile score
 
 A segmenter emits a probability tensor of shape `(num_classes, H, W)`, so every one of tens of thousands of pixels gets its own uncertainty value. Active learning queues tiles, not pixels, so those maps must reduce to a single number. A plain mean is the wrong reducer: a tile that is 98% confident background with a small, deeply confusing structure in one corner averages out to "confident" and never gets queued — even though that corner is exactly what you want labeled.
+
+<svg viewBox="0 0 720 280" role="img" aria-label="Three ways of reducing per-pixel uncertainty to one tile score, and the tile each one prefers" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The aggregation decides which tile wins</title>
+  <desc>Two tiles. Tile A has a small strip of very uncertain pixels along one field boundary; tile B is mildly uncertain everywhere. The mean over all pixels ranks B first, because its uncertainty is spread. The top-k mean over the most uncertain 1 percent ranks A first, because that is where a boundary the model cannot resolve actually is. The maximum ranks A too, but is set by a single pixel and is therefore noisy.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Tile A -->
+  <text x="120" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">tile A — concentrated</text>
+  <rect x="40" y="48" width="160" height="120" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="40" y="48" width="160" height="120" fill="currentColor" opacity="0.08"/>
+  <path d="M52 150 L96 96 L142 108 L188 62" fill="none" stroke="currentColor" stroke-width="8" opacity="0.45"/>
+  <text x="120" y="186" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">one unresolvable boundary</text>
+  <!-- Tile B -->
+  <text x="340" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">tile B — diffuse</text>
+  <rect x="260" y="48" width="160" height="120" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="260" y="48" width="160" height="120" fill="currentColor" opacity="0.22"/>
+  <text x="340" y="186" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">mild haze over the whole chip</text>
+  <!-- Rankings -->
+  <text x="470" y="66" font-size="11" fill="currentColor" font-family="monospace">mean over all pixels</text>
+  <text x="470" y="84" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks B first — the strip is diluted</text>
+  <text x="470" y="120" font-size="11" fill="currentColor" font-family="monospace">top-1% mean</text>
+  <text x="470" y="138" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks A first — and is stable</text>
+  <text x="470" y="174" font-size="11" fill="currentColor" font-family="monospace">maximum</text>
+  <text x="470" y="192" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks A too, on one pixel — noisy</text>
+  <rect x="460" y="104" width="250" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="360" y="230" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the annotator can fix A's boundary in a minute; B needs better imagery, not a label</text>
+  <text x="360" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">which is the whole argument for the top-k mean: it asks where a human could actually help</text>
+</svg>
 
 Use a high-percentile or masked-mean aggregator that preserves local difficulty.
 
@@ -340,6 +368,54 @@ The table below summarizes the levers introduced above, the range each produces,
 ### Calibration decides whether the ranking can be trusted
 
 Uncertainty scores are only as honest as the probabilities they read. Modern networks are systematically over-confident, so raw softmax entropy understates true uncertainty and the queue skews toward whichever classes the model shouts loudest. Because ranking needs only the relative order to hold, you rarely need to retrain — temperature scaling, a single learned scalar dividing the logits, is usually enough to restore a trustworthy order. Treat calibrated [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) as a prerequisite, not a nicety, before you let a score drive human effort.
+
+<svg viewBox="0 0 700 260" role="img" aria-label="Uncertainty scores from an uncalibrated model producing a ranking that does not match real error" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>An uncalibrated model ranks confidently, and wrongly</title>
+  <desc>Six tiles ordered by the model's reported uncertainty against their measured error. Under an uncalibrated model the two orderings barely correspond, so the queue spends the budget on tiles the model merely reports as uncertain. After temperature scaling the same six tiles line up, and the top of the queue is genuinely the top of the error.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Uncalibrated -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">uncalibrated</text>
+  <text x="60" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by score</text>
+  <text x="280" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by real error</text>
+  <g font-family="monospace" font-size="11" fill="currentColor">
+    <text x="60" y="86" text-anchor="middle">t_14</text><text x="280" y="86" text-anchor="middle">t_09</text>
+    <text x="60" y="112" text-anchor="middle">t_31</text><text x="280" y="112" text-anchor="middle">t_14</text>
+    <text x="60" y="138" text-anchor="middle">t_08</text><text x="280" y="138" text-anchor="middle">t_77</text>
+    <text x="60" y="164" text-anchor="middle">t_52</text><text x="280" y="164" text-anchor="middle">t_31</text>
+    <text x="60" y="190" text-anchor="middle">t_09</text><text x="280" y="190" text-anchor="middle">t_52</text>
+    <text x="60" y="216" text-anchor="middle">t_77</text><text x="280" y="216" text-anchor="middle">t_08</text>
+  </g>
+  <g stroke="currentColor" stroke-width="1" opacity="0.45">
+    <line x1="86" y1="82" x2="254" y2="108"/>
+    <line x1="86" y1="108" x2="254" y2="160"/>
+    <line x1="86" y1="134" x2="254" y2="212"/>
+    <line x1="86" y1="160" x2="254" y2="186"/>
+    <line x1="86" y1="186" x2="254" y2="82"/>
+    <line x1="86" y1="212" x2="254" y2="134"/>
+  </g>
+  <text x="170" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the queue is spending on t_14 and t_31</text>
+  <!-- Calibrated -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">after temperature scaling</text>
+  <text x="420" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by score</text>
+  <text x="640" y="60" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">by real error</text>
+  <g font-family="monospace" font-size="11" fill="currentColor">
+    <text x="420" y="86" text-anchor="middle">t_09</text><text x="640" y="86" text-anchor="middle">t_09</text>
+    <text x="420" y="112" text-anchor="middle">t_14</text><text x="640" y="112" text-anchor="middle">t_14</text>
+    <text x="420" y="138" text-anchor="middle">t_77</text><text x="640" y="138" text-anchor="middle">t_77</text>
+    <text x="420" y="164" text-anchor="middle">t_52</text><text x="640" y="164" text-anchor="middle">t_31</text>
+    <text x="420" y="190" text-anchor="middle">t_31</text><text x="640" y="190" text-anchor="middle">t_52</text>
+    <text x="420" y="216" text-anchor="middle">t_08</text><text x="640" y="216" text-anchor="middle">t_08</text>
+  </g>
+  <g stroke="currentColor" stroke-width="1" opacity="0.45">
+    <line x1="446" y1="82" x2="614" y2="82"/>
+    <line x1="446" y1="108" x2="614" y2="108"/>
+    <line x1="446" y1="134" x2="614" y2="134"/>
+    <line x1="446" y1="160" x2="614" y2="186"/>
+    <line x1="446" y1="186" x2="614" y2="160"/>
+    <line x1="446" y1="212" x2="614" y2="212"/>
+  </g>
+  <text x="530" y="244" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the top of the queue is the top of the error</text>
+</svg>
 
 ### Spatial autocorrelation collapses the batch
 

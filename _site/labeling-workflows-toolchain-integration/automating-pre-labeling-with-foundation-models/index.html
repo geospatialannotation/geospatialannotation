@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -276,6 +295,17 @@
           </li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/" class="">Orchestrating Annotation Pipelines with Airflow</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/backfilling-a-month-of-annotation-harvests/" class="">Backfilling a Month of Annotation Harvests</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
             
             <ul>
@@ -283,6 +313,17 @@
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
               
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/" class="">Label Studio vs QGIS for Geospatial Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/" class="">Serving Imagery Tiles to Annotation Tools</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/adding-an-xyz-tile-layer-to-label-studio-tasks/" class="">Adding an XYZ Tile Layer to Label Studio Tasks</a></li>
               
             </ul>
             
@@ -453,6 +494,7 @@ proj <span class="token parameter variable">--version</span>          <span clas
 <svg viewBox="0 0 780 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Foundation model pre-labeling pipeline: five stages from raster ingest to annotation export" style="width:100%;max-width:780px;height:auto;display:block;margin:1.5rem auto;">
   <title>Foundation Model Pre-Labeling Pipeline</title>
   <desc>Five-stage data flow: Raster Ingest, Tile and Window Read, Foundation Model Inference, Vectorize and Georeference, then two parallel outputs: Filter and Merge followed by Export and Validate. Arrows between stages carry the spatial metadata (affine transform, CRS, confidence scores) that must be preserved at each step.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-pm" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -548,6 +590,38 @@ proj <span class="token parameter variable">--version</span>          <span clas
 <p>If <code class="inline-code">epsg</code> returns <code class="inline-code">None</code>, the CRS is non-standard (common with older aerial survey files). Convert explicitly to a known EPSG code before proceeding — the <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> page covers the standard reprojection pattern.</p>
 <h3 id="step-2-tiling-with-windowed-reads" tabindex="-1"><a class="header-anchor" href="#step-2-tiling-with-windowed-reads" aria-label="Permalink to section &quot;Step 2 — Tiling with Windowed Reads&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Tiling with Windowed Reads</h3>
 <p>Large orthomosaics routinely exceed GPU memory. Split into fixed-size tiles with 10–15% overlap to prevent edge truncation. The overlap region is deduplicated after merging.</p>
+<svg viewBox="46 39 660 253" role="img" aria-label="Memory required to read a whole scene compared with a windowed read of one tile, on a logarithmic scale" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:660px;display:block;margin:1.5rem auto;">
+  <title>Why the read is windowed and not whole-scene</title>
+  <desc>A 40 000 by 40 000 pixel four-band scene at 16 bits per sample needs about 12.8 gigabytes resident to read in one call. A single 512 by 512 window of the same scene needs about 2 megabytes, and the tile loop holds only one window plus the model batch at a time. The logarithmic axis spans one megabyte to one hundred gigabytes.</desc>
+  <rect x="46" y="39" width="660" height="253" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="220" y1="196" x2="670" y2="196" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="220" y1="192" x2="220" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="310" y1="192" x2="310" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="400" y1="192" x2="400" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="490" y1="192" x2="490" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="580" y1="192" x2="580" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <line x1="670" y1="192" x2="670" y2="200" stroke="currentColor" stroke-width="1" opacity="0.6"/>
+  <text x="220" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 MB</text>
+  <text x="310" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10 MB</text>
+  <text x="400" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">100 MB</text>
+  <text x="490" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">1 GB</text>
+  <text x="580" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">10 GB</text>
+  <text x="670" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">100 GB</text>
+  <text x="445" y="236" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">resident memory for one read (log scale)</text>
+  <!-- Rows -->
+  <text x="210" y="70" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">whole scene in one call</text>
+  <text x="210" y="86" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">40 000 × 40 000 px, 4 bands, uint16</text>
+  <rect x="220" y="60" width="370" height="18" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="602" y="74" font-size="11" fill="currentColor" font-family="monospace">≈ 12.8 GB</text>
+  <text x="210" y="132" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">one windowed read</text>
+  <text x="210" y="148" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">512 × 512 px, 4 bands, uint16</text>
+  <rect x="220" y="122" width="27" height="18" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="255" y="136" font-size="11" fill="currentColor" font-family="monospace">≈ 2 MB</text>
+  <!-- Note -->
+  <rect x="220" y="248" width="450" height="24" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
+  <text x="445" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the tile loop holds one window and the model batch — never the scene</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -723,6 +797,44 @@ model_gd <span class="token operator">=</span> AutoModelForZeroShotObjectDetecti
 <p>Apply <code class="inline-code">make_valid</code> from Shapely immediately after construction. Contour extraction from noisy masks can produce self-intersecting rings that cause <code class="inline-code">geopandas</code> spatial joins to silently return empty results.</p>
 <h3 id="step-5-confidence-filtering-and-tile-boundary-deduplication" tabindex="-1"><a class="header-anchor" href="#step-5-confidence-filtering-and-tile-boundary-deduplication" aria-label="Permalink to section &quot;Step 5 — Confidence Filtering and Tile-Boundary Deduplication&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 5 — Confidence Filtering and Tile-Boundary Deduplication</h3>
 <p>Two-stage filtering removes noise before the merge step. Calibrate thresholds on a 200-tile validation split of manually labeled imagery. Assign per-annotation <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> as attributes so annotation platforms can prioritize low-confidence candidates for human review.</p>
+<svg viewBox="0 0 720 300" role="img" aria-label="An object crossing a tile seam is detected twice, once per tile, and the two partial masks are merged in world coordinates" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The same warehouse, detected twice, once per tile</title>
+  <desc>Two overlapping tiles share a 64 pixel seam. A warehouse straddling the seam is detected as a truncated mask in each tile, so the raw output holds two low-confidence partial polygons where there is one building. After georeferencing, polygons from different tiles whose intersection over union exceeds 0.5 are merged and the union is kept, restoring one full footprint.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Tiles -->
+  <rect x="40" y="50" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="140" y="42" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">tile 07</text>
+  <rect x="204" y="50" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="304" y="42" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">tile 08</text>
+  <rect x="204" y="50" width="36" height="140" fill="currentColor" opacity="0.12"/>
+  <text x="222" y="206" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">64 px overlap</text>
+  <!-- Partial detections -->
+  <polygon points="150,90 240,86 240,150 152,154" fill="currentColor" opacity="0.28"/>
+  <polygon points="150,90 240,86 240,150 152,154" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="196" y="124" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif">conf 0.61</text>
+  <polygon points="204,88 296,84 298,148 204,152" fill="currentColor" opacity="0.28"/>
+  <polygon points="204,88 296,84 298,148 204,152" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="252" y="124" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif">conf 0.58</text>
+  <text x="222" y="230" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">two truncated masks, both under threshold</text>
+  <!-- Arrow -->
+  <line x1="406" y1="120" x2="464" y2="120" stroke="currentColor" stroke-width="1.5" marker-end="url(#seam-arr)"/>
+  <defs>
+    <marker id="seam-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="440" y="110" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">merge</text>
+  <!-- Merged -->
+  <rect x="470" y="50" width="220" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="580" y="42" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">world coordinates</text>
+  <polygon points="500,88 660,84 662,150 502,154" fill="currentColor" opacity="0.28"/>
+  <polygon points="500,88 660,84 662,150 502,154" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="581" y="124" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">one footprint</text>
+  <text x="580" y="230" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">union kept where cross-tile IoU &gt; 0.5</text>
+  <!-- Footnote -->
+  <text x="360" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">deduplicate after georeferencing, never in pixel space — the two tiles have different pixel origins</text>
+  <text x="360" y="284" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and filter on confidence after the merge, or the seam quietly deletes every object that crosses it</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -1042,17 +1154,17 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
 <hr>
 <h2 id="production-readiness-checklist" tabindex="-1"><a class="header-anchor" href="#production-readiness-checklist" aria-label="Permalink to section &quot;Production Readiness Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Readiness Checklist</h2>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8268771"><label class="task-list-item-label" for="task-item-8268771"> CRS validated and EPSG resolved before tile generation begins</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1115002"><label class="task-list-item-label" for="task-item-1115002"> Affine transform bundled with each tile task in multiprocessing pool</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6084672"> <code class="inline-code">make_valid</code><label class="task-list-item-label" for="task-item-6084672"> `make_valid` called immediately after contour-to-polygon conversion</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7732502"><label class="task-list-item-label" for="task-item-7732502"> Per-tile GeoParquet checkpoints written before next tile starts (idempotent resume)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1105649"><label class="task-list-item-label" for="task-item-1105649"> Confidence threshold calibrated against at least 200 manually labeled validation tiles</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7851126"> Spatial NMS run with <code class="inline-code">sindex</code><label class="task-list-item-label" for="task-item-7851126"> Spatial NMS run with `sindex` for datasets with more than 100,000 predictions</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9958731"> <code class="inline-code">assert_geom_in_bounds</code><label class="task-list-item-label" for="task-item-9958731"> `assert_geom_in_bounds` check passes on sample before full export</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2886462"> Required metadata schema validated with <code class="inline-code">pydantic</code><label class="task-list-item-label" for="task-item-2886462"> Required metadata schema validated with `pydantic` or assertion block</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8789027"> Export CRS matches target annotation platform expectations (<code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-8789027"> Export CRS matches target annotation platform expectations (`EPSG:4326` for Label Studio)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1032772"><label class="task-list-item-label" for="task-item-1032772"> DVC pipeline stage defined so inference cache is not invalidated by filter-only changes</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5991082"><label class="task-list-item-label" for="task-item-5991082"> Human review acceptance rate tracked per model checkpoint and image acquisition date</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1923489"><label class="task-list-item-label" for="task-item-1923489"> CRS validated and EPSG resolved before tile generation begins</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1584163"><label class="task-list-item-label" for="task-item-1584163"> Affine transform bundled with each tile task in multiprocessing pool</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2562343"> <code class="inline-code">make_valid</code><label class="task-list-item-label" for="task-item-2562343"> `make_valid` called immediately after contour-to-polygon conversion</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5302860"><label class="task-list-item-label" for="task-item-5302860"> Per-tile GeoParquet checkpoints written before next tile starts (idempotent resume)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9369977"><label class="task-list-item-label" for="task-item-9369977"> Confidence threshold calibrated against at least 200 manually labeled validation tiles</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3588996"> Spatial NMS run with <code class="inline-code">sindex</code><label class="task-list-item-label" for="task-item-3588996"> Spatial NMS run with `sindex` for datasets with more than 100,000 predictions</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4495969"> <code class="inline-code">assert_geom_in_bounds</code><label class="task-list-item-label" for="task-item-4495969"> `assert_geom_in_bounds` check passes on sample before full export</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6848104"> Required metadata schema validated with <code class="inline-code">pydantic</code><label class="task-list-item-label" for="task-item-6848104"> Required metadata schema validated with `pydantic` or assertion block</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3725844"> Export CRS matches target annotation platform expectations (<code class="inline-code">EPSG:4326</code><label class="task-list-item-label" for="task-item-3725844"> Export CRS matches target annotation platform expectations (`EPSG:4326` for Label Studio)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6240785"><label class="task-list-item-label" for="task-item-6240785"> DVC pipeline stage defined so inference cache is not invalidated by filter-only changes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8653395"><label class="task-list-item-label" for="task-item-8653395"> Human review acceptance rate tracked per model checkpoint and image acquisition date</label></li>
 </ul>
 <hr>
 <h2 id="related" tabindex="-1"><a class="header-anchor" href="#related" aria-label="Permalink to section &quot;Related&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Related</h2>
@@ -1099,9 +1211,19 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
               <div class="desc">Label Studio is a capable general-purpose annotation platform, but geospatial pipelines expose several failure points that don&#39;t exist in standard computer vision workflows: browser-incompatible GeoTIFF formats, annotations stored in normalized pixel space rather than projected coordinates, no topology enforcement on p</div>
             </a>
           
+            <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">
+              <div class="title">Orchestrating Annotation Pipelines with Airflow</div>
+              <div class="desc">An annotation pipeline that works when a person runs four scripts in order stops working the first night nobody runs them. The steps are not hard — harvest yesterday&#39;s completed annotations, validate the geometry, export a training artifact, version it — but they need a schedule, credentials, retries that distinguish a</div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">
               <div class="title">QGIS Plugin Ecosystem for Annotation Teams</div>
               <div class="desc">When a polygon layer annotated in QGIS arrives at a model training job only to collapse IoU scores by 30 percentage points, the culprit is rarely the annotators. It is almost always a silent coordinate reference system mismatch between the QGIS project, the background imagery, and the export format — compounded by miss</div>
+            </a>
+          
+            <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">
+              <div class="title">Serving Imagery Tiles to Annotation Tools</div>
+              <div class="desc">An annotation platform wants an image. A geospatial archive holds forty thousand Cloud-Optimized GeoTIFFs in object storage, each one 40 000 pixels square, and copying chips out of them into the platform is the step that quietly turns a 2 TB archive into a 6 TB one and loses the georeferencing on the way. The alternati</div>
             </a>
           
             <a class="related__card" href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">
@@ -1152,6 +1274,8 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -1168,6 +1292,8 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -1181,6 +1307,8 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1208,7 +1336,11 @@ REQUIRED_COLUMNS <span class="token operator">=</span> <span class="token punctu
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

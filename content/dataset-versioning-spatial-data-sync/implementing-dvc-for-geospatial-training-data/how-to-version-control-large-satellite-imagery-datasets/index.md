@@ -80,6 +80,7 @@ To version control large satellite imagery datasets, decouple binary rasters fro
 <svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Architecture diagram: Git tracks pointer files, DVC orchestrates transfers, cloud storage holds binary rasters" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Git + DVC + Cloud Storage versioning architecture for satellite imagery</title>
   <desc>Three horizontal layers stacked vertically: Git repository at the top holding .dvc pointer files and code; DVC orchestration layer in the middle managing push, pull and checksums; Cloud object storage at the bottom holding COG and Zarr rasters. Labelled arrows on the left show commit/checkout going down and dvc pull going up between layers.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-down" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
@@ -115,6 +116,39 @@ To version control large satellite imagery datasets, decouple binary rasters fro
 ## Why Standard Git Breaks on Satellite Imagery
 
 Satellite scenes routinely exceed hundreds of gigabytes per acquisition. Git stores a full binary copy of every version of every committed file. Committing raw `.tif` or `.jp2` files causes repository size to compound linearly with dataset evolution, exhausts local disk space on developer machines, and makes CI/CD runners fail with out-of-memory errors during clone.
+
+<svg viewBox="0 0 720 270" role="img" aria-label="What Git stores for a changed GeoTIFF compared with what DVC stores, over five versions" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Five edits to one 800 MB scene, stored two ways</title>
+  <desc>Git stores a compressed copy of the whole binary at every commit, so five versions of an 800 megabyte scene occupy roughly four gigabytes inside the repository and every clone pays for all of it. DVC keeps a 200 byte pointer per version in Git and one deduplicated copy of each distinct file in remote storage, so the repository stays kilobytes and the clone pulls only the version it asks for.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Git -->
+  <text x="20" y="40" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">Git, tracking the file directly</text>
+  <rect x="20" y="52" width="128" height="34" rx="4" fill="currentColor" opacity="0.45"/>
+  <rect x="152" y="52" width="128" height="34" rx="4" fill="currentColor" opacity="0.45"/>
+  <rect x="284" y="52" width="128" height="34" rx="4" fill="currentColor" opacity="0.45"/>
+  <rect x="416" y="52" width="128" height="34" rx="4" fill="currentColor" opacity="0.45"/>
+  <rect x="548" y="52" width="128" height="34" rx="4" fill="currentColor" opacity="0.45"/>
+  <text x="84" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">v1 · 800 MB</text>
+  <text x="216" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">v2 · 800 MB</text>
+  <text x="348" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">v3 · 800 MB</text>
+  <text x="480" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">v4 · 800 MB</text>
+  <text x="612" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">v5 · 800 MB</text>
+  <text x="20" y="108" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">≈ 4 GB inside the repository — and every clone downloads all five</text>
+  <!-- DVC -->
+  <text x="20" y="156" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">DVC, tracking a pointer</text>
+  <rect x="20" y="168" width="128" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <rect x="152" y="168" width="128" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <rect x="284" y="168" width="128" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <rect x="416" y="168" width="128" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <rect x="548" y="168" width="128" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="84" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">.dvc · 200 B</text>
+  <text x="216" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">.dvc · 200 B</text>
+  <text x="348" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">.dvc · 200 B</text>
+  <text x="480" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">.dvc · 200 B</text>
+  <text x="612" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">.dvc · 200 B</text>
+  <text x="20" y="224" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">1 KB in the repository; the bytes live in remote storage, deduplicated by content hash</text>
+  <text x="20" y="252" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">a checkout of v3 pulls one 800 MB object — not the history</text>
+</svg>
 
 Git LFS partially mitigates file size but introduces different problems for spatial workloads: it lacks native support for [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) metadata as a versioned entity, has no concept of chunked raster access, and can generate significant egress costs when pulling historical commits. DVC solves this by committing only a `.dvc` pointer file — a small YAML containing the file's SHA-256 hash and storage path — while the binary lives in a scalable remote backend.
 
@@ -225,6 +259,29 @@ dvc pull
 ### Step 6: Validate COG Structure Before Committing
 
 Run this validation script before calling `dvc add`. It uses `rasterio` to assert internal tiling and overview presence — the two properties required for cloud-native chunked reads:
+
+<svg viewBox="0 0 720 260" role="img" aria-label="The four structural checks that decide whether a GeoTIFF qualifies as cloud-optimized" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>What the COG validator is actually asserting</title>
+  <desc>Four structural properties: the header and tile index sit at the front of the file, the data is internally tiled rather than striped, an overview pyramid exists down to a small enough level, and the overviews are themselves tiled. A file can open cleanly in any reader and still fail all four, which is why the check belongs in the commit path rather than in a viewer.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="40" width="330" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="66" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">1 · header at the front</text>
+  <text x="40" y="88" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the IFD and tile index precede the pixel data,</text>
+  <text x="40" y="104" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">so one request tells a client where everything is</text>
+  <rect x="370" y="40" width="330" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="390" y="66" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">2 · internally tiled</text>
+  <text x="390" y="88" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">512 × 512 blocks, not row strips —</text>
+  <text x="390" y="104" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a strip forces a full-width read for one window</text>
+  <rect x="20" y="130" width="330" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="156" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">3 · overviews present</text>
+  <text x="40" y="178" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">halving down to roughly 256 pixels, so a zoomed-out</text>
+  <text x="40" y="194" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">view does not decode full resolution</text>
+  <rect x="370" y="130" width="330" height="76" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="390" y="156" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">4 · overviews tiled too</text>
+  <text x="390" y="178" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the common near-miss: pyramids built, but written</text>
+  <text x="390" y="194" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">as strips, so the zoomed-out view is still slow</text>
+  <text x="360" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a plain GeoTIFF opens fine everywhere and fails all four — which is why "it loads in QGIS" is not the test</text>
+</svg>
 
 ```python
 from __future__ import annotations

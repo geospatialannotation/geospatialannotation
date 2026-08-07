@@ -94,9 +94,10 @@ A naive division by 100 is only correct when Label Studio's stored `original_wid
 
 ---
 
-<svg viewBox="0 0 760 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio to YOLOv8 conversion pipeline diagram" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+<svg viewBox="-14 45 786 178" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Label Studio to YOLOv8 conversion pipeline diagram" style="width:100%;max-width:786px;display:block;margin:1.5rem auto;">
   <title>Label Studio to YOLOv8 Conversion Pipeline</title>
   <desc>Five-stage pipeline: Label Studio JSON export, dimension audit, coordinate math (percentage to normalized), class mapping and directory layout, then data.yaml output ready for yolo val and yolo train.</desc>
+  <rect x="-14" y="45" width="786" height="178" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="7" refY="3.5" orient="auto">
       <path d="M0,0 L8,3.5 L0,7 Z" fill="currentColor" opacity="0.55"/>
@@ -203,6 +204,40 @@ This is especially important when [tracking annotation changes across dataset ve
 ### Step 3 — Coordinate Transformation Formula
 
 Label Studio's top-left anchor convention means `x` and `y` are the top-left corner of the box expressed as percentages of the image dimensions. YOLOv8 expects center-point coordinates normalized to 0–1:
+
+<svg viewBox="0 0 740 300" role="img" aria-label="One Label Studio box converted to a YOLO line, showing the top-left percentage anchor becoming a normalized centre point" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>From a top-left percentage to a normalized centre point</title>
+  <desc>A box on a 512 pixel chip reported by Label Studio as x 30 percent, y 20 percent, width 25 percent, height 40 percent. Halving the width and height and adding them to the top-left gives a centre at 42.5 and 40 percent, which divided by one hundred is 0.425 and 0.400. The YOLO line for class 2 is therefore 2, 0.425000, 0.400000, 0.250000, 0.400000.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Chip -->
+  <rect x="30" y="46" width="230" height="230" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="145" y="38" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">chip 512 × 512 px</text>
+  <rect x="99" y="92" width="57" height="92" fill="currentColor" opacity="0.2"/>
+  <rect x="99" y="92" width="57" height="92" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="99" cy="92" r="4" fill="currentColor"/>
+  <text x="106" y="86" font-size="9" fill="currentColor" font-family="monospace">x 30%, y 20%</text>
+  <circle cx="127" cy="138" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <text x="166" y="142" font-size="9" fill="currentColor" font-family="monospace">centre</text>
+  <text x="145" y="282" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">filled dot: Label Studio’s anchor</text>
+  <text x="145" y="296" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">hollow dot: what YOLO wants</text>
+  <!-- Arithmetic -->
+  <rect x="300" y="52" width="410" height="120" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="316" y="76" font-size="11" fill="currentColor" font-family="monospace">x_center = (30 + 25/2) / 100  =  0.425</text>
+  <text x="316" y="100" font-size="11" fill="currentColor" font-family="monospace">y_center = (20 + 40/2) / 100  =  0.400</text>
+  <text x="316" y="124" font-size="11" fill="currentColor" font-family="monospace">w_norm   =  25 / 100          =  0.250</text>
+  <text x="316" y="148" font-size="11" fill="currentColor" font-family="monospace">h_norm   =  40 / 100          =  0.400</text>
+  <line x1="505" y1="172" x2="505" y2="200" stroke="currentColor" stroke-width="1.5" marker-end="url(#yo-arr)"/>
+  <defs>
+    <marker id="yo-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Output line -->
+  <rect x="300" y="202" width="410" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="505" y="230" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">2 0.425000 0.400000 0.250000 0.400000</text>
+  <text x="505" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">class id first, then four values in 0–1 — no pixels, no percentages,</text>
+  <text x="505" y="286" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and the chip size never appears in the file</text>
+</svg>
 
 ```
 x_center = (x_pct + width_pct / 2) / 100.0
@@ -339,6 +374,38 @@ def convert_labelstudio_to_yolo(
 ### Step 5 — Validate the Dataset Before Training
 
 After conversion, run YOLOv8's built-in dataset check before starting any training job. A clean dataset produces zero coordinate-range warnings and a legible class histogram:
+
+<svg viewBox="0 0 700 300" role="img" aria-label="The directory layout YOLOv8 expects, with each label file sitting at the same relative path as its image" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>The layout the trainer resolves by convention, not by config</title>
+  <desc>Under the dataset root, images and labels are sibling directories, each with train and val splits. A label file is found by taking the image path, swapping the images directory for labels, and swapping the extension for .txt. A tile with no objects still needs an empty .txt file, and a missing one is read as a missing image rather than as background.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Tree -->
+  <text x="30" y="42" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">dataset/</text>
+  <text x="60" y="70" font-size="12" fill="currentColor" font-family="monospace">images/</text>
+  <text x="90" y="96" font-size="12" fill="currentColor" font-family="monospace">train/  tile_0007.tif</text>
+  <text x="90" y="120" font-size="12" fill="currentColor" font-family="monospace">val/    tile_0104.tif</text>
+  <text x="60" y="152" font-size="12" fill="currentColor" font-family="monospace">labels/</text>
+  <text x="90" y="178" font-size="12" fill="currentColor" font-family="monospace">train/  tile_0007.txt</text>
+  <text x="90" y="202" font-size="12" fill="currentColor" font-family="monospace">val/    tile_0104.txt</text>
+  <text x="60" y="234" font-size="12" fill="currentColor" font-family="monospace">data.yaml</text>
+  <text x="90" y="258" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">names the classes and the two split paths</text>
+  <!-- Pairing -->
+  <path d="M312 90 L360 90 L360 172 L312 172" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.7"/>
+  <text x="370" y="126" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">same stem,</text>
+  <text x="370" y="140" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">same split</text>
+  <!-- Rules -->
+  <rect x="450" y="52" width="230" height="86" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="565" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">how the path is resolved</text>
+  <text x="565" y="98" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">swap /images/ for /labels/</text>
+  <text x="565" y="116" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">swap the extension for .txt</text>
+  <text x="565" y="132" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">nothing else is configurable</text>
+  <rect x="450" y="152" width="230" height="106" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="565" y="176" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">the empty-tile trap</text>
+  <text x="565" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a tile with no objects still needs</text>
+  <text x="565" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a zero-byte .txt beside it</text>
+  <text x="565" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">omit it and the trainer counts the</text>
+  <text x="565" y="250" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">image as missing, not as background</text>
+</svg>
 
 ```python
 from ultralytics import YOLO   # ultralytics>=8.0.0

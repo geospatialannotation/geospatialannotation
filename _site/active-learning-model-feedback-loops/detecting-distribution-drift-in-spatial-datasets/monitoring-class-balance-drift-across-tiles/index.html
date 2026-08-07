@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -246,6 +265,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/" class="">Triggering Retraining from New Annotations with DVC</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/" class="">Cold-Start Strategies for New Annotation Projects</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/bootstrapping-labels-with-a-zero-shot-model/" class="">Bootstrapping Labels with a Zero-Shot Model</a></li>
               
             </ul>
             
@@ -347,6 +377,7 @@
 <svg viewBox="0 0 660 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grouped bar chart comparing reference and current class-prior distributions for four classes, alongside a horizontal PSI gauge with stable, watch, and drift zones" style="width:100%;max-width:660px;display:block;margin:1.5rem auto;">
   <title>Reference versus current class priors with a PSI drift gauge</title>
   <desc>Left panel: grouped bars for four classes — building, road, vehicle, vegetation — showing the reference prior against the current batch prior. Vehicle rises sharply while building falls. Right panel: a horizontal PSI gauge divided into stable, watch, and drift zones with a marker sitting in the drift zone at PSI 0.34.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Left panel axis -->
   <line x1="40" y1="240" x2="360" y2="240" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
   <text x="40" y="40" font-size="12" fill="currentColor" opacity="0.85" font-family="sans-serif" font-weight="bold">Class-prior distribution</text>
@@ -493,6 +524,42 @@
 </div>
 <h3 id="step-3-compute-psi-per-class" tabindex="-1"><a class="header-anchor" href="#step-3-compute-psi-per-class" aria-label="Permalink to section &quot;Step 3 — Compute PSI per Class&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Compute PSI per Class</h3>
 <p>PSI is a sum over classes of <code class="inline-code">(current - reference) * ln(current / reference)</code>. Compute the per-class contribution so you can flag <em>which</em> class drifted, not merely that the batch as a whole moved. Align both vectors on the full class index first so a class missing from one side still contributes.</p>
+<svg viewBox="0 0 720 270" role="img" aria-label="Per-class population stability index across a batch, with the action band each class falls into" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>PSI per class, and the band each one lands in</title>
+  <desc>Six classes scored against the reference priors. Building at 0.04 and road at 0.07 sit in the stable band below 0.10. Cropland at 0.16 and water at 0.19 sit in the investigate band. Solar farm at 0.31 and substation at 0.44 clear 0.25 and trigger a re-label review. The bands are marked on the axis rather than left to a reader's judgement.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="180" y1="222" x2="670" y2="222" stroke="currentColor" stroke-width="1.4" opacity="0.6"/>
+  <text x="180" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.00</text>
+  <text x="278" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.10</text>
+  <text x="425" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.25</text>
+  <text x="670" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.50</text>
+  <text x="425" y="262" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">population stability index against the reference priors</text>
+  <line x1="278" y1="44" x2="278" y2="218" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <line x1="425" y1="44" x2="425" y2="218" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>
+  <text x="228" y="40" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">stable</text>
+  <text x="351" y="40" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">investigate</text>
+  <text x="545" y="40" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">re-label review</text>
+  <!-- Bars -->
+  <text x="172" y="66" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">building</text>
+  <rect x="180" y="54" width="39" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="227" y="66" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.04</text>
+  <text x="172" y="94" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">road</text>
+  <rect x="180" y="82" width="69" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="257" y="94" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.07</text>
+  <text x="172" y="122" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">cropland</text>
+  <rect x="180" y="110" width="157" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="345" y="122" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.16</text>
+  <text x="172" y="150" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">water_body</text>
+  <rect x="180" y="138" width="186" height="15" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="374" y="150" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.19</text>
+  <text x="172" y="178" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">solar_farm</text>
+  <rect x="180" y="166" width="304" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="492" y="178" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.31</text>
+  <text x="172" y="206" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">substation</text>
+  <rect x="180" y="194" width="431" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="619" y="206" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.44</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -529,6 +596,33 @@
 </div>
 <h3 id="step-4-emit-an-alert-table" tabindex="-1"><a class="header-anchor" href="#step-4-emit-an-alert-table" aria-label="Permalink to section &quot;Step 4 — Emit an Alert Table&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Emit an Alert Table</h3>
 <p>Band each per-class PSI, compute the total PSI for the batch, and mark any class above 0.25 for targeted re-labeling. The <code class="inline-code">action</code> column feeds straight into an annotation-queue routing step.</p>
+<svg viewBox="0 0 700 260" role="img" aria-label="A rare class whose share barely moves while its instance count collapses, and the count column that reveals it" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>A share that barely moves can hide a class disappearing</title>
+  <desc>Between the reference and the current batch, the substation class falls from 180 instances to 22. Because it was only 1.2 percent of the set to begin with, its share moves to 0.15 percent and any share-based alert stays quiet. The count column makes the collapse obvious, which is why the alert table carries both.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="200" y="40" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">share of the batch</text>
+  <text x="530" y="40" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">instance count</text>
+  <line x1="20" y1="50" x2="680" y2="50" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Share bars -->
+  <text x="20" y="82" font-size="11" fill="currentColor" font-family="monospace">reference</text>
+  <rect x="120" y="70" width="6" height="16" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="134" y="83" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">1.20%</text>
+  <text x="20" y="116" font-size="11" fill="currentColor" font-family="monospace">current</text>
+  <rect x="120" y="104" width="2" height="16" rx="1" fill="currentColor" opacity="0.5"/>
+  <text x="134" y="117" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">0.15%</text>
+  <text x="120" y="148" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a share-only alert sees a 1 point move</text>
+  <text x="120" y="164" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and stays quiet</text>
+  <!-- Count bars -->
+  <rect x="380" y="66" width="240" height="24" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="628" y="83" font-size="11" fill="currentColor" font-family="monospace">180</text>
+  <rect x="380" y="100" width="29" height="24" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="417" y="117" font-size="11" fill="currentColor" font-family="monospace">22</text>
+  <text x="380" y="148" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the count column shows an 88% collapse</text>
+  <text x="380" y="164" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">in a class the model can least afford to lose</text>
+  <rect x="120" y="188" width="500" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="370" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">carry both columns, and alert on either</text>
+  <text x="370" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">rare classes are exactly the ones a proportional metric is worst at watching</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -695,6 +789,8 @@ Fix: alert on the maximum per-class PSI, not just the total; a single class abov
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -711,6 +807,8 @@ Fix: alert on the maximum per-class PSI, not just the total; a single class abov
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -724,6 +822,8 @@ Fix: alert on the maximum per-class PSI, not just the total; a single class abov
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -751,7 +851,11 @@ Fix: alert on the maximum per-class PSI, not just the total; a single class abov
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -241,11 +260,26 @@
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/" class="">Overview</a></li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/" class="">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/computing-boundary-iou-for-footprint-quality/" class="">Computing Boundary IoU for Footprint Quality</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/measuring-inter-annotator-agreement-with-cohens-kappa/" class="">Measuring Inter-Annotator Agreement with Cohen&#39;s Kappa</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/" class="">Confidence Scoring for Geospatial Labels</a>
             
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/calibrating-confidence-scores-with-temperature-scaling/" class="">Calibrating Confidence Scores with Temperature Scaling</a></li>
+              
+                <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/weighting-training-loss-by-annotation-confidence/" class="">Weighting Training Loss by Annotation Confidence</a></li>
               
             </ul>
             
@@ -378,6 +412,7 @@
 <svg viewBox="0 0 720 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Decision flow: choose bounding box or polygon annotation based on object type and pipeline requirements" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
   <title>Polygon vs Bounding Box annotation decision flow</title>
   <desc>Flowchart showing how object compactness, model architecture, and downstream analytics requirements drive the choice between bounding box and polygon annotation, with a hybrid path for active-learning refinement.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
@@ -428,6 +463,39 @@
 </svg>
 <h2 id="why-geometry-choice-breaks-geospatial-pipelines" tabindex="-1"><a class="header-anchor" href="#why-geometry-choice-breaks-geospatial-pipelines" aria-label="Permalink to section &quot;Why geometry choice breaks geospatial pipelines&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why geometry choice breaks geospatial pipelines</h2>
 <p>Annotation geometry determines not just labeling speed but model behaviour, CRS-correctness of area calculations, and the validity of downstream geospatial analytics. Using bounding boxes where polygons are needed floods segmentation heads with background noise and prevents accurate footprint extraction. Conversely, forcing polygon annotation on every class stalls throughput, raises QA failure rates from self-intersecting rings, and inflates GPU memory during mask rasterization — effects that compound across <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference systems in annotation pipelines</a> when geometries are stored in geographic degrees (<code class="inline-code">EPSG:4326</code>) rather than a local metric CRS, causing IoU metrics to distort at mid-latitudes.</p>
+<svg viewBox="0 0 700 330" role="img" aria-label="A rotated building footprint with its axis-aligned bounding box, showing how much background the box admits compared with the polygon" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>What an axis-aligned box costs on a rotated footprint</title>
+  <desc>A thirty by twelve metre building rotated thirty degrees has a footprint of 360 square metres. Its axis-aligned bounding box measures 32.0 by 25.4 metres, or 812 square metres, so 56 percent of the box is background. The polygon tracks the footprint exactly; the box teaches the segmentation head to expect roof texture across an area more than twice the building.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Imagery frame -->
+  <rect x="30" y="30" width="330" height="250" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+  <text x="42" y="50" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">tile at 30 cm GSD</text>
+  <!-- Bounding box (drawn first, so the polygon reads on top) -->
+  <rect x="99" y="86" width="192" height="152" fill="currentColor" opacity="0.14"/>
+  <rect x="99" y="86" width="192" height="152" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <!-- Rotated footprint -->
+  <polygon points="99,176 255,86 291,148 135,238" fill="currentColor" opacity="0.3"/>
+  <polygon points="99,176 255,86 291,148 135,238" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="195" y="166" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">footprint</text>
+  <!-- Box dimension labels, outside the box -->
+  <text x="195" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">32.0 m</text>
+  <text x="308" y="166" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">25.4 m</text>
+  <!-- Numbers panel -->
+  <text x="400" y="56" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">the same object, two geometries</text>
+  <rect x="400" y="72" width="270" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="414" y="94" font-size="11" fill="currentColor" font-family="sans-serif">polygon, 4 vertices</text>
+  <text x="656" y="94" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">360 m²</text>
+  <text x="414" y="118" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">30 m × 12 m, rotated 30°</text>
+  <rect x="400" y="146" width="270" height="62" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="414" y="168" font-size="11" fill="currentColor" font-family="sans-serif">axis-aligned box, 4 floats</text>
+  <text x="656" y="168" text-anchor="end" font-size="12" fill="currentColor" font-family="monospace">812 m²</text>
+  <text x="414" y="192" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">32.0 m × 25.4 m envelope</text>
+  <rect x="400" y="220" width="270" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="535" y="244" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">56% of the box is background</text>
+  <text x="535" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and it grows with rotation and elongation</text>
+  <!-- Note -->
+  <text x="195" y="302" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">a box aligned to the raster, on an object aligned to the street grid</text>
+</svg>
 <h2 id="step-by-step-implementation" tabindex="-1"><a class="header-anchor" href="#step-by-step-implementation" aria-label="Permalink to section &quot;Step-by-step implementation&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step-by-step implementation</h2>
 <h3 id="step-1-classify-object-types-by-spatial-fidelity-tier" tabindex="-1"><a class="header-anchor" href="#step-1-classify-object-types-by-spatial-fidelity-tier" aria-label="Permalink to section &quot;Step 1 — Classify object types by spatial fidelity tier&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 1 — Classify object types by spatial fidelity tier</h3>
 <p>Group every class in your taxonomy into one of three tiers before annotation begins:</p>
@@ -671,7 +739,36 @@ IOU_VARIANCE_THRESHOLD <span class="token operator">=</span> <span class="token 
 </tr>
 </tbody>
 </table>
-</div><h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common errors and fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common errors and fixes</h2>
+</div><svg viewBox="0 0 740 260" role="img" aria-label="The same building contour at three simplification tolerances, with vertex counts and the consequences of each" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Vertex budget: what Douglas-Peucker tolerance buys and costs</title>
+  <desc>Three versions of one building contour. Raw auto-traced output carries 512 vertices and stalls the dataloader. Simplified at 0.10 metres it keeps 78 vertices and every real corner. Simplified at 0.60 metres it drops to 21 vertices and the corners round off, losing the wall lines the footprint exists to record.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Raw -->
+  <text x="120" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">raw auto-trace</text>
+  <text x="120" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">no tolerance</text>
+  <path d="M40 80 L58 74 L60 82 L78 76 L80 84 L98 78 L100 86 L118 80 L136 76 L154 82 L172 78 L190 84 L194 104 L188 122 L192 140 L186 158 L190 176 L168 180 L150 174 L132 180 L114 174 L96 180 L78 174 L60 180 L44 176 L48 158 L42 140 L46 122 L40 104 Z" fill="currentColor" opacity="0.16"/>
+  <path d="M40 80 L58 74 L60 82 L78 76 L80 84 L98 78 L100 86 L118 80 L136 76 L154 82 L172 78 L190 84 L194 104 L188 122 L192 140 L186 158 L190 176 L168 180 L150 174 L132 180 L114 174 L96 180 L78 174 L60 180 L44 176 L48 158 L42 140 L46 122 L40 104 Z" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="208" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">512 vertices</text>
+  <text x="120" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">rasterisation stalls the</text>
+  <text x="120" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">COCO dataloader</text>
+  <!-- Good -->
+  <text x="370" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">tolerance 0.10 m</text>
+  <text x="370" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">≈ 1 vertex per 5–10 px at 30 cm GSD</text>
+  <path d="M290 78 L444 78 L444 104 L440 140 L444 178 L290 178 L294 140 L290 104 Z" fill="currentColor" opacity="0.16"/>
+  <path d="M290 78 L444 78 L444 104 L440 140 L444 178 L290 178 L294 140 L290 104 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="370" y="208" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">78 vertices</text>
+  <text x="370" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">corners intact, walls straight —</text>
+  <text x="370" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the target for QA</text>
+  <!-- Over-simplified -->
+  <text x="620" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">tolerance 0.60 m</text>
+  <text x="620" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">past the useful range</text>
+  <path d="M545 84 L690 78 L694 172 L548 176 Z" fill="currentColor" opacity="0.16"/>
+  <path d="M545 84 L690 78 L694 172 L548 176 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="5 3"/>
+  <text x="620" y="208" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">21 vertices</text>
+  <text x="620" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">corners rounded off — the wall</text>
+  <text x="620" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">lines the footprint exists for</text>
+</svg>
+<h2 id="common-errors-and-fixes" tabindex="-1"><a class="header-anchor" href="#common-errors-and-fixes" aria-label="Permalink to section &quot;Common errors and fixes&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Common errors and fixes</h2>
 <p><code class="inline-code">TopologicalError: This operation could not be performed</code>
 : Cause: self-intersecting ring generated by vertex snapping or annotator trace error.
 : Fix: <code class="inline-code">geom = geom.buffer(0)</code> — Shapely’s zero-buffer trick dissolves self-intersections; verify with <code class="inline-code">geom.is_valid</code> after.</p>
@@ -739,6 +836,8 @@ IOU_VARIANCE_THRESHOLD <span class="token operator">=</span> <span class="token 
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -755,6 +854,8 @@ IOU_VARIANCE_THRESHOLD <span class="token operator">=</span> <span class="token 
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -768,6 +869,8 @@ IOU_VARIANCE_THRESHOLD <span class="token operator">=</span> <span class="token 
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -795,7 +898,11 @@ IOU_VARIANCE_THRESHOLD <span class="token operator">=</span> <span class="token 
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -252,6 +271,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/" class="">Reproducible Train/Validation Splits for Spatial Data</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/detecting-train-test-leakage-in-tiled-datasets/" class="">Detecting Train/Test Leakage in Tiled Datasets</a></li>
               
             </ul>
             
@@ -376,6 +406,7 @@
 <svg viewBox="0 0 860 400" role="img" aria-label="Two annotation sites syncing to a shared content-addressed remote with conflict detection on a single manifest pointer" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
   <title>Multi-site sync to a content-addressed remote with manifest conflict detection</title>
   <desc>Site A and Site B each compute per-feature content hashes and a local manifest, push immutable objects to a shared object store, and compete to update a single manifest pointer guarded by a generation-number conflict check that admits one writer and rejects the stale one.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -451,11 +482,11 @@
 </ul>
 <p><strong>Baseline checklist before your first multi-site sync:</strong></p>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5745958"><label class="task-list-item-label" for="task-item-5745958"> All sites agree on one canonical CRS for stored labels</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3389757"><label class="task-list-item-label" for="task-item-3389757"> The GeoJSON serialization is byte-deterministic (sorted keys, fixed coordinate precision)</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9085395"><label class="task-list-item-label" for="task-item-9085395"> The remote bucket has object versioning enabled for recoverability</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5720347"><label class="task-list-item-label" for="task-item-5720347"> Exactly one object key is designated the mutable manifest pointer</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5154700"><label class="task-list-item-label" for="task-item-5154700"> Every site records the manifest generation number it based its edits on</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1947516"><label class="task-list-item-label" for="task-item-1947516"> All sites agree on one canonical CRS for stored labels</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5692242"><label class="task-list-item-label" for="task-item-5692242"> The GeoJSON serialization is byte-deterministic (sorted keys, fixed coordinate precision)</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4837949"><label class="task-list-item-label" for="task-item-4837949"> The remote bucket has object versioning enabled for recoverability</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7859960"><label class="task-list-item-label" for="task-item-7859960"> Exactly one object key is designated the mutable manifest pointer</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9050195"><label class="task-list-item-label" for="task-item-9050195"> Every site records the manifest generation number it based its edits on</label></li>
 </ul>
 <hr>
 <h2 id="content-addressed-sync-hash-features-before-push" tabindex="-1"><a class="header-anchor" href="#content-addressed-sync-hash-features-before-push" aria-label="Permalink to section &quot;Content-Addressed Sync: Hash Features Before Push&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Content-Addressed Sync: Hash Features Before Push</h2>
@@ -610,6 +641,31 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
 <p>Because objects are immutable and hashed, a non-empty <code class="inline-code">conflicting</code> set is the only case that ever requires human or three-way-merge attention. The mechanics of resolving those cases — feature-id reconciliation and a last-writer-wins guard — are covered in depth in <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/resolving-sync-conflicts-in-distributed-annotation/">resolving sync conflicts in distributed annotation</a>.</p>
 <h3 id="safe-multi-remote-pushpull-ordering" tabindex="-1"><a class="header-anchor" href="#safe-multi-remote-pushpull-ordering" aria-label="Permalink to section &quot;Safe Multi-Remote Push/Pull Ordering&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Safe Multi-Remote Push/Pull Ordering</h3>
 <p>Ordering is what prevents a crash from leaving the dataset half-written. The invariant: the manifest pointer must only ever reference objects that already exist on the remote. That forces a strict sequence — pull and reconcile first, upload immutable content next, and commit the manifest pointer <em>last</em>. If the process dies after uploading objects but before committing the pointer, the extra objects are simply unreferenced and harmless; a later garbage-collection pass reclaims them. The reverse ordering — pointer first — would publish a manifest referencing objects that do not yet exist, breaking every reader.</p>
+<svg viewBox="0 40 720 208" role="img" aria-label="Push order that keeps the pointer commit valid: objects first, manifest second, pointer last" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Push in the order that keeps every intermediate state readable</title>
+  <desc>Objects go up first, then the manifest that names them, then the pointer commit that names the manifest. At every intermediate moment a reader following the current pointer sees a complete older version. Reversing the order — pointer first — publishes a version whose objects are still uploading, and readers get missing-key errors until the transfer finishes.</desc>
+  <rect x="0" y="40" width="720" height="208" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="po-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="20" y="60" width="190" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="115" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">1 · content objects</text>
+  <text x="115" y="102" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">addressed by hash — safe to re-upload</text>
+  <line x1="210" y1="90" x2="248" y2="90" stroke="currentColor" stroke-width="1.5" marker-end="url(#po-arr)"/>
+  <rect x="250" y="60" width="190" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="345" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">2 · manifest</text>
+  <text x="345" y="102" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">names objects that already exist</text>
+  <line x1="440" y1="90" x2="478" y2="90" stroke="currentColor" stroke-width="1.5" marker-end="url(#po-arr)"/>
+  <rect x="480" y="60" width="220" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="590" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">3 · pointer commit</text>
+  <text x="590" y="102" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the only step that publishes anything</text>
+  <text x="360" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">at every moment in between, a reader following the pointer gets a complete older version</text>
+  <rect x="90" y="176" width="540" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="198" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">reverse it and the pointer names a manifest naming objects still in flight</text>
+  <text x="360" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">readers get missing-key errors for as long as the transfer takes — on a large batch, hours</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -648,6 +704,36 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
 <p>Multi-remote fan-out (for example S3 as primary and GCS as a disaster-recovery mirror) reuses the same ordering per remote: fully commit the primary, then replicate the immutable objects and finally the manifest to each mirror. Never commit a mirror’s pointer before its objects have finished transferring, or a failover read will hit dangling references.</p>
 <h3 id="coordinate-concurrent-sites-with-a-lease-and-generation-number" tabindex="-1"><a class="header-anchor" href="#coordinate-concurrent-sites-with-a-lease-and-generation-number" aria-label="Permalink to section &quot;Coordinate Concurrent Sites With a Lease and Generation Number&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Coordinate Concurrent Sites With a Lease and Generation Number</h3>
 <p>The manifest pointer is the single mutable object, so it needs a concurrency guard. Two mechanisms work, and you can layer them. The first is a <em>monotonic generation number</em>: a writer records the generation it pulled, and its commit only succeeds if the remote is still at that generation. The second is a short-lived <em>lease</em> that gives one site an exclusive window to commit, which reduces wasted retries under heavy contention.</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="A lease and generation number serialising two sites that try to publish at the same moment" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The lease is what stops two sites publishing generation 42</title>
+  <desc>Two sites finish work at the same time and both hold generation 41. Site A acquires the lease, writes generation 42 and releases. Site B's acquire fails, so it re-reads, finds 42, rebases its changes onto it and publishes 43. Without the lease both write 42 and the second write silently replaces the first.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="ls-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="90" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">site A</text>
+  <text x="360" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">remote</text>
+  <text x="630" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">site B</text>
+  <line x1="90" y1="54" x2="90" y2="234" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <line x1="360" y1="54" x2="360" y2="234" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <line x1="630" y1="54" x2="630" y2="234" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <line x1="94" y1="78" x2="352" y2="78" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="223" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">acquire lease @ gen 41</text>
+  <line x1="626" y1="104" x2="368" y2="104" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="497" y="96" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">acquire lease @ gen 41</text>
+  <line x1="356" y1="128" x2="98" y2="128" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)" opacity="0.6"/>
+  <text x="227" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">granted</text>
+  <line x1="364" y1="152" x2="622" y2="152" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)" opacity="0.6"/>
+  <text x="493" y="144" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">refused — held by A</text>
+  <line x1="94" y1="180" x2="352" y2="180" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="223" y="172" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">publish gen 42, release</text>
+  <line x1="626" y1="206" x2="368" y2="206" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="497" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">re-read → rebase → publish gen 43</text>
+  <rect x="150" y="240" width="420" height="32" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="261" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">without the lease both write gen 42, and B's write erases A's work with no error anywhere</text>
+</svg>
 <p>Object stores expose a conditional-write primitive that makes the generation check atomic. On S3, <code class="inline-code">IfMatch</code> on the pointer’s ETag rejects a write if another site has already advanced it; on GCS, <code class="inline-code">ifGenerationMatch</code> does the same with the object’s native generation number.</p>
 <div class="code-block">
   <div class="code-block__head">
@@ -942,6 +1028,11 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
               <div class="desc">Geospatial ML pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving t</div>
             </a>
           
+            <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">
+              <div class="title">Reproducible Train/Validation Splits for Spatial Data</div>
+              <div class="desc">A model reports 0.84 IoU on validation and 0.61 in production, and nothing in between changed. The usual cause is not the model: it is a train/validation split drawn by shuffling tiles, which put the tile north of a warehouse in training and the tile south of it in validation. The two share the roof, the shadow, the se</div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">
               <div class="title">Rollback Strategies for Corrupted Spatial Datasets</div>
               <div class="desc">A corrupted geospatial training dataset rarely announces itself. A malformed coordinate reference system embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation</div>
@@ -995,6 +1086,8 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -1011,6 +1104,8 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -1024,6 +1119,8 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1051,7 +1148,11 @@ COORD_PRECISION <span class="token operator">=</span> <span class="token number"
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

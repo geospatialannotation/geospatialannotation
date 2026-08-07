@@ -112,9 +112,10 @@ For foundational context on the broader pipeline these hashes live within, see t
 
 The pipeline follows five deterministic stages. Every stage either transforms the annotation data into a more canonical form or uses the canonical form to make a binary pass/fail decision.
 
-<svg viewBox="0 0 780 200" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;display:block;margin:1.5rem auto;">
+<svg viewBox="-14 36 808 116" role="img" aria-label="SHA hashing pipeline: five stages from raw annotation through normalization, hashing, manifest generation, and validation gate" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:808px;display:block;margin:1.5rem auto;">
   <title>SHA-256 Annotation Hashing Pipeline</title>
   <desc>Five sequential pipeline stages connected by arrows: Raw Annotation (GeoJSON or COCO input), Normalize Payload (strip volatile keys, sort, round coordinates), Compute SHA-256 (hashlib.sha256), Build Manifest (version registry JSON), and Validation Gate (pass or halt training).</desc>
+  <rect x="-14" y="36" width="808" height="116" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-sha" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
       <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>
@@ -198,6 +199,29 @@ The round-trip through `json.dumps`/`json.loads` with `sort_keys=True` collapses
 ### Step 2: Canonicalize Spatial Geometry
 
 Generic normalization is not sufficient for geospatial annotations. Two sources of hash divergence are unique to spatial data and must be addressed before serialization.
+
+<svg viewBox="0 0 700 270" role="img" aria-label="Geometry canonicalisation steps that make two spellings of the same polygon hash identically" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Four rewrites that make the same shape produce the same digest</title>
+  <desc>The same polygon can be written starting from any vertex, wound either way, with any coordinate precision and with or without a repeated closing point. Canonicalisation fixes all four: rotate the ring to start at its lexicographically smallest vertex, force counter-clockwise winding, round to a fixed precision, and drop the duplicate closing coordinate before serialising.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="36" y="66" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">1 · rotate the ring</text>
+  <text x="36" y="84" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">start at the lexicographically smallest vertex</text>
+  <rect x="360" y="46" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="376" y="66" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">2 · fix the winding</text>
+  <text x="376" y="84" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">exteriors counter-clockwise, holes clockwise</text>
+  <rect x="20" y="106" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="36" y="126" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">3 · round the coordinates</text>
+  <text x="36" y="144" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">7 decimals for degrees, 3 for metres</text>
+  <rect x="360" y="106" width="320" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="376" y="126" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">4 · drop the closing duplicate</text>
+  <text x="376" y="144" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">one representation, not two equivalent ones</text>
+  <!-- Result -->
+  <rect x="120" y="176" width="460" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="350" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">only then serialise and hash</text>
+  <text x="350" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">sha256(canonical_wkb) → 91c7e4…</text>
+  <text x="350" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">skip any one of the four and a re-save through a different library reports every feature as changed</text>
+</svg>
 
 **Coordinate precision:** Different GIS tools serialize `EPSG:4326` coordinates to different decimal place counts — see the full projection decision matrix on the [coordinate reference systems in annotation pipelines](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) page. A coordinate written as `12.300000000000001` by QGIS and `12.3` by Label Studio represents the same point but yields a different hash. Round every coordinate value to 6 decimal places (approximately 0.11 m at the equator, well within sub-meter imagery resolution) before hashing.
 
@@ -322,6 +346,7 @@ The manifest is only valuable if it gates downstream processes. Run validation b
 <svg viewBox="0 0 680 260" role="img" aria-label="Manifest validation flow: current manifest compared against baseline, branching to pass or fail paths" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:680px;display:block;margin:1.5rem auto;">
   <title>Annotation Manifest Baseline Comparison</title>
   <desc>Flowchart showing current manifest and baseline manifest feeding into a comparison step. If hashes match the training run proceeds (pass path). If hashes differ, errors are logged and training is halted (fail path), with an optional rollback to the last known-good state.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-val" markerWidth="9" markerHeight="9" refX="8" refY="4" orient="auto">
       <path d="M0,0 L9,4 L0,8 Z" fill="currentColor" opacity="0.55"/>

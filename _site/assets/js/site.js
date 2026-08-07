@@ -1,4 +1,5 @@
 /* geospatialannotation.com — client behaviors
+   - Light/dark theme toggle (persisted; follows the OS preference until chosen)
    - Mobile nav toggle
    - Copy-to-clipboard buttons on code blocks
    - Mermaid rendering for ```mermaid blocks
@@ -9,6 +10,43 @@
 
 (function () {
   "use strict";
+
+  // ----- Theme toggle -----
+  // The <head> script has already applied any stored choice. Here we only label the
+  // control for the theme it will switch TO, and record the reader's choice. With no
+  // stored choice the attribute stays off the root so the OS preference keeps control.
+  const themeToggle = document.querySelector("[data-theme-toggle]");
+  if (themeToggle) {
+    const root = document.documentElement;
+    const osDark = window.matchMedia
+      ? window.matchMedia("(prefers-color-scheme: dark)")
+      : { matches: false, addEventListener: () => {} };
+
+    const isDark = () => {
+      const explicit = root.getAttribute("data-theme");
+      return explicit ? explicit === "dark" : osDark.matches;
+    };
+    const label = () => {
+      const next = isDark() ? "light" : "dark";
+      themeToggle.setAttribute("aria-label", "Switch to " + next + " theme");
+      themeToggle.setAttribute("title", "Switch to " + next + " theme");
+      themeToggle.setAttribute("aria-pressed", isDark() ? "true" : "false");
+    };
+
+    label();
+    themeToggle.addEventListener("click", () => {
+      const next = isDark() ? "light" : "dark";
+      root.setAttribute("data-theme", next);
+      try { localStorage.setItem("theme", next); } catch (e) { /* private mode */ }
+      label();
+    });
+    // Track the OS while the reader has not picked a side.
+    if (osDark.addEventListener) {
+      osDark.addEventListener("change", () => {
+        if (!root.getAttribute("data-theme")) label();
+      });
+    }
+  }
 
   // ----- Mobile nav toggle -----
   const navToggle = document.querySelector(".nav-toggle");

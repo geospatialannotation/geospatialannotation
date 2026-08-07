@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -285,6 +304,17 @@
           </li>
         
           <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/" class="">Orchestrating Annotation Pipelines with Airflow</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/backfilling-a-month-of-annotation-harvests/" class="">Backfilling a Month of Annotation Harvests</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
             <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/" class="">QGIS Plugin Ecosystem for Annotation Teams</a>
             
             <ul>
@@ -292,6 +322,17 @@
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/automating-batch-pre-labeling-with-sam-and-qgis/" class="">Automating Batch Pre-Labeling with SAM and QGIS</a></li>
               
                 <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/label-studio-vs-qgis-for-geospatial-annotation/" class="">Label Studio vs QGIS for Geospatial Annotation</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/" class="">Serving Imagery Tiles to Annotation Tools</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/adding-an-xyz-tile-layer-to-label-studio-tasks/" class="">Adding an XYZ Tile Layer to Label Studio Tasks</a></li>
               
             </ul>
             
@@ -378,6 +419,43 @@
 <p>Choose <strong>COCO</strong> when the immediate consumer is an off-the-shelf detector or segmenter training loop that expects pixel-space bounding boxes and masks with no notion of a coordinate reference system. Choose <strong>GeoParquet</strong> when the annotations must stay georeferenced — so they can participate in spatial joins, cross-sensor analytics, and large-scale columnar queries — and when the label store has to outlive any single training experiment. The two formats are not competitors in a well-designed pipeline: the durable answer for most geospatial teams is to keep GeoParquet as the source of truth and generate COCO as a derived training artifact, regenerated deterministically whenever the tiling scheme or image set changes.</p>
 <h2 id="why-the-export-format-decision-outlasts-the-model" tabindex="-1"><a class="header-anchor" href="#why-the-export-format-decision-outlasts-the-model" aria-label="Permalink to section &quot;Why the Export Format Decision Outlasts the Model&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why the Export Format Decision Outlasts the Model</h2>
 <p>The format you export to encodes an assumption about what the annotations are <em>for</em>. COCO was designed for natural-image object detection, where a photograph has no georeference and a box is defined purely in image pixels. That assumption is baked into its schema: <code class="inline-code">bbox</code> is <code class="inline-code">[x, y, width, height]</code> in pixels, <code class="inline-code">segmentation</code> is a polygon or RLE mask in pixels, and there is no field anywhere for a CRS, a datum, or an affine geotransform. Export straight to COCO and you have silently thrown away the one property that made your labels geospatial — the ability to know <em>where on Earth</em> each object sits.</p>
+<svg viewBox="0 0 720 260" role="img" aria-label="One source of truth deriving many training exports, contrasted with several exports each edited independently" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Derive the exports; never edit two of them</title>
+  <desc>On the left a single GeoParquet store derives COCO, YOLO and GeoJSON artifacts, each regenerated from the store and never edited. On the right the same three files are each corrected by hand, so within weeks no two agree and there is no way to tell which one is right.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="sot-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Left -->
+  <text x="170" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">one store, three derivations</text>
+  <rect x="20" y="106" width="120" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="80" y="128" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">GeoParquet</text>
+  <text x="80" y="145" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">source of truth</text>
+  <path d="M140 120 L180 120 L180 68 L216 68" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#sot-arr)"/>
+  <path d="M140 132 L198 132 L216 132" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#sot-arr)"/>
+  <path d="M140 144 L180 144 L180 196 L216 196" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#sot-arr)"/>
+  <rect x="218" y="50" width="104" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="270" y="73" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">COCO</text>
+  <rect x="218" y="114" width="104" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="270" y="137" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">YOLO</text>
+  <rect x="218" y="178" width="104" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="270" y="201" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">GeoJSON</text>
+  <text x="170" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">regenerated, never hand-edited</text>
+  <!-- Right -->
+  <text x="540" y="34" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">three files, three truths</text>
+  <rect x="400" y="50" width="120" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="460" y="73" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">COCO</text>
+  <rect x="400" y="114" width="120" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="460" y="137" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">YOLO</text>
+  <rect x="400" y="178" width="120" height="36" rx="5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <text x="460" y="201" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">GeoJSON</text>
+  <text x="600" y="72" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">class fixed here</text>
+  <text x="600" y="136" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">box nudged here</text>
+  <text x="600" y="200" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">polygon redrawn here</text>
+  <text x="540" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">after a month, nothing reconciles them</text>
+</svg>
 <p>That loss is invisible until the second use case arrives. A model retrains on a new acquisition, someone needs to join detections against a parcel boundary layer, or an auditor asks which annotations fall inside a flood zone. If COCO is your only record, every one of those questions requires reconstructing the geotransform you discarded, and if the imagery was re-tiled in between, the pixel coordinates no longer map to anything. GeoParquet inverts the failure mode: it stores geometries in a real <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a>, so the labels remain meaningful independent of any particular image grid, and the pixel-space COCO file becomes a cheap, reproducible projection of them rather than the primary record.</p>
 <h2 id="dimension-by-dimension-comparison" tabindex="-1"><a class="header-anchor" href="#dimension-by-dimension-comparison" aria-label="Permalink to section &quot;Dimension-by-Dimension Comparison&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Dimension-by-Dimension Comparison</h2>
 <p>The table below contrasts the two formats across the properties that actually decide a geospatial export. Read it as <em>COCO is optimised for direct training ingestion; GeoParquet is optimised for durability, scale, and spatial reasoning.</em></p>
@@ -431,6 +509,7 @@
 <svg viewBox="0 0 640 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagram showing GeoParquet as the georeferenced source of truth that both feeds spatial analytics and derives a pixel-space COCO training file" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>GeoParquet source of truth deriving a COCO training artifact</title>
   <desc>A GeoParquet store on the left, holding CRS-aware geometries, branches into two paths. The upper path keeps the data georeferenced for spatial joins and analytics. The lower path passes through a projection step that applies the inverse geotransform to produce a pixel-space COCO file for detector and segmenter training.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -541,6 +620,38 @@
 </div>
 <h3 id="step-3-project-geoparquet-geometries-into-pixel-space" tabindex="-1"><a class="header-anchor" href="#step-3-project-geoparquet-geometries-into-pixel-space" aria-label="Permalink to section &quot;Step 3 — Project GeoParquet Geometries Into Pixel Space&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 3 — Project GeoParquet Geometries Into Pixel Space</h3>
 <p>Read the GeoParquet store, reproject each feature into the image CRS, and apply <code class="inline-code">world_to_pixel</code> to every vertex. Emit a COCO <code class="inline-code">bbox</code> and a flattened <code class="inline-code">segmentation</code> ring per annotation:</p>
+<svg viewBox="0 0 700 300" role="img" aria-label="A world-coordinate polygon projected into the pixel space of one tile using the inverse geotransform" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>The inverse geotransform is the whole conversion</title>
+  <desc>A polygon stored in projected metres is converted to COCO pixel coordinates by applying the inverse of the tile's geotransform: subtract the tile origin, divide by the pixel size, and flip the row direction because y decreases as rows increase. The COCO file records the result but not the transform, so the derivation is one-way unless the geotransform is stored alongside it.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- World -->
+  <rect x="20" y="60" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="120" y="50" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">GeoParquet — metres</text>
+  <polygon points="60,100 160,92 172,160 72,168" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.8"/>
+  <text x="120" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">(512340.2, 5401882.7)</text>
+  <text x="120" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">EPSG:25832, in the file</text>
+  <!-- Formula -->
+  <line x1="220" y1="130" x2="250" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+  <defs>
+    <marker id="cg-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="252" y="86" width="196" height="88" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="350" y="110" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">col = (x − c) / a</text>
+  <text x="350" y="132" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">row = (y − f) / e</text>
+  <text x="350" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">e is negative — rows run south</text>
+  <line x1="448" y1="130" x2="478" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#cg-arr)"/>
+  <!-- Pixel -->
+  <rect x="480" y="60" width="200" height="140" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="580" y="50" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">COCO — pixels</text>
+  <polygon points="520,100 620,92 632,160 532,168" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="1.8"/>
+  <text x="580" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">[142.0, 87.5, 96.0, 71.0]</text>
+  <text x="580" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">no CRS anywhere in the file</text>
+  <!-- One-way note -->
+  <rect x="140" y="256" width="420" height="34" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="350" y="277" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">keep the geotransform beside the COCO file, or the trip back is guesswork</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -696,6 +807,8 @@ Fix: keep GeoParquet authoritative and export COCO per experiment at the needed 
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -712,6 +825,8 @@ Fix: keep GeoParquet authoritative and export COCO per experiment at the needed 
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -725,6 +840,8 @@ Fix: keep GeoParquet authoritative and export COCO per experiment at the needed 
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -752,7 +869,11 @@ Fix: keep GeoParquet authoritative and export COCO per experiment at the needed 
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

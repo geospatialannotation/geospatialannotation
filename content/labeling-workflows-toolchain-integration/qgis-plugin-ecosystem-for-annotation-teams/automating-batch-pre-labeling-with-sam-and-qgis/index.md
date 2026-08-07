@@ -86,9 +86,10 @@ A headless Python pipeline runs Meta's Segment Anything Model (SAM) on georefere
 When the source raster is in a geographic [coordinate reference system](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/) such as `EPSG:4326`, one pixel does not represent a consistent ground distance across the image. SAM's receptive field spans different physical areas in the north versus south of a scene, causing fragmented or oversized masks at scale. The second failure is quieter: converting pixel-space contours back to geographic coordinates using a geographic CRS affine transform produces geometries that look correct in a GIS viewer but carry distorted area and perimeter values, which collapses [IoU threshold](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/calculating-iou-thresholds-for-geospatial-object-detection/) calculations at model evaluation time. Both failures are silent — the pipeline finishes, the GeoJSON loads, but the annotations do not match the ground truth.
 
 <figure>
-<svg viewBox="0 0 720 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SAM batch pre-labeling pipeline: raster tiles flow through SAM inference, mask vectorization, and QGIS review" style="width:100%;max-width:720px;display:block;">
+<svg viewBox="-10 35 740 163" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="SAM batch pre-labeling pipeline: raster tiles flow through SAM inference, mask vectorization, and QGIS review" style="width:100%;max-width:740px;display:block;">
   <title>SAM Batch Pre-Labeling Pipeline</title>
   <desc>Four pipeline stages shown left to right: Raster Tiling and CRS Normalization, SAM Batch Inference, Mask to Vector Conversion, and QGIS Review and Export.</desc>
+  <rect x="-10" y="35" width="740" height="163" style="fill:var(--bg)"/>
   <defs>
     <marker id="arr-sam" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 Z" fill="currentColor"/>
@@ -125,6 +126,7 @@ When the source raster is in a geographic [coordinate reference system](https://
   <text x="455" y="175" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 3</text>
   <text x="637" y="175" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.7">Step 4</text>
 </svg>
+
 <figcaption>Four deterministic pipeline stages: tile and reproject, run SAM, convert masks to georeferenced polygons, then validate in QGIS.</figcaption>
 </figure>
 
@@ -198,6 +200,39 @@ def tile_raster(src_path: str, out_dir: str) -> list[str]:
 
 Pre-load the checkpoint once and iterate tiles in a `torch.no_grad()` context. Mixed-precision cuts VRAM usage by roughly 40% without affecting mask quality.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="Three ways to prompt the segmentation model on one tile, and what each returns" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The prompt decides how much you have to throw away</title>
+  <desc>The same tile prompted three ways. A point prompt returns one mask per click and needs a click per object. A box prompt returns one mask per box and pairs naturally with an existing detector. Automatic mode returns every mask in the tile, including roads, shadows and roof sections, so most of the output is discarded by an area and class filter.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Point -->
+  <text x="120" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" font-weight="600">point prompt</text>
+  <rect x="30" y="50" width="180" height="130" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <polygon points="70,80 150,74 158,140 78,148" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1.5"/>
+  <circle cx="114" cy="110" r="4" fill="currentColor"/>
+  <text x="120" y="204" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">one mask per click</text>
+  <text x="120" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">precise, but it is still</text>
+  <text x="120" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">a click per object</text>
+  <!-- Box -->
+  <text x="360" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" font-weight="600">box prompt</text>
+  <rect x="270" y="50" width="180" height="130" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <rect x="300" y="70" width="100" height="80" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 2"/>
+  <polygon points="310,80 390,74 398,140 318,148" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="204" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">one mask per box</text>
+  <text x="360" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">feed it a detector's boxes and</text>
+  <text x="360" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the class comes along for free</text>
+  <!-- Automatic -->
+  <text x="600" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace" font-weight="600">automatic</text>
+  <rect x="510" y="50" width="180" height="130" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <polygon points="530,66 592,62 596,104 534,108" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.2"/>
+  <polygon points="606,62 674,60 678,100 610,104" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.2"/>
+  <polygon points="530,118 596,114 600,168 534,172" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.2"/>
+  <polygon points="610,116 678,112 682,170 614,174" fill="currentColor" opacity="0.22" stroke="currentColor" stroke-width="1.2"/>
+  <text x="600" y="204" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">every mask in the tile</text>
+  <text x="600" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">roads, shadows and roof sections</text>
+  <text x="600" y="236" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">arrive with the buildings</text>
+  <text x="360" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the model returns geometry, never a class — whichever prompt you use, the label still has to come from somewhere else</text>
+</svg>
+
 ```python
 # requirements: segment-anything==1.0, torch==2.3.0, opencv-python==4.9.0.80
 import torch
@@ -242,6 +277,49 @@ def run_sam_on_tiles(tile_paths: list[str]) -> list[tuple[str, list[dict]]]:
 ### Step 3 — Convert Pixel Masks to Georeferenced Polygons
 
 Apply each tile's affine transform to map pixel contour coordinates to real-world map coordinates. Assign per-polygon [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) so annotators can triage masks by certainty in QGIS.
+
+<svg viewBox="-6 40 752 210" role="img" aria-label="The chain that turns a binary mask array into a georeferenced polygon, with what each step can lose" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:752px;display:block;margin:1.5rem auto;">
+  <title>From a boolean array to something a GIS will accept</title>
+  <desc>A binary mask is traced to pixel contours, simplified to remove the staircase, transformed through the tile geotransform into world coordinates, then repaired and filtered by minimum area. Each step can lose something: tracing drops single-pixel holes, simplification rounds corners, and the transform is where a wrong tile origin puts the whole polygon in the wrong place.</desc>
+  <rect x="-6" y="40" width="752" height="210" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="sm-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="14" y="60" width="126" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="77" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">binary mask</text>
+  <text x="77" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">bool[512, 512]</text>
+  <line x1="140" y1="88" x2="164" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#sm-arr)"/>
+  <rect x="166" y="60" width="126" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="229" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">trace contours</text>
+  <text x="229" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">pixel rings</text>
+  <line x1="292" y1="88" x2="316" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#sm-arr)"/>
+  <rect x="318" y="60" width="126" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="381" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">simplify</text>
+  <text x="381" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">tolerance ≈ 1 px</text>
+  <line x1="444" y1="88" x2="468" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#sm-arr)"/>
+  <rect x="470" y="60" width="126" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="533" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">apply transform</text>
+  <text x="533" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">tile affine + CRS</text>
+  <line x1="596" y1="88" x2="620" y2="88" stroke="currentColor" stroke-width="1.5" marker-end="url(#sm-arr)"/>
+  <rect x="622" y="60" width="104" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="674" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">repair</text>
+  <text x="674" y="101" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">make_valid</text>
+  <!-- Losses -->
+  <text x="229" y="152" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">single-pixel holes are</text>
+  <text x="229" y="166" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">dropped here</text>
+  <text x="381" y="152" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the pixel staircase goes,</text>
+  <text x="381" y="166" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and so do real corners</text>
+  <text x="533" y="152" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a wrong tile origin moves</text>
+  <text x="533" y="166" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">every polygon, identically</text>
+  <line x1="229" y1="122" x2="229" y2="138" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="381" y1="122" x2="381" y2="138" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <line x1="533" y1="122" x2="533" y2="138" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <!-- Filter -->
+  <rect x="150" y="190" width="440" height="40" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="370" y="215" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">then drop everything under the minimum area — in metres, after the transform</text>
+</svg>
 
 ```python
 # requirements: shapely==2.0.4, geopandas==0.14.4, opencv-python==4.9.0.80

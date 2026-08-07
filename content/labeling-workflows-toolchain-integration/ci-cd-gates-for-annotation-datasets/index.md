@@ -95,6 +95,7 @@ This is the failure mode a CI/CD gate exists to prevent. In software, no one mer
 <svg viewBox="0 0 880 200" role="img" aria-label="CI gate pipeline for annotation datasets from pull request through validation to merge or block" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:880px;display:block;margin:1.5rem auto;">
   <title>Annotation CI Gate Pipeline</title>
   <desc>A pull request that touches annotations flows through checkout, dependency install, and a validation stage running geometry, CRS, schema, and class-balance checks; a passing run merges while a failing run blocks the pull request.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ga" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -165,6 +166,51 @@ The gate operates on the files under `annotations/`. Every label file is expecte
 ## Structuring the Four-Check Validation Gate
 
 The gate is a single Python entrypoint that runs four independent checks and aggregates their findings. Each check returns a list of `Issue` records tagged with a severity; the entrypoint decides the exit code from the worst severity it sees. Keeping the checks independent means you can add a fifth later without touching the others, and you can unit-test each in isolation.
+
+<svg viewBox="0 0 740 290" role="img" aria-label="Four validation checks running in order, each with the exit behaviour it produces and what it lets through" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Four checks, in the order that fails cheapest first</title>
+  <desc>A changed annotation file runs through schema enforcement, then geometry validity, then CRS assertions, then class balance. Schema and geometry failures are hard errors that exit non-zero. A CRS mismatch is a hard error too. Class-balance drift is a warning that annotates the pull request without blocking it, because the right response is a judgement call rather than a fix.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="ci-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="14" y="96" width="112" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="70" y="120" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">changed</text>
+  <text x="70" y="137" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">label files</text>
+  <line x1="126" y1="125" x2="148" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="150" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="213" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">1 · schema</text>
+  <text x="213" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">jsonschema</text>
+  <line x1="276" y1="125" x2="298" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="300" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="363" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">2 · geometry</text>
+  <text x="363" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">shapely is_valid</text>
+  <line x1="426" y1="125" x2="448" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="450" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="513" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">3 · CRS</text>
+  <text x="513" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">pyproj to_epsg()</text>
+  <line x1="576" y1="125" x2="598" y2="125" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="600" y="96" width="126" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="663" y="118" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">4 · balance</text>
+  <text x="663" y="136" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">per-class counts</text>
+  <!-- Failure lanes -->
+  <line x1="213" y1="96" x2="213" y2="64" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <line x1="363" y1="96" x2="363" y2="64" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <line x1="513" y1="96" x2="513" y2="64" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="120" y="24" width="480" height="38" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="360" y="48" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">exit 1 — the merge is blocked, with the failing feature id in the log</text>
+  <line x1="663" y1="154" x2="663" y2="192" stroke="currentColor" stroke-width="1.5" marker-end="url(#ci-arr)"/>
+  <rect x="470" y="194" width="256" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="598" y="216" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">exit 0 with a warning comment</text>
+  <text x="598" y="234" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">drift is a judgement call, not a defect</text>
+  <!-- Ordering note -->
+  <text x="14" y="216" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">why this order</text>
+  <text x="14" y="236" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a malformed file cannot be parsed into geometries,</text>
+  <text x="14" y="252" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and an invalid geometry cannot be reprojected —</text>
+  <text x="14" y="268" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">so each check earns the right to run the next</text>
+</svg>
 
 Start with the shared vocabulary — an `Issue` dataclass and a severity ranking:
 
@@ -443,6 +489,40 @@ Now a failing batch produces a per-feature list an annotator can act on directly
 ## Gate Parameters & Severity Reference
 
 The table below summarizes each check, the library that implements it, the condition that trips it, and its default severity. Tune the severities and thresholds to your model's sensitivities rather than accepting these blindly.
+
+<svg viewBox="0 0 720 280" role="img" aria-label="Severity matrix pairing each failure condition with whether it blocks the merge and who is expected to act" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>What blocks a merge, and what only annotates it</title>
+  <desc>Six failure conditions with their severity. Invalid geometry, a CRS mismatch and a schema violation are blocking errors fixed by the author. A self-intersection repaired automatically, class-balance drift beyond ten percent and a new class appearing are warnings that ask a reviewer to make a call rather than stopping the merge.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="330" y="36" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">blocks the merge</text>
+  <text x="560" y="36" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">who acts</text>
+  <line x1="20" y1="46" x2="700" y2="46" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="sans-serif">geometry fails is_valid</text>
+  <rect x="270" y="62" width="120" height="20" rx="4" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">yes — error</text>
+  <text x="560" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the author, before review</text>
+  <text x="20" y="112" font-size="11" fill="currentColor" font-family="sans-serif">CRS is not the declared EPSG</text>
+  <rect x="270" y="98" width="120" height="20" rx="4" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">yes — error</text>
+  <text x="560" y="112" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the author, before review</text>
+  <text x="20" y="148" font-size="11" fill="currentColor" font-family="sans-serif">property missing from the schema</text>
+  <rect x="270" y="134" width="120" height="20" rx="4" fill="currentColor" opacity="0.5"/>
+  <text x="330" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">yes — error</text>
+  <text x="560" y="148" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the author, before review</text>
+  <line x1="20" y1="162" x2="700" y2="162" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+  <text x="20" y="190" font-size="11" fill="currentColor" font-family="sans-serif">self-intersection repaired by make_valid</text>
+  <rect x="270" y="176" width="120" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="330" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">no — warning</text>
+  <text x="560" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reviewer confirms the repair</text>
+  <text x="20" y="226" font-size="11" fill="currentColor" font-family="sans-serif">class share moved more than 10%</text>
+  <rect x="270" y="212" width="120" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="330" y="226" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">no — warning</text>
+  <text x="560" y="226" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">reviewer decides if it is real</text>
+  <text x="20" y="262" font-size="11" fill="currentColor" font-family="sans-serif">a class appears that the taxonomy lacks</text>
+  <rect x="270" y="248" width="120" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="330" y="262" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">no — warning</text>
+  <text x="560" y="262" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">taxonomy owner rules on it</text>
+</svg>
 
 | Check | Tool | Failure condition | Default severity |
 |---|---|---|---|

@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -246,6 +265,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/triggering-retraining-from-new-annotations-with-dvc/" class="">Triggering Retraining from New Annotations with DVC</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/" class="">Cold-Start Strategies for New Annotation Projects</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/bootstrapping-labels-with-a-zero-shot-model/" class="">Bootstrapping Labels with a Zero-Shot Model</a></li>
               
             </ul>
             
@@ -345,9 +375,48 @@
 <p>Aerial and satellite tiles are dominated by confident background — vegetation, water, bare soil — so a segmentation model is genuinely uncertain over only a thin fraction of each tile, usually class boundaries and rare objects. If you rank tiles by average uncertainty, those informative fractions vanish and annotators are handed confident tiles that teach the model nothing. Choosing the right per-pixel measure and aggregating it with a top-k mean concentrates scarce annotation budget on the tiles whose ambiguous regions will actually move the metric.</p>
 <h2 id="entropy-vs-margin-on-a-single-pixel" tabindex="-1"><a class="header-anchor" href="#entropy-vs-margin-on-a-single-pixel" aria-label="Permalink to section &quot;Entropy vs Margin on a Single Pixel&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Entropy vs Margin on a Single Pixel</h2>
 <p>Both measures start from the same input: a per-pixel probability vector over <code class="inline-code">C</code> classes, produced by a softmax over the segmentation head’s logits. They disagree on what “uncertain” means. Entropy is maximised when probability is spread evenly across <em>all</em> classes; margin looks only at the gap between the top two. The SVG below shows the same two softmax vectors scored both ways — a three-way-confused pixel that entropy flags strongly but margin rates as only moderately uncertain.</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="Two pixels with the same margin but different entropy, showing what each score is measuring" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Same margin, different entropy — and the difference matters</title>
+  <desc>Pixel A is split evenly across three classes at 0.34, 0.33 and 0.33; pixel B is split between two at 0.50 and 0.49 with 0.01 left over. Both have a margin of 0.01, so margin sampling cannot separate them. Entropy is 1.099 for A and 0.742 for B, because A is uncertain among three classes and B between two. Margin asks how close the decision is; entropy asks how many ways it could go.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Pixel A -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">pixel A — three-way</text>
+  <text x="60" y="72" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">forest</text>
+  <rect x="70" y="60" width="204" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="282" y="73" font-size="10" fill="currentColor" font-family="monospace">0.34</text>
+  <text x="60" y="100" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">crop</text>
+  <rect x="70" y="88" width="198" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="276" y="101" font-size="10" fill="currentColor" font-family="monospace">0.33</text>
+  <text x="60" y="128" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">grass</text>
+  <rect x="70" y="116" width="198" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="276" y="129" font-size="10" fill="currentColor" font-family="monospace">0.33</text>
+  <text x="170" y="164" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">entropy 1.099 · margin 0.01</text>
+  <!-- Pixel B -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">pixel B — two-way</text>
+  <text x="420" y="72" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">forest</text>
+  <rect x="430" y="60" width="200" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="638" y="73" font-size="10" fill="currentColor" font-family="monospace">0.50</text>
+  <text x="420" y="100" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">crop</text>
+  <rect x="430" y="88" width="196" height="16" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="634" y="101" font-size="10" fill="currentColor" font-family="monospace">0.49</text>
+  <text x="420" y="128" text-anchor="end" font-size="11" fill="currentColor" font-family="monospace">grass</text>
+  <rect x="430" y="116" width="4" height="16" rx="2" fill="currentColor" opacity="0.5"/>
+  <text x="442" y="129" font-size="10" fill="currentColor" font-family="monospace">0.01</text>
+  <text x="530" y="164" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">entropy 0.742 · margin 0.01</text>
+  <!-- Verdict -->
+  <rect x="60" y="188" width="280" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="200" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">margin: how close is the call?</text>
+  <text x="200" y="230" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">identical here — it cannot separate them</text>
+  <text x="200" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">good when a decision boundary is the target</text>
+  <rect x="380" y="188" width="280" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="520" y="210" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">entropy: how many ways could it go?</text>
+  <text x="520" y="230" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">ranks A above B — three live options</text>
+  <text x="520" y="248" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">good when the taxonomy itself is the problem</text>
+</svg>
 <svg viewBox="0 0 640 340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Comparison of entropy and margin scores on two example per-pixel softmax vectors" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Entropy versus margin on two example softmax vectors</title>
   <desc>Two grouped bar charts of class probabilities. Pixel A has three near-equal classes and one small class, giving high entropy but only moderate margin uncertainty. Pixel B has one dominant class and one runner-up, giving lower entropy but a small top-two gap. Score readouts appear beneath each chart.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Pixel A -->
   <text x="150" y="24" text-anchor="middle" font-size="13" fill="currentColor" opacity="0.9" font-family="sans-serif" font-weight="bold">Pixel A — 3-way confusion</text>
   <line x1="40" y1="170" x2="260" y2="170" stroke="currentColor" stroke-width="1" opacity="0.4"/>
@@ -556,6 +625,28 @@ Scorer <span class="token operator">=</span> Callable<span class="token punctuat
 </div>
 <h2 id="parameters-and-score-ranges" tabindex="-1"><a class="header-anchor" href="#parameters-and-score-ranges" aria-label="Permalink to section &quot;Parameters and Score Ranges&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Parameters and Score Ranges</h2>
 <p>The two measures live on different numeric scales even after normalisation, so pick thresholds per measure and per target type rather than reusing one global cutoff. Because these scores drive annotation priority the same way <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">confidence scores</a> drive review triage, keep them calibrated: over-confident softmax output compresses both measures toward zero and flattens the ranking.</p>
+<svg viewBox="0 0 700 260" role="img" aria-label="Score ranges for entropy and margin across class counts, and why raw scores cannot be compared between them" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>The two scores live on different scales, and one moves with the class count</title>
+  <desc>Margin always runs from zero to one whatever the taxonomy. Entropy runs from zero to the natural log of the class count — about 1.10 for three classes, 1.61 for five and 2.30 for ten — so the same raw entropy means different things in different projects. Normalise entropy by log of the class count before any threshold is written down.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="20" y="42" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">margin</text>
+  <rect x="140" y="30" width="330" height="18" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="482" y="44" font-size="11" fill="currentColor" font-family="monospace">0 … 1</text>
+  <text x="140" y="68" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">same range for 3 classes or 30 — thresholds port between projects</text>
+  <text x="20" y="112" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">entropy</text>
+  <text x="140" y="112" font-size="11" fill="currentColor" font-family="sans-serif">3 classes</text>
+  <rect x="240" y="100" width="110" height="16" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="360" y="113" font-size="11" fill="currentColor" font-family="monospace">0 … 1.10</text>
+  <text x="140" y="142" font-size="11" fill="currentColor" font-family="sans-serif">5 classes</text>
+  <rect x="240" y="130" width="161" height="16" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="411" y="143" font-size="11" fill="currentColor" font-family="monospace">0 … 1.61</text>
+  <text x="140" y="172" font-size="11" fill="currentColor" font-family="sans-serif">10 classes</text>
+  <rect x="240" y="160" width="230" height="16" rx="3" fill="currentColor" opacity="0.4"/>
+  <text x="480" y="173" font-size="11" fill="currentColor" font-family="monospace">0 … 2.30</text>
+  <rect x="140" y="198" width="440" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="360" y="220" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">entropy / log(n_classes)  →  0 … 1</text>
+  <text x="360" y="238" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">normalise before writing a threshold down, or it silently means something else next project</text>
+</svg>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -692,6 +783,8 @@ Fix: apply temperature scaling to the logits before <code class="inline-code">so
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -708,6 +801,8 @@ Fix: apply temperature scaling to the logits before <code class="inline-code">so
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -721,6 +816,8 @@ Fix: apply temperature scaling to the logits before <code class="inline-code">so
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -748,7 +845,11 @@ Fix: apply temperature scaling to the logits before <code class="inline-code">so
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -194,6 +208,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -252,6 +271,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/" class="">Reproducible Train/Validation Splits for Spatial Data</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/detecting-train-test-leakage-in-tiled-datasets/" class="">Detecting Train/Test Leakage in Tiled Datasets</a></li>
               
             </ul>
             
@@ -357,9 +387,10 @@
 <p>A corrupted geospatial training dataset rarely announces itself. A malformed <a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/coordinate-reference-systems-in-annotation-pipelines/">coordinate reference system</a> embedded in a single GeoTIFF tile can silently shift every bounding box by hundreds of metres before IoU metrics collapse. A truncated multipart upload leaves a valid-looking file that fails mid-epoch. An annotation platform exporting incremental patches against a rolled-back tile set produces geometry joins that return empty matches or misaligned instance masks. By the time model validation surfaces the problem, the corrupted version may already be the “latest” snapshot in your remote store.</p>
 <p>This page covers the complete recovery workflow: pre-flight triage, distributed locking, atomic restoration, post-restore CRS verification, and the integration hooks that make the whole sequence repeatable inside a CI pipeline.</p>
 <hr>
-<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="0 0 760 210" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;height:auto;display:block;margin:1.5rem auto;">
+<svg role="img" aria-label="Five-phase spatial dataset rollback workflow diagram" viewBox="-10 50 710 168" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:710px;height:auto;display:block;margin:1.5rem auto;">
   <title>Five-Phase Spatial Dataset Rollback Workflow</title>
   <desc>A left-to-right flow diagram showing the five phases of a spatial dataset rollback: Detect and Triage, Lock Registry, Stage Snapshot, Atomic Swap, and Verify and Resume. Arrows connect each phase sequentially. A dashed arc below returns from the Verify phase back to Stage Snapshot to indicate automatic revert on failure.</desc>
+  <rect x="-10" y="50" width="710" height="168" style="fill:var(--bg)"/>
   <defs>
     <marker id="rb-arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
@@ -481,6 +512,28 @@ filelock==3.14.0     # cross-process distributed locking
 <hr>
 <h3 id="step-2-pre-flight-triage-detect-corruption-before-ingestion" tabindex="-1"><a class="header-anchor" href="#step-2-pre-flight-triage-detect-corruption-before-ingestion" aria-label="Permalink to section &quot;Step 2 — Pre-Flight Triage: Detect Corruption Before Ingestion&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 2 — Pre-Flight Triage: Detect Corruption Before Ingestion</h3>
 <p>Validation runs as a CI gate before training jobs consume data. It checks checksums, confirms CRS conformance, and validates vector schema structure.</p>
+<svg viewBox="0 0 720 270" role="img" aria-label="Corruption signatures caught by pre-flight triage, ordered from cheapest to most expensive to detect" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Triage in the order that costs least to run</title>
+  <desc>Four checks in increasing cost: byte size against the manifest costs a stat call, header readability costs one small read, structural validity costs a header parse, and a pixel checksum costs a full decode. Running them in this order means most corrupt files are rejected before anything expensive touches them.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="46" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="72" font-size="11" fill="currentColor" font-family="sans-serif">1 · byte size differs from the manifest</text>
+  <text x="500" y="66" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">one stat() call</text>
+  <text x="500" y="80" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">catches truncated transfers</text>
+  <rect x="20" y="100" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="126" font-size="11" fill="currentColor" font-family="sans-serif">2 · header will not open</text>
+  <text x="500" y="120" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">a few KB read</text>
+  <text x="500" y="134" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">catches a partial or wrong-format write</text>
+  <rect x="20" y="154" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="40" y="180" font-size="11" fill="currentColor" font-family="sans-serif">3 · opens, but is no longer a valid COG</text>
+  <text x="500" y="174" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">header parse</text>
+  <text x="500" y="188" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">catches a re-save that dropped the overviews</text>
+  <rect x="20" y="208" width="680" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="40" y="234" font-size="11" fill="currentColor" font-family="sans-serif">4 · pixel checksum differs</text>
+  <text x="500" y="228" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">full decode</text>
+  <text x="500" y="242" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">the only one that catches silent bit rot</text>
+  <text x="360" y="34" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">cheapest first — a truncated file should never reach the decoder</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -587,6 +640,38 @@ EXPECTED_CRS <span class="token operator">=</span> CRS<span class="token punctua
 <hr>
 <h3 id="step-4-atomic-snapshot-restoration" tabindex="-1"><a class="header-anchor" href="#step-4-atomic-snapshot-restoration" aria-label="Permalink to section &quot;Step 4 — Atomic Snapshot Restoration&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Step 4 — Atomic Snapshot Restoration</h3>
 <p>Write the target version to a staging directory, verify it fully, then swap it into the production path in a single <code class="inline-code">os.rename()</code> call. On POSIX-compliant local filesystems this rename is atomic — consumers see either the old state or the fully restored state, never a hybrid.</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="An atomic restore that stages into a new directory and flips a pointer, compared with overwriting in place" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Restore beside the live path, then move the pointer</title>
+  <desc>Restoring in place leaves the dataset half-old and half-new for the length of the copy, and a failure in the middle leaves it that way permanently. Staging the restore into a fresh directory and then repointing a symlink means readers see either the whole old version or the whole new one, and an abort costs only the staging directory.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="rb-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- In place -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">restore in place</text>
+  <rect x="30" y="52" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="170" y="74" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">data/current/</text>
+  <text x="170" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">overwritten tile by tile</text>
+  <rect x="30" y="118" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+  <text x="170" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">during the copy: half v2, half v3</text>
+  <text x="170" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a reader mid-copy gets a mixture</text>
+  <text x="170" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">an abort here leaves it mixed</text>
+  <text x="170" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">with nothing recording which tiles moved</text>
+  <!-- Atomic -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">stage, then flip</text>
+  <rect x="390" y="52" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="530" y="74" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">data/restore-v2-tmp/</text>
+  <text x="530" y="92" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">built and verified while v3 still serves</text>
+  <line x1="530" y1="104" x2="530" y2="116" stroke="currentColor" stroke-width="1.4" marker-end="url(#rb-arr)"/>
+  <rect x="390" y="118" width="280" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="530" y="140" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">data/current → restore-v2-tmp</text>
+  <text x="530" y="158" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">one rename, no window</text>
+  <text x="530" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">an abort costs a staging directory</text>
+  <text x="530" y="214" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">and readers never saw a mixture</text>
+  <text x="360" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">verify the staged copy against the integrity manifest BEFORE the flip — after it, the bad version is the live one</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -929,18 +1014,18 @@ EXPECTED_CRS <span class="token operator">=</span> CRS<span class="token punctua
 <hr>
 <h2 id="production-readiness-checklist" tabindex="-1"><a class="header-anchor" href="#production-readiness-checklist" aria-label="Permalink to section &quot;Production Readiness Checklist&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Production Readiness Checklist</h2>
 <ul class="contains-task-list">
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4140786"> SHA-256 manifest and <code class="inline-code">crs_registry.json</code><label class="task-list-item-label" for="task-item-4140786"> SHA-256 manifest and `crs_registry.json` generated and committed for every dataset version</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2141464"><label class="task-list-item-label" for="task-item-2141464"> CRS conformance check validates WKT strings, not just authority codes</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1959324"><label class="task-list-item-label" for="task-item-1959324"> Distributed lock acquired before any restoration attempt</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1643822"><label class="task-list-item-label" for="task-item-1643822"> Staging directory is on the same filesystem mount as the production directory</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1165345"> Atomic swap (<code class="inline-code">os.rename</code><label class="task-list-item-label" for="task-item-1165345"> Atomic swap (`os.rename`) used — no file-by-file copy into live path</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-382049"><label class="task-list-item-label" for="task-item-382049"> Post-restore triage pass runs automatically after swap completes</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9080598"><label class="task-list-item-label" for="task-item-9080598"> Failed post-restore verification triggers automatic revert to pre-rollback backup</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8839640"><label class="task-list-item-label" for="task-item-8839640"> At least two prior production-tagged versions retained in cold storage</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-3254110"> All sidecar files (<code class="inline-code">.tfw</code>, <code class="inline-code">.prj</code>, <code class="inline-code">.shx</code>, <code class="inline-code">.aux.xml</code><label class="task-list-item-label" for="task-item-3254110"> All sidecar files (`.tfw`, `.prj`, `.shx`, `.aux.xml`) included in manifest and restored as a unit</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-5993976"> <code class="inline-code">dvc commit --force</code><label class="task-list-item-label" for="task-item-5993976"> `dvc commit --force` run after any manual restoration to re-sync the run-cache</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6351283"><label class="task-list-item-label" for="task-item-6351283"> Rollback telemetry logged to a persistent audit sink for recurrence analysis</label></li>
-<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4163098"><label class="task-list-item-label" for="task-item-4163098"> GitHub Actions dataset integrity gate blocks training job dispatch on triage failure</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7011718"> SHA-256 manifest and <code class="inline-code">crs_registry.json</code><label class="task-list-item-label" for="task-item-7011718"> SHA-256 manifest and `crs_registry.json` generated and committed for every dataset version</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-318828"><label class="task-list-item-label" for="task-item-318828"> CRS conformance check validates WKT strings, not just authority codes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4407378"><label class="task-list-item-label" for="task-item-4407378"> Distributed lock acquired before any restoration attempt</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2649220"><label class="task-list-item-label" for="task-item-2649220"> Staging directory is on the same filesystem mount as the production directory</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-9846621"> Atomic swap (<code class="inline-code">os.rename</code><label class="task-list-item-label" for="task-item-9846621"> Atomic swap (`os.rename`) used — no file-by-file copy into live path</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-8240713"><label class="task-list-item-label" for="task-item-8240713"> Post-restore triage pass runs automatically after swap completes</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-7809163"><label class="task-list-item-label" for="task-item-7809163"> Failed post-restore verification triggers automatic revert to pre-rollback backup</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-4720547"><label class="task-list-item-label" for="task-item-4720547"> At least two prior production-tagged versions retained in cold storage</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6362482"> All sidecar files (<code class="inline-code">.tfw</code>, <code class="inline-code">.prj</code>, <code class="inline-code">.shx</code>, <code class="inline-code">.aux.xml</code><label class="task-list-item-label" for="task-item-6362482"> All sidecar files (`.tfw`, `.prj`, `.shx`, `.aux.xml`) included in manifest and restored as a unit</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-1338986"> <code class="inline-code">dvc commit --force</code><label class="task-list-item-label" for="task-item-1338986"> `dvc commit --force` run after any manual restoration to re-sync the run-cache</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-2614316"><label class="task-list-item-label" for="task-item-2614316"> Rollback telemetry logged to a persistent audit sink for recurrence analysis</label></li>
+<li class="task-list-item enabled"><input class="task-list-item-checkbox"type="checkbox" id="task-item-6314078"><label class="task-list-item-label" for="task-item-6314078"> GitHub Actions dataset integrity gate blocks training job dispatch on triage failure</label></li>
 </ul>
 <hr>
 <h2 id="frequently-asked-questions" tabindex="-1"><a class="header-anchor" href="#frequently-asked-questions" aria-label="Permalink to section &quot;Frequently Asked Questions&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Frequently Asked Questions</h2>
@@ -996,6 +1081,11 @@ Maintain at least two prior production-tagged versions in cold storage. Single-v
               <div class="desc">Geospatial ML pipelines fail silently when coordinate reference systems, acquisition timestamps, or annotation provenance drift between iterations. Unlike tabular datasets, spatial data carries implicit geometric and semantic context that must survive every transformation, augmentation, and version commit. Preserving t</div>
             </a>
           
+            <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">
+              <div class="title">Reproducible Train/Validation Splits for Spatial Data</div>
+              <div class="desc">A model reports 0.84 IoU on validation and 0.61 in production, and nothing in between changed. The usual cause is not the model: it is a train/validation split drawn by shuffling tiles, which put the tile north of a warehouse in training and the tile south of it in validation. The two share the roof, the shadow, the se</div>
+            </a>
+          
             <a class="related__card" href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">
               <div class="title">Syncing Annotations Across Cloud Remotes</div>
               <div class="desc">Two annotation teams — one in Lisbon, one in Nairobi — spend a Tuesday labeling building footprints over the same city extent. Both pull the dataset in the morning, both work against a shared S3 bucket, and both run sync at the end of the day. The Nairobi run finishes ninety seconds after Lisbon&#39;s. Because the tool wro</div>
@@ -1049,6 +1139,8 @@ Maintain at least two prior production-tagged versions in cold storage. Single-v
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -1065,6 +1157,8 @@ Maintain at least two prior production-tagged versions in cold storage. Single-v
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -1078,6 +1172,8 @@ Maintain at least two prior production-tagged versions in cold storage. Single-v
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -1105,7 +1201,11 @@ Maintain at least two prior production-tagged versions in cold storage. Single-v
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

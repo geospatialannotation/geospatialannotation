@@ -101,6 +101,7 @@ This page details a production-tested validation architecture: from toolchain pr
 <svg viewBox="0 0 820 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Human-in-the-loop validation cycle data flow diagram" style="width:100%;max-width:820px;display:block;margin:2rem auto;">
   <title>Human-in-the-Loop Validation Cycle</title>
   <desc>Data flow from pre-label generation through confidence routing, human review, topology QA, and retraining feedback loop. High-confidence predictions bypass human review via auto-approve. Topology failures are re-queued for human correction. Validated exports feed active learning for improved pre-labels.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrow-hitl" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.7"/>
@@ -212,6 +213,34 @@ def load_predictions(path: str, target_crs: str = "EPSG:4326") -> gpd.GeoDataFra
 
 Predictions split into three operational queues based on confidence thresholds and spatial complexity. The function below handles routing and writes each queue to a dedicated GeoJSON file for the annotation platform to ingest.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="How a batch of a thousand pre-labels splits across the three queues, and what each queue costs in reviewer minutes" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Where a thousand pre-labels actually go</title>
+  <desc>A batch of one thousand pre-labels splits by confidence: 620 are auto-accepted above 0.85, 280 go to spot review between 0.60 and 0.85, and 100 go to full manual correction below 0.60. Spot review costs about half a minute each and full correction about four minutes, so the low-confidence tenth of the batch consumes more than two thirds of the review budget.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Bar of the batch -->
+  <text x="20" y="42" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">1 000 pre-labels, split by confidence</text>
+  <rect x="20" y="56" width="428" height="34" rx="4" fill="currentColor" opacity="0.5"/>
+  <rect x="448" y="56" width="193" height="34" rx="4" fill="currentColor" opacity="0.28"/>
+  <rect x="641" y="56" width="69" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="234" y="78" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">620 auto-accepted</text>
+  <text x="544" y="78" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">280 spot review</text>
+  <text x="675" y="78" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">100</text>
+  <text x="234" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">≥ 0.85</text>
+  <text x="544" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">0.60 – 0.85</text>
+  <text x="675" y="106" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">&lt; 0.60</text>
+  <!-- Bar of the cost -->
+  <text x="20" y="158" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">the same batch, measured in reviewer minutes</text>
+  <rect x="20" y="172" width="179" height="34" rx="4" fill="currentColor" opacity="0.28"/>
+  <rect x="199" y="172" width="511" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="109" y="194" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">140 min</text>
+  <text x="454" y="194" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">400 min</text>
+  <text x="109" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">280 &#215; 30 s</text>
+  <text x="454" y="222" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">100 &#215; 4 min</text>
+  <!-- Note -->
+  <text x="360" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the auto-accepted 62% costs nothing; the bottom 10% eats 74% of the budget —</text>
+  <text x="360" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">which is the number to watch when the lower threshold is argued about</text>
+</svg>
+
 ```python
 import logging
 from pathlib import Path
@@ -275,6 +304,45 @@ Log all edits with user IDs, timestamps, and diff metadata. This audit trail fee
 ### Step 4 — Topology Validation and Automated QA
 
 Human corrections introduce new spatial artifacts — vertex snapping creates bowties, polygon merges leave unclosed rings, and attribute copy-paste produces duplicate features. Run an automated QA pass before exporting:
+
+<svg viewBox="0 0 720 290" role="img" aria-label="Four topology defects an automated QA pass catches, each drawn as the shape it makes" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The four shapes an automated topology pass is looking for</title>
+  <desc>A self-intersecting ring where the boundary crosses itself, a sliver polygon a few centimetres wide left between two parcels, a gap where adjacent parcels fail to share an edge, and an overlap where two parcels claim the same ground. Each has a distinct signature that a rule can test, which is why they are worth catching before a human ever opens the tile.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Self-intersection -->
+  <text x="100" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">self-intersection</text>
+  <path d="M40 60 L160 60 L40 160 L160 160 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+  <circle cx="100" cy="110" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <text x="100" y="192" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the ring crosses itself;</text>
+  <text x="100" y="206" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">area is undefined</text>
+  <text x="100" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">is_valid → False</text>
+  <!-- Sliver -->
+  <text x="270" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">sliver</text>
+  <polygon points="210,60 262,60 262,160 210,160" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5"/>
+  <polygon points="272,60 330,60 330,160 272,160" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5"/>
+  <polygon points="262,60 272,60 272,160 262,160" fill="currentColor" opacity="0.5" stroke="currentColor" stroke-width="1.5"/>
+  <text x="270" y="192" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a 4 cm strip left between</text>
+  <text x="270" y="206" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">two parcels</text>
+  <text x="270" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">area &lt; min_area</text>
+  <!-- Gap -->
+  <text x="450" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">gap</text>
+  <polygon points="390,60 442,60 442,160 390,160" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5"/>
+  <polygon points="466,60 518,60 518,160 466,160" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5"/>
+  <text x="454" y="114" text-anchor="middle" font-size="16" fill="currentColor" font-family="sans-serif" opacity="0.6">?</text>
+  <text x="450" y="192" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">neighbours that should share</text>
+  <text x="450" y="206" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">an edge, and do not</text>
+  <text x="450" y="228" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">unary_union has holes</text>
+  <!-- Overlap -->
+  <text x="622" y="34" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">overlap</text>
+  <polygon points="562,60 646,60 646,160 562,160" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5"/>
+  <polygon points="606,80 690,80 690,180 606,180" fill="currentColor" opacity="0.15" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <polygon points="606,80 646,80 646,160 606,160" fill="currentColor" opacity="0.45"/>
+  <text x="622" y="204" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">two parcels claiming</text>
+  <text x="622" y="218" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the same ground</text>
+  <text x="622" y="240" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.7">intersection area &gt; 0</text>
+  <!-- Footnote -->
+  <text x="360" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">only the first is caught by is_valid — the other three need the neighbours, so they are dataset-level checks, not per-feature ones</text>
+</svg>
 
 ```python
 import geopandas as gpd
@@ -524,6 +592,14 @@ Add a post-push verification step: `dvc status --remote myremote` should return 
 Without annotator IDs in the diff metadata, inter-annotator agreement analysis is impossible. Enforce this at the platform level — block submission if `annotator_id` is null.
 
 ---
+
+## Why the Loop Has to Close
+
+A review cycle that finds defects and fixes them is doing half the job. The other half is making the same
+defect less likely next time, and it is the half most often skipped because it produces no visible output
+in a sprint. Every adjudicated disagreement should leave behind one of three artifacts: a sentence in the
+annotation guide, a new automated check, or a taxonomy change. A dispute that produces none of them will be
+re-litigated, by different people, within a month.
 
 ## Related
 

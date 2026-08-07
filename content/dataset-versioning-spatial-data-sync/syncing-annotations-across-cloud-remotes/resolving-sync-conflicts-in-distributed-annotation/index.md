@@ -99,6 +99,7 @@ Two structural preconditions make this work. First, features must carry a **stab
 <svg viewBox="0 0 640 340" role="img" aria-label="Three-way merge of GeoJSON annotations from a common base into ours and theirs, producing a merged output plus a conflict queue" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Three-way merge for distributed GeoJSON annotations</title>
   <desc>A common base FeatureCollection diverges into two edited versions, ours and theirs. Non-overlapping changes auto-merge into a merged output, while edits to the same feature are routed to a conflict review queue.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ah" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -171,6 +172,46 @@ theirs: gpd.GeoDataFrame = load_keyed("theirs.geojson")
 ### Step 2 — Classify Each Feature Against the Base
 
 For one side, compare every feature id to the base to label it `added`, `removed`, or `modified`. A feature is `modified` when its geometry or its non-metadata attributes differ from the base version. Comparing on WKB plus a sorted attribute tuple is stable and ignores property ordering.
+
+<svg viewBox="0 0 720 290" role="img" aria-label="A change matrix classifying every feature by what each side did to it since the common base" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Nine cases, and only three of them need a human</title>
+  <desc>Each feature is classified by what our side did and what theirs did since the base version. Where only one side touched a feature, that side's version is taken. Where neither did, the base stands. Where both edited, both deleted, or one edited while the other deleted, the merge stops and writes a conflict record rather than guessing.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="330" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">theirs: unchanged</text>
+  <text x="480" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">theirs: edited</text>
+  <text x="620" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">theirs: deleted</text>
+  <line x1="20" y1="52" x2="700" y2="52" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Row 1 -->
+  <text x="20" y="90" font-size="11" fill="currentColor" font-family="sans-serif">ours: unchanged</text>
+  <rect x="260" y="70" width="140" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="330" y="90" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">keep base</text>
+  <rect x="410" y="70" width="140" height="30" rx="4" fill="currentColor" opacity="0.28"/>
+  <text x="480" y="90" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">take theirs</text>
+  <rect x="560" y="70" width="140" height="30" rx="4" fill="currentColor" opacity="0.28"/>
+  <text x="630" y="90" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">delete</text>
+  <!-- Row 2 -->
+  <text x="20" y="140" font-size="11" fill="currentColor" font-family="sans-serif">ours: edited</text>
+  <rect x="260" y="120" width="140" height="30" rx="4" fill="currentColor" opacity="0.28"/>
+  <text x="330" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">take ours</text>
+  <rect x="410" y="120" width="140" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+  <text x="480" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">conflict</text>
+  <rect x="560" y="120" width="140" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+  <text x="630" y="140" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">conflict</text>
+  <!-- Row 3 -->
+  <text x="20" y="190" font-size="11" fill="currentColor" font-family="sans-serif">ours: deleted</text>
+  <rect x="260" y="170" width="140" height="30" rx="4" fill="currentColor" opacity="0.28"/>
+  <text x="330" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">delete</text>
+  <rect x="410" y="170" width="140" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+  <text x="480" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">conflict</text>
+  <rect x="560" y="170" width="140" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <text x="630" y="190" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">delete — both agree</text>
+  <!-- Legend -->
+  <rect x="20" y="228" width="20" height="14" rx="3" fill="currentColor" opacity="0.28"/>
+  <text x="48" y="240" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">resolved automatically</text>
+  <rect x="220" y="228" width="20" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 2"/>
+  <text x="248" y="240" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">written to the conflict report, untouched in the output</text>
+  <text x="360" y="272" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">the edit-versus-delete cells are the ones worth arguing about: whoever deleted may have known something the editor did not</text>
+</svg>
 
 ```python
 from shapely.geometry.base import BaseGeometry
@@ -261,6 +302,26 @@ def _same_edit(fid: str, o: str | None, t: str | None,
 ### Step 4 — Apply the Last-Writer-Wins Guard
 
 For pipelines that must produce a merged file with no human in the loop, resolve remaining conflicts by keeping the feature with the newer `edited_at`. Always log the discarded side so the choice stays auditable rather than silent.
+
+<svg viewBox="0 0 720 260" role="img" aria-label="Last-writer-wins resolving a conflict by timestamp, and the clock skew that makes it unsafe" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Last-writer-wins is only as trustworthy as the clocks</title>
+  <desc>Two sites edit the same feature. Site A's edit is stamped 14:02:10 and site B's 14:02:04, so last-writer-wins keeps A. But site B's host clock runs 90 seconds fast, so B's edit actually happened later in real time and is the one being discarded. The guard is to require a monotonic generation number, and to refuse the automatic resolution when the two timestamps fall within the tolerated skew.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <rect x="20" y="52" width="300" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="170" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">what the timestamps say</text>
+  <text x="40" y="102" font-size="11" fill="currentColor" font-family="monospace">site A   14:02:10   ← kept</text>
+  <text x="40" y="126" font-size="11" fill="currentColor" font-family="monospace">site B   14:02:04   ← discarded</text>
+  <rect x="400" y="52" width="300" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="550" y="76" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">what actually happened</text>
+  <text x="420" y="102" font-size="11" fill="currentColor" font-family="monospace">site A   14:02:10</text>
+  <text x="420" y="126" font-size="11" fill="currentColor" font-family="monospace">site B   14:03:34   (clock +90 s)</text>
+  <line x1="320" y1="100" x2="396" y2="100" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="358" y="92" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">but</text>
+  <rect x="90" y="172" width="540" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="196" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">so the guard is not a better clock</text>
+  <text x="360" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">order by the monotonic generation number, and when two edits fall inside the tolerated skew,</text>
+  <text x="360" y="232" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">refuse to resolve automatically and write both to the conflict report</text>
+</svg>
 
 ```python
 from datetime import datetime

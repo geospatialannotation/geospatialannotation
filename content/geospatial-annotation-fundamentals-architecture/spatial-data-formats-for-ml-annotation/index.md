@@ -97,6 +97,7 @@ None of these are annotation-quality problems. They are format problems. This gu
 <svg viewBox="0 0 860 300" role="img" aria-label="Diagram showing COG imagery, GeoParquet labels, and STAC catalog feeding an annotation pipeline" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
   <title>Format Roles Feeding an Annotation Pipeline</title>
   <desc>Three format boxes on the left — COG for imagery streaming, GeoParquet for vector labels, and STAC as the catalog and index — with arrows converging into a single annotation and training pipeline box on the right. STAC links the imagery and label boxes.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="fa" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -167,6 +168,50 @@ The three formats are not competitors; they occupy three roles. COG makes imager
 ### Produce a Cloud-Optimized GeoTIFF for Imagery
 
 A plain GeoTIFF stores pixels in horizontal strips with the metadata directory anywhere in the file. To read a 256×256 window a client may have to walk most of the file. A COG fixes this by writing internally tiled pixels, precomputed overviews (downsampled zoom levels), and a leading image-file-directory, so a client can read the file header, learn the byte ranges it needs, and fetch only those with HTTP range requests. That is the single change that turns a twelve-second scene open into a sub-second one.
+
+<svg viewBox="0 0 760 320" role="img" aria-label="Internal layout of a Cloud-Optimized GeoTIFF: header first, then tiled full-resolution data and successively smaller overview levels, with a range request fetching one tile" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:760px;display:block;margin:1.5rem auto;">
+  <title>What makes a GeoTIFF cloud-optimized</title>
+  <desc>A COG places its header and tile index at the front of the file, followed by internal tiles of 512 by 512 pixels and a pyramid of overviews at half, quarter and eighth resolution. A client reads the header with one request, then issues a byte-range request for exactly the tiles it needs. A plain striped GeoTIFF has no tile index and no overviews, so the same view costs a full-file download.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- COG layout bar -->
+  <text x="30" y="36" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">cloud-optimized layout</text>
+  <rect x="30" y="48" width="90" height="46" rx="4" fill="currentColor" opacity="0.25"/>
+  <rect x="30" y="48" width="90" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="75" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">header</text>
+  <text x="75" y="85" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">+ tile index</text>
+  <rect x="124" y="48" width="290" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="269" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">full resolution, tiled 512 × 512</text>
+  <text x="269" y="85" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">each tile independently addressable</text>
+  <rect x="418" y="48" width="120" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="478" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">overview 1/2</text>
+  <text x="478" y="85" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.75">tiled</text>
+  <rect x="542" y="48" width="84" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="584" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">ovr 1/4</text>
+  <rect x="630" y="48" width="60" height="46" rx="4" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="660" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">1/8</text>
+  <!-- Request flow -->
+  <rect x="30" y="140" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="105" y="162" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">viewer asks for</text>
+  <text x="105" y="179" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">one map tile</text>
+  <line x1="180" y1="166" x2="216" y2="166" stroke="currentColor" stroke-width="1.5" marker-end="url(#cog-arr)"/>
+  <defs>
+    <marker id="cog-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="218" y="140" width="180" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="308" y="162" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">read header once</text>
+  <text x="308" y="179" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">~16 KB</text>
+  <line x1="398" y1="166" x2="434" y2="166" stroke="currentColor" stroke-width="1.5" marker-end="url(#cog-arr)"/>
+  <rect x="436" y="140" width="254" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="563" y="162" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">range request for those tiles only</text>
+  <text x="563" y="179" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">Range: bytes=…  ·  a few hundred KB</text>
+  <!-- Contrast -->
+  <text x="30" y="238" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">plain striped GeoTIFF</text>
+  <rect x="30" y="250" width="660" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 3"/>
+  <text x="360" y="268" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">row-strip data, no tile index, no overviews</text>
+  <text x="360" y="284" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the same view costs a full-file download before the first pixel is drawn</text>
+</svg>
 
 ```python
 from pathlib import Path
@@ -359,6 +404,45 @@ The `proj:epsg` property comes from the STAC Projection extension and records th
 | STAC Collection | Grouping + shared metadata | One discoverable index over the whole dataset | `pystac` `validate_all()` | Inherited or per-item projection metadata |
 
 ---
+
+
+<svg viewBox="0 0 740 290" role="img" aria-label="Matrix of which format carries which responsibility across imagery, vector labels, catalog and training export" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:740px;display:block;margin:1.5rem auto;">
+  <title>Which format owns which responsibility</title>
+  <desc>Four formats against four responsibilities. COG owns imagery storage and partial reads. GeoParquet owns vector label storage with typed columns and a CRS. STAC owns discovery and catalog metadata. COCO owns the training export and owns nothing else. A filled marker means the format is the right owner, a hollow marker means it can do the job but should not own it, and a blank cell means it does not apply.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Header row -->
+  <text x="210" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">imagery</text>
+  <text x="210" y="56" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">storage</text>
+  <text x="360" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">vector</text>
+  <text x="360" y="56" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">labels</text>
+  <text x="510" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">discovery</text>
+  <text x="510" y="56" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">&amp; metadata</text>
+  <text x="660" y="42" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">training</text>
+  <text x="660" y="56" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.85">export</text>
+  <line x1="30" y1="68" x2="710" y2="68" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <!-- Rows -->
+  <text x="30" y="102" font-size="12" fill="currentColor" font-family="monospace">COG</text>
+  <circle cx="210" cy="98" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="510" cy="98" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="30" y="118" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">tiled, overviewed raster</text>
+  <line x1="30" y1="130" x2="710" y2="130" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+  <text x="30" y="164" font-size="12" fill="currentColor" font-family="monospace">GeoParquet</text>
+  <circle cx="360" cy="160" r="9" fill="currentColor" opacity="0.55"/>
+  <circle cx="660" cy="160" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="30" y="180" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">typed columns, CRS in metadata</text>
+  <line x1="30" y1="192" x2="710" y2="192" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+  <text x="30" y="226" font-size="12" fill="currentColor" font-family="monospace">STAC</text>
+  <circle cx="510" cy="222" r="9" fill="currentColor" opacity="0.55"/>
+  <text x="30" y="242" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">items, assets, temporal extent</text>
+  <line x1="30" y1="254" x2="710" y2="254" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+  <text x="30" y="282" font-size="12" fill="currentColor" font-family="monospace">COCO</text>
+  <circle cx="660" cy="278" r="9" fill="currentColor" opacity="0.55"/>
+  <!-- Legend -->
+  <circle cx="210" cy="278" r="9" fill="currentColor" opacity="0.55"/>
+  <text x="224" y="282" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">owns it</text>
+  <circle cx="330" cy="278" r="9" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="344" y="282" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">can, but should not own it</text>
+</svg>
 
 ## Edge Cases & Gotchas
 

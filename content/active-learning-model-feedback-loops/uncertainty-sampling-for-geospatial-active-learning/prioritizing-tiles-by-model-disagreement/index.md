@@ -91,11 +91,50 @@ When an [active learning loop](https://www.geospatialannotation.com/active-learn
 
 A single model's softmax entropy tells you where *that* model is unsure, but it conflates two very different situations: genuine class ambiguity, and a model that is confidently wrong. A committee separates them. If five independently trained checkpoints all assign 60% to "building" on a tile, the model family agrees — the tile is only mildly uncertain and probably not worth a label. If three checkpoints say "building" and two say "greenhouse", the tile sits exactly on a boundary the committee has not resolved, and one human label there corrects several models at once.
 
+<svg viewBox="0 0 720 280" role="img" aria-label="Three committee members agreeing confidently and wrongly, against three disagreeing on the same tile" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Confident agreement is invisible to a single model's uncertainty</title>
+  <desc>On the left all three committee members call the tile cropland at high confidence, so single-model uncertainty is low and the tile is never queued — even though all three are wrong in the same way, having learned the same bias from the same data. On the right the three disagree, which single-model confidence cannot express at all, and that disagreement is the signal worth labelling.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Agreement -->
+  <text x="170" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">confident agreement</text>
+  <rect x="40" y="54" width="80" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="80" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">model 1</text>
+  <text x="80" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">crop 0.94</text>
+  <rect x="130" y="54" width="80" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="170" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">model 2</text>
+  <text x="170" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">crop 0.91</text>
+  <rect x="220" y="54" width="80" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="260" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">model 3</text>
+  <text x="260" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">crop 0.93</text>
+  <text x="170" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">vote entropy 0.00</text>
+  <text x="170" y="160" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">never queued</text>
+  <text x="170" y="182" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">and the ground truth is orchard —</text>
+  <text x="170" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a bias all three inherited from the same data</text>
+  <!-- Disagreement -->
+  <text x="530" y="36" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">disagreement</text>
+  <rect x="400" y="54" width="80" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="440" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">model 1</text>
+  <text x="440" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">crop 0.71</text>
+  <rect x="490" y="54" width="80" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="530" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">model 2</text>
+  <text x="530" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">orchard 0.68</text>
+  <rect x="580" y="54" width="80" height="52" rx="5" fill="none" stroke="currentColor" stroke-width="1.3"/>
+  <text x="620" y="76" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">model 3</text>
+  <text x="620" y="94" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">grass 0.55</text>
+  <text x="530" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="monospace">vote entropy 1.10</text>
+  <text x="530" y="160" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">top of the queue</text>
+  <text x="530" y="182" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">a single model reports 0.71 here and looks</text>
+  <text x="530" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">no more uncertain than on an easy tile</text>
+  <text x="360" y="240" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the committee only earns this if its members differ — different seeds, splits or architectures</text>
+  <text x="360" y="262" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">three checkpoints from one run agree by construction, and measure nothing</text>
+</svg>
+
 This matters for geospatial data specifically because uncertainty is spatially structured. Terrain, sensor geometry, seasonal illumination, and class frequency all vary smoothly across a scene, so disagreement clusters into contiguous patches rather than scattering randomly. A naive top-K selection would hand annotators twenty tiles from the same confusing field. The batch selector below treats spatial redundancy as a first-class constraint, spreading the label budget across distinct regions so each retraining round sees maximally diverse examples. The committee approach also composes cleanly with the [confidence scores](https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/) you already log per prediction — disagreement is a complementary axis, not a replacement.
 
-<svg viewBox="0 0 720 300" role="img" aria-label="Diagram: a committee of model checkpoints votes on unlabeled tiles, disagreement is scored, and tiles are ordered into a ranked annotation queue" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="3 -5 717 235" role="img" aria-label="Diagram: a committee of model checkpoints votes on unlabeled tiles, disagreement is scored, and tiles are ordered into a ranked annotation queue" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:717px;display:block;margin:1.5rem auto;">
   <title>Query-by-committee tile prioritization flow</title>
   <desc>On the left, four model checkpoints each emit a vote for a tile. Their votes feed a disagreement score box that computes vote entropy and average KL divergence. On the right the scored tiles are ordered into a ranked annotation queue, highest disagreement first, with spatially adjacent duplicates skipped.</desc>
+  <rect x="3" y="-5" width="717" height="235" style="fill:var(--bg)"/>
   <defs>
     <marker id="qbc-arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.55"/>
@@ -247,6 +286,42 @@ def disagreement_score(committee: np.ndarray, alpha: float = 0.5) -> float:
 ### Step 5 — Batch-Select While De-Duplicating Adjacent Tiles
 
 Ranking alone is not enough — the top of the queue is usually a band of neighbouring tiles that share the same ambiguity. Greedily accept the highest-scoring tiles, but reject any candidate whose tile-grid position lies within `min_gap` cells of an already-selected tile. Tile positions are expressed as integer `(row, col)` grid coordinates, so adjacency is a cheap Chebyshev-distance check.
+
+<svg viewBox="0 0 700 270" role="img" aria-label="A selected batch thinned by a minimum spacing rule so adjacent tiles do not all enter the same round" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>Thinning the batch by distance, after ranking by disagreement</title>
+  <desc>The ranked list is walked from the highest disagreement down. A tile is accepted only if no already-accepted tile lies within the minimum spacing; otherwise it is skipped and the next candidate is considered. Nine of the top twenty tiles here fall within two tiles of a higher-ranked pick and are deferred to a later round rather than dropped.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Grid with picks -->
+  <rect x="30" y="46" width="280" height="180" fill="none" stroke="currentColor" stroke-width="1.2"/>
+  <g stroke="currentColor" stroke-width="0.7" opacity="0.35">
+    <line x1="70" y1="46" x2="70" y2="226"/><line x1="110" y1="46" x2="110" y2="226"/><line x1="150" y1="46" x2="150" y2="226"/>
+    <line x1="190" y1="46" x2="190" y2="226"/><line x1="230" y1="46" x2="230" y2="226"/><line x1="270" y1="46" x2="270" y2="226"/>
+    <line x1="30" y1="86" x2="310" y2="86"/><line x1="30" y1="126" x2="310" y2="126"/><line x1="30" y1="166" x2="310" y2="166"/><line x1="30" y1="206" x2="310" y2="206"/>
+  </g>
+  <!-- accepted -->
+  <rect x="72" y="48" width="36" height="36" fill="currentColor" opacity="0.5"/>
+  <rect x="192" y="88" width="36" height="36" fill="currentColor" opacity="0.5"/>
+  <rect x="32" y="168" width="36" height="36" fill="currentColor" opacity="0.5"/>
+  <rect x="272" y="168" width="36" height="36" fill="currentColor" opacity="0.5"/>
+  <rect x="152" y="208" width="36" height="36" fill="currentColor" opacity="0.5"/>
+  <!-- skipped -->
+  <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" opacity="0.75">
+    <rect x="112" y="48" width="36" height="36"/><rect x="72" y="88" width="36" height="36"/>
+    <rect x="232" y="88" width="36" height="36"/><rect x="192" y="128" width="36" height="36"/>
+    <rect x="152" y="88" width="36" height="36"/>
+  </g>
+  <text x="170" y="252" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">filled: accepted · dashed: within the spacing of a higher-ranked pick</text>
+  <!-- Rule -->
+  <rect x="360" y="60" width="310" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="515" y="82" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">walk the ranked list from the top</text>
+  <text x="515" y="100" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">accept if no accepted tile is within min_spacing</text>
+  <rect x="360" y="126" width="310" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="515" y="148" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">skipped tiles are deferred, not dropped</text>
+  <text x="515" y="166" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">they compete again next round, at their new score</text>
+  <rect x="360" y="192" width="310" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="515" y="214" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">spacing is in metres, not tiles</text>
+  <text x="515" y="232" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">so it survives a change of tile size or resolution</text>
+</svg>
 
 ```python
 from dataclasses import dataclass

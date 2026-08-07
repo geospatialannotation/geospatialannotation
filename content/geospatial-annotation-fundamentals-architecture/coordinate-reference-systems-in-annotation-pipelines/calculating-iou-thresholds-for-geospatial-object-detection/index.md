@@ -94,6 +94,7 @@ Reliable IoU evaluation for aerial and satellite object detection requires three
 <svg viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Geometric illustration of IoU: two overlapping polygons with intersection area shaded, labelled with the IoU formula" style="width:100%;max-width:520px;display:block;margin:1.5rem auto;">
   <title>IoU geometric definition for geospatial polygons</title>
   <desc>Two overlapping quadrilaterals representing a ground-truth annotation and a model prediction. The overlapping region is shaded and labelled Intersection. The combined area is labelled Union. The IoU formula IoU = Intersection divided by Union appears below.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <!-- Ground-truth polygon -->
   <polygon points="60,60 240,50 260,190 50,200" fill="currentColor" fill-opacity="0.10" stroke="currentColor" stroke-width="2" stroke-opacity="0.7"/>
   <!-- Prediction polygon -->
@@ -265,9 +266,10 @@ def stratified_map(
 
 ## Threshold and CRS Reference
 
-<svg viewBox="0 0 700 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline diagram showing the five stages of projection-aware IoU calculation" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+<svg viewBox="-12 48 722 113" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pipeline diagram showing the five stages of projection-aware IoU calculation" style="width:100%;max-width:722px;display:block;margin:1.5rem auto;">
   <title>Projection-aware IoU calculation pipeline</title>
   <desc>Five sequential stages: WGS84 input coordinates are reprojected via pyproj to a UTM CRS, validated with make_valid, used to compute intersection and union in square metres, then compared against a GSD-calibrated IoU threshold.</desc>
+  <rect x="-12" y="48" width="722" height="113" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
       <polygon points="0 0, 8 3, 0 6" fill="currentColor" opacity="0.5"/>
@@ -325,6 +327,47 @@ def stratified_map(
 - `EPSG:3857` — Web Mercator, metric fallback for multi-zone datasets (distortion acceptable for tile-level area ratios under ~50 km wide)
 
 Ensure the CRS and GSD metadata needed for threshold selection travels with every dataset export — [preserving metadata across dataset versions](https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/) covers the mechanics of attaching that context to each versioned snapshot.
+
+<svg viewBox="0 0 720 290" role="img" aria-label="Recommended IoU cutoff ranges by mission type, plotted on a shared axis from 0.3 to 0.8" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Where each mission type's IoU cutoff belongs</title>
+  <desc>A shared axis from 0.30 to 0.80. Infrastructure mapping of objects under a hundred square metres sits at 0.65 to 0.75. Vehicle and asset detection between one and fifty square metres sits at 0.50 to 0.60. Agricultural and land cover work above ten thousand square metres sits at 0.35 to 0.50. Multi-scale detection spans 0.40 to 0.60 and is applied per size bin rather than as one number. The single default of 0.50 is marked, showing it is only correct for one of the four.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axis -->
+  <line x1="230" y1="238" x2="670" y2="238" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="230" y1="234" x2="230" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="318" y1="234" x2="318" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="406" y1="234" x2="406" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="494" y1="234" x2="494" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="582" y1="234" x2="582" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <line x1="670" y1="234" x2="670" y2="242" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+  <text x="230" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.30</text>
+  <text x="318" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.40</text>
+  <text x="406" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.50</text>
+  <text x="494" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.60</text>
+  <text x="582" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.70</text>
+  <text x="670" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">0.80</text>
+  <text x="450" y="278" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.75">IoU cutoff, computed on projected metres</text>
+  <!-- The inherited default -->
+  <line x1="406" y1="26" x2="406" y2="230" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
+  <text x="400" y="24" text-anchor="end" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">the inherited 0.50 default</text>
+  <!-- Rows -->
+  <text x="222" y="52" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">infrastructure mapping</text>
+  <text x="222" y="66" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">&lt; 100 m² · regulatory risk</text>
+  <rect x="538" y="46" width="88" height="14" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="634" y="58" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.65–0.75</text>
+  <text x="222" y="104" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">vehicle / asset detection</text>
+  <text x="222" y="118" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">1 – 50 m² · balanced</text>
+  <rect x="406" y="98" width="88" height="14" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="502" y="110" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.50–0.60</text>
+  <text x="222" y="156" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">agricultural / land cover</text>
+  <text x="222" y="170" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">&gt; 10 000 m² · fuzzy edges</text>
+  <rect x="274" y="150" width="132" height="14" rx="3" fill="currentColor" opacity="0.5"/>
+  <text x="414" y="162" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.35–0.50</text>
+  <text x="222" y="208" text-anchor="end" font-size="11" fill="currentColor" font-family="sans-serif">multi-scale detection</text>
+  <text x="222" y="222" text-anchor="end" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">mixed · per size bin</text>
+  <rect x="318" y="202" width="176" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 2"/>
+  <text x="502" y="214" font-size="10" fill="currentColor" font-family="monospace" opacity="0.75">0.40–0.60</text>
+</svg>
 
 ## Common Errors and Fixes
 

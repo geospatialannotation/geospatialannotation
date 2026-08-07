@@ -12,7 +12,21 @@
 
   <!-- Theme + tile colors -->
   <meta name="theme-color" content="#1f779e" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a1820" media="(prefers-color-scheme: dark)">
   <meta name="msapplication-TileColor" content="#1f779e">
+
+  <!-- Set the stored theme before first paint so the page never flashes the wrong one.
+       No stored choice means no attribute, which leaves the OS preference in charge. -->
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem("theme");
+        if (stored === "dark" || stored === "light") {
+          document.documentElement.setAttribute("data-theme", stored);
+        }
+      } catch (e) { /* private mode — fall back to the OS preference */ }
+    })();
+  </script>
   <meta name="msapplication-config" content="none">
   <meta name="application-name" content="GeoAnnotation">
 
@@ -54,8 +68,8 @@
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
 
   <link rel="sitemap" type="application/xml" href="/sitemap.xml">
-  <link rel="stylesheet" href="/assets/css/site.css?v=5c600b85">
-  <script defer src="/assets/js/site.js?v=2033eb7b"></script>
+  <link rel="stylesheet" href="/assets/css/site.css?v=a4a27cff">
+  <script defer src="/assets/js/site.js?v=980fb55c"></script>
 
   <script type="application/ld+json">
 {
@@ -199,6 +213,11 @@
       </a>
       
     </nav>
+
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark theme" title="Switch to dark theme" aria-pressed="false">
+      <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/></svg>
+      <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.6A8.6 8.6 0 0 1 9.4 3.5a8.6 8.6 0 1 0 11.1 11.1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -261,6 +280,17 @@
             <ul>
               
                 <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/embedding-geotransform-metadata-in-coco-exports/" class="">Embedding Geotransform Metadata in COCO Exports</a></li>
+              
+            </ul>
+            
+          </li>
+        
+          <li>
+            <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/" class="">Reproducible Train/Validation Splits for Spatial Data</a>
+            
+            <ul>
+              
+                <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/detecting-train-test-leakage-in-tiled-datasets/" class="">Detecting Train/Test Leakage in Tiled Datasets</a></li>
               
             </ul>
             
@@ -373,9 +403,10 @@
 <h2 id="why-acquisition-provenance-belongs-in-the-version-record" tabindex="-1"><a class="header-anchor" href="#why-acquisition-provenance-belongs-in-the-version-record" aria-label="Permalink to section &quot;Why Acquisition Provenance Belongs in the Version Record&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Why Acquisition Provenance Belongs in the Version Record</h2>
 <p>Geospatial training data is derived data. The imagery a model learns from is a filtered slice of a much larger archive, selected by area of interest, date range, sensor, and cloud cover. If a dataset version records only the resulting files, it throws away the query that produced them — and with it, any ability to explain why one scene was included and another dropped, or to reproduce the selection when the archive grows. A directory of GeoTIFFs cannot answer “was this the June 2025 cloud-free Sentinel-2 pass or the July re-processing?”</p>
 <p>STAC solves the description problem: it is a JSON specification where each <strong>item</strong> describes one spatiotemporal asset (a scene) with its geometry, datetime, and links to the underlying files. What STAC does not solve is <em>version binding</em> — nothing in a raw catalog ties a specific training snapshot to a specific set of items at a specific moment. That binding is what the manifest supplies. By recording item ids and a hash of the selection inside a DVC-tracked file, you turn an ephemeral query into a durable, verifiable part of the version record. When an upstream provider re-processes a scene and quietly changes an asset href, the recomputed hash no longer matches and the difference surfaces in <code class="inline-code">dvc status</code> instead of corrupting a downstream model months later.</p>
-<svg viewBox="0 0 720 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data-flow diagram: a STAC catalog of items is filtered by a spatiotemporal query into a selection, recorded as a dataset manifest of item ids and a catalog hash, which DVC tracks as a version" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+<svg viewBox="-8 11 736 211" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data-flow diagram: a STAC catalog of items is filtered by a spatiotemporal query into a selection, recorded as a dataset manifest of item ids and a catalog hash, which DVC tracks as a version" style="width:100%;max-width:736px;display:block;margin:1.5rem auto;">
   <title>From STAC catalog to DVC-tracked dataset version</title>
   <desc>Four stages flow left to right. A STAC catalog containing multiple items is filtered by a bounding box and datetime query into a smaller selection. The selection is written to a dataset manifest holding item ids and a catalog hash. DVC then tracks the manifest as an immutable version pointer committed to git.</desc>
+  <rect x="-8" y="11" width="736" height="211" style="fill:var(--bg)"/>
   <defs>
     <marker id="arrow" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -534,6 +565,43 @@
 <p>Because <code class="inline-code">self_href</code> points at an immutable catalog record and the <code class="inline-code">id</code> uniquely names the scene, these two fields together are enough to rehydrate the imagery later — either by re-fetching from the STAC-hosted remote or by pulling the assets you mirrored into your own <a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/implementing-dvc-for-geospatial-training-data/configuring-dvc-remotes-for-geospatial-data/">DVC remote configuration</a>.</p>
 <h2 id="hashing-the-manifest-for-drift-detection" tabindex="-1"><a class="header-anchor" href="#hashing-the-manifest-for-drift-detection" aria-label="Permalink to section &quot;Hashing the Manifest for Drift Detection&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> Hashing the Manifest for Drift Detection</h2>
 <p>The catalog hash is a SHA-256 digest computed over the manifest in a canonical form. Serialising with <code class="inline-code">sort_keys=True</code> and no incidental whitespace guarantees the same logical content always yields the same digest, regardless of dict insertion order:</p>
+<svg viewBox="0 0 720 280" role="img" aria-label="A manifest hash changing when the catalog selection changes, even though the local files did not" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The manifest hash catches the change that leaves no local trace</title>
+  <desc>Two runs of the same query against a moving catalog. The first selects fourteen items and hashes to 3f9c. The second, run a month later, selects fifteen because a scene was reprocessed and re-published, and hashes to a1d7. The local imagery on disk is byte-identical in both runs, so only the manifest hash reveals that the dataset's provenance moved.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="mh-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <!-- Run 1 -->
+  <text x="150" y="40" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">run in March</text>
+  <rect x="30" y="54" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="150" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">bbox + datetime + cloud &lt; 10%</text>
+  <text x="150" y="90" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">the same query, both times</text>
+  <line x1="150" y1="100" x2="150" y2="122" stroke="currentColor" stroke-width="1.4" marker-end="url(#mh-arr)"/>
+  <rect x="30" y="124" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="150" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">14 items selected</text>
+  <text x="150" y="161" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">manifest sha 3f9c…</text>
+  <!-- Run 2 -->
+  <text x="570" y="40" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">run in April</text>
+  <rect x="450" y="54" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+  <text x="570" y="74" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">bbox + datetime + cloud &lt; 10%</text>
+  <text x="570" y="90" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.7">unchanged</text>
+  <line x1="570" y1="100" x2="570" y2="122" stroke="currentColor" stroke-width="1.4" marker-end="url(#mh-arr)"/>
+  <rect x="450" y="124" width="240" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="570" y="144" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">15 items — one was re-published</text>
+  <text x="570" y="161" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace" opacity="0.8">manifest sha a1d7…</text>
+  <!-- Middle -->
+  <rect x="290" y="112" width="140" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="136" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">local imagery</text>
+  <text x="360" y="154" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">byte-identical</text>
+  <text x="360" y="172" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">in both runs</text>
+  <!-- Verdict -->
+  <rect x="130" y="204" width="460" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="360" y="226" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">the files agree; the provenance does not</text>
+  <text x="360" y="246" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">only the manifest hash makes the difference visible — a file-level check reports "no changes"</text>
+</svg>
 <div class="code-block">
   <div class="code-block__head">
     <span class="code-lang">python</span>
@@ -620,6 +688,26 @@
 <p>To reproduce the training set at any later date, check out the revision, run <code class="inline-code">dvc checkout</code> to restore the manifest, recompute the catalog hash, and confirm it matches the stored value before rehydrating assets from the recorded <code class="inline-code">self_href</code> links.</p>
 <h2 id="stac-fields-that-anchor-reproducibility" tabindex="-1"><a class="header-anchor" href="#stac-fields-that-anchor-reproducibility" aria-label="Permalink to section &quot;STAC Fields That Anchor Reproducibility&quot;"><span aria-hidden="true" class="anchor-symbol">#</span></a> STAC Fields That Anchor Reproducibility</h2>
 <p>Not every STAC field matters for version binding. The ones below are the load-bearing pieces — capture them in the manifest or verify them at rehydration time.</p>
+<svg viewBox="0 0 720 270" role="img" aria-label="STAC fields that survive into the version manifest, and the questions each one answers later" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The five STAC fields worth copying into the manifest</title>
+  <desc>Item id answers which scene this was. The self href answers where it came from and whether it still exists. The datetime answers when the ground looked like this. Cloud cover and off-nadir angle answer why a batch of labels may be systematically worse. Each is recorded at ingest because none of them can be recovered from the pixels afterwards.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="200" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">field copied into the manifest</text>
+  <text x="530" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">the question it answers a year later</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="76" font-size="11" fill="currentColor" font-family="monospace">item.id</text>
+  <text x="360" y="76" font-size="11" fill="currentColor" font-family="sans-serif">which scene is this, exactly?</text>
+  <text x="20" y="114" font-size="11" fill="currentColor" font-family="monospace">rel=self href</text>
+  <text x="360" y="114" font-size="11" fill="currentColor" font-family="sans-serif">where did it come from, and is it still there?</text>
+  <text x="20" y="152" font-size="11" fill="currentColor" font-family="monospace">properties.datetime</text>
+  <text x="360" y="152" font-size="11" fill="currentColor" font-family="sans-serif">when did the ground look like this?</text>
+  <text x="20" y="190" font-size="11" fill="currentColor" font-family="monospace">eo:cloud_cover</text>
+  <text x="360" y="190" font-size="11" fill="currentColor" font-family="sans-serif">why is this batch of labels worse than the rest?</text>
+  <text x="20" y="228" font-size="11" fill="currentColor" font-family="monospace">view:off_nadir</text>
+  <text x="360" y="228" font-size="11" fill="currentColor" font-family="sans-serif">why do the building footprints lean?</text>
+  <line x1="20" y1="242" x2="700" y2="242" stroke="currentColor" stroke-width="1" opacity="0.25"/>
+  <text x="360" y="262" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">none of the five can be recovered from the pixels, which is the whole argument for recording them at ingest</text>
+</svg>
 <div class="table-scroll" tabindex="0"><table>
 <thead>
 <tr>
@@ -744,6 +832,8 @@ Fix: construct query bounds with <code class="inline-code">tzinfo=timezone.utc</
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/closing-the-loop-with-automated-retraining/">Closing the Loop with Automated Model Retraining</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/cold-start-strategies-for-new-annotation-projects/">Cold-Start Strategies for New Annotation Projects</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/detecting-distribution-drift-in-spatial-datasets/">Detecting Distribution Drift in Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/active-learning-model-feedback-loops/uncertainty-sampling-for-geospatial-active-learning/">Uncertainty Sampling for Geospatial Active Learning</a></li>
@@ -760,6 +850,8 @@ Fix: construct query bounds with <code class="inline-code">tzinfo=timezone.utc</
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/preserving-metadata-across-dataset-versions/">Preserving Metadata Across Dataset Versions</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/reproducible-train-validation-splits/">Reproducible Train/Validation Splits for Spatial Data</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/rollback-strategies-for-corrupted-spatial-datasets/">Rollback Strategies for Corrupted Spatial Datasets</a></li>
         
           <li><a href="https://www.geospatialannotation.com/dataset-versioning-spatial-data-sync/syncing-annotations-across-cloud-remotes/">Syncing Annotations Across Cloud Remotes</a></li>
@@ -773,6 +865,8 @@ Fix: construct query bounds with <code class="inline-code">tzinfo=timezone.utc</
       <h4>Fundamentals</h4>
       <ul>
         <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/">Overview</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/annotation-quality-metrics-and-agreement/">Annotation Quality Metrics &amp; Inter-Annotator Agreement</a></li>
         
           <li><a href="https://www.geospatialannotation.com/geospatial-annotation-fundamentals-architecture/confidence-scoring-for-geospatial-labels/">Confidence Scoring for Geospatial Labels</a></li>
         
@@ -800,7 +894,11 @@ Fix: construct query bounds with <code class="inline-code">tzinfo=timezone.utc</
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/integrating-label-studio-with-geospatial-workflows/">Integrating Label Studio with Geospatial Workflows</a></li>
         
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/orchestrating-annotation-pipelines-with-airflow/">Orchestrating Annotation Pipelines with Airflow</a></li>
+        
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/qgis-plugin-ecosystem-for-annotation-teams/">QGIS Plugin Ecosystem for Annotation Teams</a></li>
+        
+          <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/serving-imagery-tiles-to-annotation-tools/">Serving Imagery Tiles to Annotation Tools</a></li>
         
           <li><a href="https://www.geospatialannotation.com/labeling-workflows-toolchain-integration/validating-annotation-export-formats/">Validating Annotation Export Formats: COCO, YOLO, and GeoJSON</a></li>
         

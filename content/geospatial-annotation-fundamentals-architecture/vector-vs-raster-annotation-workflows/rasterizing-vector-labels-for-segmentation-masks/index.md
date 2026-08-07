@@ -97,6 +97,7 @@ The alignment contract has two halves. The vector coordinates must be expressed 
 <svg viewBox="0 0 640 300" role="img" aria-label="Diagram showing vector polygons and an image pixel grid combined through rasterize into a class-indexed mask aligned to the image transform" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:640px;display:block;margin:1.5rem auto;">
   <title>Rasterizing vector labels onto the image grid</title>
   <desc>On the left, two overlapping vector polygons labelled with class values sit over a georeferenced image pixel grid. A central rasterize step consumes the image affine transform and output shape. On the right, a class-indexed segmentation mask shows discrete pixel cells coloured by class, aligned one-to-one with the input grid.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ar" markerWidth="9" markerHeight="7" refX="8" refY="3.5" orient="auto">
       <polygon points="0 0, 9 3.5, 0 7" fill="currentColor" opacity="0.5"/>
@@ -124,7 +125,7 @@ The alignment contract has two halves. The vector coordinates must be expressed 
   <polygon points="96,110 168,104 176,182 104,192" fill="currentColor" fill-opacity="0.22" stroke="currentColor" stroke-width="2" stroke-dasharray="5 3" stroke-opacity="0.8"/>
   <text x="140" y="160" text-anchor="middle" font-size="10" fill="currentColor" opacity="0.85" font-family="sans-serif">building = 2</text>
   <!-- Center: rasterize -->
-  <line x1="196" y1="125" x2="250" y2="125" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ar)"/>
+  <line x1="178" y1="125" x2="250" y2="125" stroke="currentColor" stroke-width="1.5" opacity="0.5" marker-end="url(#ar)"/>
   <rect x="256" y="95" width="128" height="72" rx="7" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
   <text x="320" y="123" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.9" font-family="sans-serif" font-weight="bold">rasterize()</text>
   <text x="320" y="141" text-anchor="middle" font-size="9.5" fill="currentColor" opacity="0.6" font-family="sans-serif">transform + out_shape</text>
@@ -264,6 +265,54 @@ def build_shapes(
 
 This is the core call. Pass the ordered shapes, the raster `out_shape` as `(height, width)`, the imagery's `transform`, a background `fill`, and an integer `dtype`. Keep `all_touched=False` for area classes so only pixel centres inside a polygon are burned:
 
+<svg viewBox="0 0 700 300" role="img" aria-label="The same polygon rasterized with all_touched false and true, showing which pixels each rule claims" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:700px;display:block;margin:1.5rem auto;">
+  <title>all_touched changes which pixels the label owns</title>
+  <desc>One polygon over a pixel grid, rasterized twice. With all_touched false, only pixels whose centre falls inside the polygon are burned, so thin features can vanish entirely. With all_touched true, every pixel the polygon touches is burned, which recovers thin features but inflates area and lets neighbouring classes fight over the same boundary pixels.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Panel A -->
+  <text x="160" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">all_touched=False</text>
+  <text x="160" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">pixel centre must fall inside</text>
+  <g>
+    <rect x="60" y="60" width="200" height="160" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+    <rect x="100" y="100" width="120" height="80" fill="currentColor" opacity="0.28"/>
+    <line x1="100" y1="60" x2="100" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="140" y1="60" x2="140" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="180" y1="60" x2="180" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="220" y1="60" x2="220" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="60" y1="100" x2="260" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="60" y1="140" x2="260" y2="140" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="60" y1="180" x2="260" y2="180" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <polygon points="86,126 214,92 232,168 108,196" fill="none" stroke="currentColor" stroke-width="2"/>
+    <circle cx="120" cy="120" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="160" cy="120" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="200" cy="120" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="120" cy="160" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="160" cy="160" r="2.5" fill="currentColor" opacity="0.5"/>
+    <circle cx="200" cy="160" r="2.5" fill="currentColor" opacity="0.5"/>
+  </g>
+  <text x="160" y="244" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">6 pixels burned</text>
+  <text x="160" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">a footpath narrower than one pixel</text>
+  <text x="160" y="278" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">disappears from the mask entirely</text>
+  <!-- Panel B -->
+  <text x="500" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace" font-weight="600">all_touched=True</text>
+  <text x="500" y="46" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.7">any overlap claims the pixel</text>
+  <g>
+    <rect x="400" y="60" width="200" height="160" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+    <rect x="400" y="100" width="200" height="120" fill="currentColor" opacity="0.28"/>
+    <line x1="440" y1="60" x2="440" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="480" y1="60" x2="480" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="520" y1="60" x2="520" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="560" y1="60" x2="560" y2="220" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="400" y1="100" x2="600" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="400" y1="140" x2="600" y2="140" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <line x1="400" y1="180" x2="600" y2="180" stroke="currentColor" stroke-width="0.8" opacity="0.35"/>
+    <polygon points="426,126 554,92 572,168 448,196" fill="none" stroke="currentColor" stroke-width="2"/>
+  </g>
+  <text x="500" y="244" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">15 pixels burned</text>
+  <text x="500" y="264" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">thin features survive, but area inflates and</text>
+  <text x="500" y="278" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">adjacent classes contend for edge pixels</text>
+</svg>
+
 ```python
 import numpy as np
 from rasterio.features import rasterize
@@ -314,6 +363,31 @@ def write_mask(mask: np.ndarray, grid: RasterGrid, out_path: str) -> None:
 ### Step 6 — Validate Alignment by Overlay
 
 Rasterization never throws on misalignment, so validate deliberately. Re-read the mask, assert its transform and shape match the imagery exactly, then confirm that burned pixels fall inside the original polygons by sampling a geometry's representative point back through the inverse transform:
+
+<svg viewBox="0 0 720 290" role="img" aria-label="Overlay check comparing a correctly aligned mask against one shifted by half a pixel, with the resulting IoU" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The overlay check that catches a half-pixel origin error</title>
+  <desc>Two overlays of the rendered mask on the source imagery footprint. On the left the mask edge follows the roof line and the IoU against a reference rasterization is 0.99. On the right the mask sits half a pixel up and left, because the transform origin was read as a pixel centre rather than a corner; the edges no longer coincide and the IoU falls to 0.86, which at 30 cm ground sample distance is a 15 centimetre systematic shift on every label.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Correct -->
+  <text x="170" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">origin read as pixel corner</text>
+  <rect x="60" y="46" width="220" height="150" fill="none" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <polygon points="100,86 240,74 250,158 110,172" fill="none" stroke="currentColor" stroke-width="2"/>
+  <polygon points="100,86 240,74 250,158 110,172" fill="currentColor" opacity="0.2"/>
+  <text x="170" y="126" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">mask edge on the roof line</text>
+  <text x="170" y="220" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">IoU 0.99</text>
+  <text x="170" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">residual is antialiasing at the corners</text>
+  <!-- Shifted -->
+  <text x="530" y="30" text-anchor="middle" font-size="12" fill="currentColor" font-family="sans-serif" font-weight="600">origin read as pixel centre</text>
+  <rect x="420" y="46" width="220" height="150" fill="none" stroke="currentColor" stroke-width="1" opacity="0.45"/>
+  <polygon points="460,86 600,74 610,158 470,172" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.6"/>
+  <polygon points="452,78 592,66 602,150 462,164" fill="currentColor" opacity="0.2"/>
+  <polygon points="452,78 592,66 602,150 462,164" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="530" y="126" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">mask sits half a pixel up and left</text>
+  <text x="530" y="220" text-anchor="middle" font-size="12" fill="currentColor" font-family="monospace">IoU 0.86</text>
+  <text x="530" y="242" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">15 cm of systematic shift at 30 cm GSD —</text>
+  <text x="530" y="256" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">on every label, in the same direction</text>
+  <text x="170" y="270" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">run this on one tile before rendering the batch</text>
+</svg>
 
 ```python
 from rasterio.transform import rowcol

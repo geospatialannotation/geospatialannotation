@@ -95,6 +95,7 @@ This failure is not a bug in any one tool. It is the default behaviour of every 
 <svg viewBox="0 0 860 400" role="img" aria-label="Two annotation sites syncing to a shared content-addressed remote with conflict detection on a single manifest pointer" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:860px;display:block;margin:1.5rem auto;">
   <title>Multi-site sync to a content-addressed remote with manifest conflict detection</title>
   <desc>Site A and Site B each compute per-feature content hashes and a local manifest, push immutable objects to a shared object store, and compete to update a single manifest pointer guarded by a generation-number conflict check that admits one writer and rejects the stale one.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -301,6 +302,32 @@ Because objects are immutable and hashed, a non-empty `conflicting` set is the o
 
 Ordering is what prevents a crash from leaving the dataset half-written. The invariant: the manifest pointer must only ever reference objects that already exist on the remote. That forces a strict sequence — pull and reconcile first, upload immutable content next, and commit the manifest pointer *last*. If the process dies after uploading objects but before committing the pointer, the extra objects are simply unreferenced and harmless; a later garbage-collection pass reclaims them. The reverse ordering — pointer first — would publish a manifest referencing objects that do not yet exist, breaking every reader.
 
+<svg viewBox="0 40 720 208" role="img" aria-label="Push order that keeps the pointer commit valid: objects first, manifest second, pointer last" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Push in the order that keeps every intermediate state readable</title>
+  <desc>Objects go up first, then the manifest that names them, then the pointer commit that names the manifest. At every intermediate moment a reader following the current pointer sees a complete older version. Reversing the order — pointer first — publishes a version whose objects are still uploading, and readers get missing-key errors until the transfer finishes.</desc>
+  <rect x="0" y="40" width="720" height="208" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="po-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <rect x="20" y="60" width="190" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="115" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">1 · content objects</text>
+  <text x="115" y="102" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">addressed by hash — safe to re-upload</text>
+  <line x1="210" y1="90" x2="248" y2="90" stroke="currentColor" stroke-width="1.5" marker-end="url(#po-arr)"/>
+  <rect x="250" y="60" width="190" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="345" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">2 · manifest</text>
+  <text x="345" y="102" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">names objects that already exist</text>
+  <line x1="440" y1="90" x2="478" y2="90" stroke="currentColor" stroke-width="1.5" marker-end="url(#po-arr)"/>
+  <rect x="480" y="60" width="220" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+  <text x="590" y="84" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">3 · pointer commit</text>
+  <text x="590" y="102" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.75">the only step that publishes anything</text>
+  <text x="360" y="152" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">at every moment in between, a reader following the pointer gets a complete older version</text>
+  <rect x="90" y="176" width="540" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="198" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">reverse it and the pointer names a manifest naming objects still in flight</text>
+  <text x="360" y="216" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">readers get missing-key errors for as long as the transfer takes — on a large batch, hours</text>
+</svg>
+
 ```python
 def sync_to_remote(
     local_features: dict[str, dict[str, Any]],
@@ -332,6 +359,37 @@ Multi-remote fan-out (for example S3 as primary and GCS as a disaster-recovery m
 ### Coordinate Concurrent Sites With a Lease and Generation Number
 
 The manifest pointer is the single mutable object, so it needs a concurrency guard. Two mechanisms work, and you can layer them. The first is a *monotonic generation number*: a writer records the generation it pulled, and its commit only succeeds if the remote is still at that generation. The second is a short-lived *lease* that gives one site an exclusive window to commit, which reduces wasted retries under heavy contention.
+
+<svg viewBox="0 0 720 280" role="img" aria-label="A lease and generation number serialising two sites that try to publish at the same moment" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>The lease is what stops two sites publishing generation 42</title>
+  <desc>Two sites finish work at the same time and both hold generation 41. Site A acquires the lease, writes generation 42 and releases. Site B's acquire fails, so it re-reads, finds 42, rebases its changes onto it and publishes 43. Without the lease both write 42 and the second write silently replaces the first.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <defs>
+    <marker id="ls-arr" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="currentColor"/>
+    </marker>
+  </defs>
+  <text x="90" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">site A</text>
+  <text x="360" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">remote</text>
+  <text x="630" y="44" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">site B</text>
+  <line x1="90" y1="54" x2="90" y2="234" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <line x1="360" y1="54" x2="360" y2="234" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <line x1="630" y1="54" x2="630" y2="234" stroke="currentColor" stroke-width="1" opacity="0.4" stroke-dasharray="4 4"/>
+  <line x1="94" y1="78" x2="352" y2="78" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="223" y="70" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">acquire lease @ gen 41</text>
+  <line x1="626" y1="104" x2="368" y2="104" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="497" y="96" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">acquire lease @ gen 41</text>
+  <line x1="356" y1="128" x2="98" y2="128" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)" opacity="0.6"/>
+  <text x="227" y="120" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">granted</text>
+  <line x1="364" y1="152" x2="622" y2="152" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)" opacity="0.6"/>
+  <text x="493" y="144" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">refused — held by A</text>
+  <line x1="94" y1="180" x2="352" y2="180" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="223" y="172" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">publish gen 42, release</text>
+  <line x1="626" y1="206" x2="368" y2="206" stroke="currentColor" stroke-width="1.5" marker-end="url(#ls-arr)"/>
+  <text x="497" y="198" text-anchor="middle" font-size="10" fill="currentColor" font-family="monospace">re-read → rebase → publish gen 43</text>
+  <rect x="150" y="240" width="420" height="32" rx="6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 3"/>
+  <text x="360" y="261" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif">without the lease both write gen 42, and B's write erases A's work with no error anywhere</text>
+</svg>
 
 Object stores expose a conditional-write primitive that makes the generation check atomic. On S3, `IfMatch` on the pointer's ETag rejects a write if another site has already advanced it; on GCS, `ifGenerationMatch` does the same with the object's native generation number.
 

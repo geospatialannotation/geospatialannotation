@@ -97,6 +97,7 @@ This is distribution drift, and it is the failure mode that a monitoring layer i
 <svg viewBox="0 0 880 340" role="img" aria-label="Distribution drift monitoring diagram: reference distribution compared against an incoming batch through PSI bins and a threshold gate that raises a re-label trigger" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:880px;display:block;margin:1.5rem auto;">
   <title>Drift Monitoring Flow</title>
   <desc>A reference distribution and an incoming batch distribution are each binned, compared per bin to produce a Population Stability Index, passed through a banded threshold gate, and when drift is significant the gate raises a re-label trigger that feeds the active learning loop.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
   <defs>
     <marker id="dm-arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
       <path d="M0,0 L0,6 L8,3 z" fill="currentColor" opacity="0.6"/>
@@ -123,8 +124,8 @@ This is distribution drift, and it is the failure mode that a monitoring layer i
   <rect x="154" y="270" width="18" height="42" fill="currentColor" opacity="0.6"/>
   <line x1="30" y1="312" x2="196" y2="312" stroke="currentColor" stroke-width="1.2" opacity="0.6"/>
   <!-- Arrows into PSI bins -->
-  <line x1="200" y1="120" x2="270" y2="180" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm-arr)" opacity="0.6"/>
-  <line x1="200" y1="270" x2="270" y2="210" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm-arr)" opacity="0.6"/>
+  <path d="M196 150 L238 150 L238 180 L274 180" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm-arr)" opacity="0.6"/>
+  <path d="M196 312 L238 312 L238 210 L274 210" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#dm-arr)" opacity="0.6"/>
   <!-- PSI bins box -->
   <rect x="278" y="150" width="180" height="90" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.55"/>
   <text x="368" y="176" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor" font-family="sans-serif">Per-bin compare</text>
@@ -405,6 +406,35 @@ The `min_samples_met` guard is deliberate: an undersized batch can produce a `si
 
 Treat the numeric bands as starting points, not universals. A high-cadence daily-revisit constellation with tight radiometric calibration can tolerate a lower `significant` threshold; a heterogeneous archive stitched from several sensors may need a higher one to avoid alert fatigue. Calibrate against a labeled drift event if you have one — replay a known summer-to-winter transition and tune the bands so it trips exactly once.
 
+<svg viewBox="0 0 720 250" role="img" aria-label="Drift metrics against what each one can and cannot see" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Three metrics, three blind spots</title>
+  <desc>The population stability index summarises a whole distribution in one number but says nothing about which bin moved. The Kolmogorov-Smirnov test is sensitive to the shape of the middle of a distribution and weak in the tails. Per-class prior comparison catches label drift that leaves the imagery statistics untouched. Running one of the three and calling it drift monitoring leaves the other two failures invisible.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <text x="330" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">catches</text>
+  <text x="580" y="38" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" font-weight="600">misses</text>
+  <line x1="20" y1="48" x2="700" y2="48" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+  <text x="20" y="80" font-size="12" fill="currentColor" font-family="monospace">PSI</text>
+  <text x="20" y="98" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">per-band, binned</text>
+  <text x="200" y="80" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">a whole-distribution shift, in one number</text>
+  <text x="200" y="96" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">that is easy to threshold and trend</text>
+  <text x="470" y="80" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">which bin moved, and whether two</text>
+  <text x="470" y="96" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">opposing shifts cancelled out</text>
+  <line x1="20" y1="110" x2="700" y2="110" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+  <text x="20" y="142" font-size="12" fill="currentColor" font-family="monospace">KS test</text>
+  <text x="20" y="160" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">per-band, continuous</text>
+  <text x="200" y="142" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">a change in the body of the</text>
+  <text x="200" y="158" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">distribution, with a p-value</text>
+  <text x="470" y="142" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">tail behaviour — new saturated</text>
+  <text x="470" y="158" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">pixels barely move the statistic</text>
+  <line x1="20" y1="172" x2="700" y2="172" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+  <text x="20" y="204" font-size="12" fill="currentColor" font-family="monospace">class priors</text>
+  <text x="20" y="222" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.65">on the labels</text>
+  <text x="200" y="204" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">label drift with identical imagery —</text>
+  <text x="200" y="220" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">a taxonomy or guideline change</text>
+  <text x="470" y="204" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">anything about the pixels; a new</text>
+  <text x="470" y="220" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.85">sensor passes it untouched</text>
+</svg>
+
 ---
 
 ## Edge Cases & Gotchas
@@ -412,6 +442,40 @@ Treat the numeric bands as starting points, not universals. A high-cadence daily
 ### Seasonal cycles masquerading as drift
 
 Vegetation greenness, snow, sun angle, and soil moisture all swing on an annual cycle. Compared against a single summer reference, every winter batch trips the gate — but that is expected variation the model should already handle, not a reason to re-label. Build the reference from a full annual cycle, or maintain season-matched references and compare like against like. True drift accumulates and does not revert across cycles; seasonal signal returns to baseline every year, and a rolling annual reference absorbs it.
+
+<svg viewBox="0 0 720 280" role="img" aria-label="A seasonal cycle in a spectral index and the two ways of comparing it, one of which reports drift every autumn" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:720px;display:block;margin:1.5rem auto;">
+  <title>Comparing to last month reports drift every autumn</title>
+  <desc>A vegetation index over two years traces the same seasonal curve twice. Comparing each batch to the previous month crosses the seasonal slope and fires an alert every spring and autumn. Comparing to the same season a year earlier removes the cycle, so only a genuine change — a new sensor, a land-use shift — clears the threshold.</desc>
+  <rect x="0" y="0" width="100%" height="100%" style="fill:var(--bg)"/>
+  <!-- Axes -->
+  <line x1="60" y1="180" x2="670" y2="180" stroke="currentColor" stroke-width="1.3" opacity="0.5"/>
+  <text x="120" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">spring</text>
+  <text x="210" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">summer</text>
+  <text x="300" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">autumn</text>
+  <text x="390" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">winter</text>
+  <text x="480" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">spring</text>
+  <text x="570" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">summer</text>
+  <text x="655" y="200" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.6">autumn</text>
+  <text x="34" y="110" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif" opacity="0.7" transform="rotate(-90 34 110)">band mean</text>
+  <!-- Curve -->
+  <path d="M60 140 L120 96 L210 62 L300 104 L390 152 L480 98 L570 60 L655 106" fill="none" stroke="currentColor" stroke-width="2.5"/>
+  <circle cx="120" cy="96" r="4" fill="currentColor"/>
+  <circle cx="210" cy="62" r="4" fill="currentColor"/>
+  <circle cx="300" cy="104" r="4" fill="currentColor"/>
+  <circle cx="390" cy="152" r="4" fill="currentColor"/>
+  <circle cx="480" cy="98" r="4" fill="currentColor"/>
+  <circle cx="570" cy="60" r="4" fill="currentColor"/>
+  <circle cx="655" cy="106" r="4" fill="currentColor"/>
+  <!-- month-over-month comparisons -->
+  <path d="M210 46 L300 88" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3" opacity="0.75"/>
+  <text x="258" y="44" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.8">alert</text>
+  <path d="M300 120 L390 168" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3" opacity="0.75"/>
+  <text x="352" y="182" text-anchor="middle" font-size="9" fill="currentColor" font-family="sans-serif" opacity="0.8">alert</text>
+  <!-- year-over-year -->
+  <path d="M210 78 L210 226 L570 226 L570 76" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <text x="390" y="244" text-anchor="middle" font-size="11" fill="currentColor" font-family="sans-serif">compare like season to like season — no alert, because nothing changed</text>
+  <text x="390" y="266" text-anchor="middle" font-size="10" fill="currentColor" font-family="sans-serif" opacity="0.8">dashed: month-over-month, which fires twice a year forever and trains everyone to ignore the alert</text>
+</svg>
 
 ### Sensor calibration shifts
 
